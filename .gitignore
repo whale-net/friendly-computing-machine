@@ -1,6 +1,8 @@
 # python
 *.pyc
 
+.env
+
 #pyenv
 .python-version
 
