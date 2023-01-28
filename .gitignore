@@ -3,6 +3,9 @@
 
 .env
 
+# auto generated idk
+*.egg-info
+
 #pyenv
 .python-version
 
