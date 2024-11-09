@@ -1,16 +1,16 @@
 [project]
 name = "friendly-computing-machine"
 version = "0.1.0"
-description = "Add your description here"
+description = "slackbot"
 readme = "README.md"
 authors = [
-    { name = "qmastermoo", email = "cpsaicontact@gmail.com" }
+    { name = "qmastermoo", email = "alex.harding@gmail.com" }
 ]
 requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
-friendly-computing-machine = "friendly_computing_machine:main"
+fcm = "friendly_computing_machine:main"
 
 [build-system]
 requires = ["hatchling"]
