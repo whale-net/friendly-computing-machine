@@ -3,10 +3,11 @@ slackbot
 
 
 ## environment
-pyenv: https://github.com/pyenv/pyenv
-python version 3.10.7 (for now, will be configurable in future)
+uv
 ```
-pyenv install 3.10.7
+uv venv
+source .venv/bin/activate
+uv sync
 ```
 pyenv virtual environment: https://github.com/pyenv/pyenv-virtualenv
 makes package management easier for test version of python
@@ -39,4 +40,3 @@ run the bot (or whatever this currently is)
 ```
 python run.py
 ```
-
