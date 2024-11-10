@@ -7,7 +7,14 @@ authors = [
     { name = "qmastermoo", email = "alex.harding@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "alembic>=1.14.0",
+    "psycopg2-binary>=2.9.10",
+    "slack-bolt>=1.21.2",
+    "sqlalchemy>=2.0.36",
+    "sqlmodel>=0.0.22",
+    "typer>=0.13.0",
+]
 
 [project.scripts]
 fcm = "friendly_computing_machine:main"
