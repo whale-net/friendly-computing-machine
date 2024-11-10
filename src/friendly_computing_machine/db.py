@@ -2,9 +2,10 @@ import alembic
 import alembic.command
 import alembic.config
 from typing import Optional
-from sqlalchemy import Engine
+from sqlalchemy import Engine, select
 from sqlmodel import create_engine, Session
 
+from friendly_computing_machine.models import SlackMessageCreate, SlackUser
 
 __GLOBALS = {"engine": None}
 
@@ -49,3 +50,28 @@ def create_migration(config: alembic.config.Config, message: Optional[str]):
     with get_engine().begin() as conn:
         config.attributes["connection"] = conn
         alembic.command.revision(config, message=message, autogenerate=True)
+
+
+def get_music_poll_channel_slack_ids() -> set[str]:
+    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
+    ids = set()
+    with get_session() as session:
+        for row in session.execute(stmt):
+            print(row)
+            ids.add(row["slack_id"])
+    return ids
+
+
+def get_bot_slack_user_slack_ids() -> set[str]:
+    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
+    ids = set()
+    with get_session() as session:
+        for row in session.execute(stmt):
+            print(row)
+            ids.add(row["slack_id"])
+    return ids
+
+
+# unsure how to structure this app, putting it here for now
+def insert_message(message: SlackMessageCreate):
+    pass
