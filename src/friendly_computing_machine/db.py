@@ -1,19 +1,24 @@
 import alembic
 import alembic.command
 import alembic.config
-from typing import Optional
+from typing import Optional, Generator
 from sqlalchemy import Engine, select
 from sqlmodel import create_engine, Session
 
-from friendly_computing_machine.models import SlackMessageCreate, SlackUser
+from friendly_computing_machine.models import (
+    SlackMessageCreate,
+    SlackMessage,
+    SlackUser,
+    SlackChannel,
+)
 
 __GLOBALS = {"engine": None}
 
 
-def init_engine(url: str):
+def init_engine(url: str, echo: bool = False):
     if __GLOBALS["engine"] is not None:
         raise RuntimeError("double engine init")
-    __GLOBALS["engine"] = create_engine(url, echo=True)
+    __GLOBALS["engine"] = create_engine(url, echo=echo)
 
 
 def get_engine() -> Engine:
@@ -22,9 +27,14 @@ def get_engine() -> Engine:
     return __GLOBALS["engine"]
 
 
-def get_session():
+def gen_get_session() -> Generator[Session, None, None]:
+    # would be useful if fastapi was ever needed in this app
     with Session(get_engine()) as session:
         yield session
+
+
+def get_session() -> Session:
+    return next(gen_get_session())
 
 
 def run_migration(config: alembic.config.Config):
@@ -53,25 +63,39 @@ def create_migration(config: alembic.config.Config, message: Optional[str]):
 
 
 def get_music_poll_channel_slack_ids() -> set[str]:
-    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
     ids = set()
-    with get_session() as session:
-        for row in session.execute(stmt):
-            print(row)
-            ids.add(row["slack_id"])
+    stmt = select(SlackChannel.slack_id).where(SlackChannel.is_music_poll)
+    session = get_session()
+    result = session.exec(stmt)
+    for row in result:
+        ids.add(row.slack_id)
     return ids
 
 
 def get_bot_slack_user_slack_ids() -> set[str]:
-    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
     ids = set()
-    with get_session() as session:
-        for row in session.execute(stmt):
-            print(row)
-            ids.add(row["slack_id"])
+    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
+    session = get_session()
+    result = session.exec(stmt)
+    for row in result:
+        ids.add(row.slack_id)
     return ids
 
 
 # unsure how to structure this app, putting it here for now
 def insert_message(message: SlackMessageCreate):
-    pass
+    _message = SlackMessage(
+        slack_id=message.slack_id,
+        slack_team_slack_id=message.slack_team_slack_id,
+        slack_channel_slack_id=message.slack_channel_slack_id,
+        slack_user_slack_id=message.slack_user_slack_id,
+        text=message.text,
+        ts=message.ts,
+        thread_ts=message.thread_ts,
+        parent_user_slack_id=message.parent_user_slack_id,
+    )
+    session = get_session()
+    session.add(message)
+    session.commit()
+    session.refresh(message)
+    return

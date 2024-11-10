@@ -50,10 +50,9 @@ def run_slack_bot(app_token: str):  # ), bot_token: str):
 
 @app.event("message")
 def handle_message(event, say):
-    # config = get_bot_config()
-
     # TODO: typehint for event? or am I supposed to just yolo it?
-    print(event)
+    # TODO: logging
+    # print(event)
 
     message = SlackMessageCreate(
         slack_id=event.get("client_msg_id"),
@@ -66,8 +65,32 @@ def handle_message(event, say):
         parent_user_slack_id=event.get("parent_user_id"),
     )
 
-    if event.get("thread_ts") is not None:
-        insert_message(message)
+    # Rules for inserting messages
+    # is in channel.is_music_poll
+    # and
+    # (
+    #   is from bot user
+    #   or
+    #   is message in thread from bot user
+    # )
+    config = get_bot_config()
+
+    # demorgans the above
+    if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
+        print(f"skipping message {message.slack_id} - not in music poll channel")
+        return
+    elif (
+        message.slack_user_slack_id not in config.BOT_SLACK_USER_IDS
+        and message.parent_user_slack_id not in config.BOT_SLACK_USER_IDS
+    ):
+        print(
+            f"skipping message {message.slack_id} - not posted by bot user, or in bot user thread"
+        )
+        return
+
+    # if we reach this point, we can insert the message
+    # will be processed later
+    insert_message(message)
 
 
 def ts_to_datetime(ts: str):
