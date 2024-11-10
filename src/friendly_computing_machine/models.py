@@ -51,7 +51,7 @@ class SlackUserCreate(SlackUserBase):
 # -----
 # message
 class SlackMessageBase(Base):
-    slack_id: str = Field(index=True, unique=True)
+    slack_id: str | None = Field(index=True)
     slack_team_slack_id: str
     slack_channel_slack_id: str
     slack_user_slack_id: str

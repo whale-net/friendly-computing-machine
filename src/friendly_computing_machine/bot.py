@@ -28,7 +28,9 @@ class SlackBotConfig:
 
 
 def init_bot_config():
-    return SlackBotConfig(
+    if __GLOBALS["bot_config"] is not None:
+        raise RuntimeError("double bot_config init")
+    __GLOBALS["bot_config"] = SlackBotConfig(
         MUSIC_POLL_CHANNEL_IDS=get_music_poll_channel_slack_ids(),
         BOT_SLACK_USER_IDS=get_bot_slack_user_slack_ids(),
     )
@@ -48,49 +50,77 @@ def run_slack_bot(app_token: str):  # ), bot_token: str):
     SocketModeHandler(app, app_token).start()
 
 
+def slack_bot_who_am_i():
+    print(app.client.auth_test())
+
+
+def slack_send_message(channel: str, message: str):
+    response = app.client.chat_postMessage(channel=channel, text=message)
+    # our own messages aren't sent via event api
+    # so need to insert them from the client response
+    in_message = SlackMessageCreate(
+        slack_id=None,
+        slack_team_slack_id=response["message"].get("team"),
+        slack_channel_slack_id=response.get("channel"),
+        slack_user_slack_id=response["message"].get("user"),
+        text=response["message"].get("text"),
+        # unsure if message or response ts is more correct, or if it matters
+        ts=ts_to_datetime(response["message"].get("ts")),
+        thread_ts=response["message"].get("thread_ts"),
+        parent_user_slack_id=response["message"].get("parent_user_id"),
+    )
+
+    out_message = insert_message(in_message)
+    print(out_message)
+
+
 @app.event("message")
 def handle_message(event, say):
     # TODO: typehint for event? or am I supposed to just yolo it?
     # TODO: logging
-    # print(event)
-
-    message = SlackMessageCreate(
-        slack_id=event.get("client_msg_id"),
-        slack_team_slack_id=event.get("team"),
-        slack_channel_slack_id=event.get("channel"),
-        slack_user_slack_id=event.get("user"),
-        text=event.get("text"),
-        ts=ts_to_datetime(event.get("ts")),
-        thread_ts=event.get("thread_ts"),
-        parent_user_slack_id=event.get("parent_user_id"),
-    )
-
-    # Rules for inserting messages
-    # is in channel.is_music_poll
-    # and
-    # (
-    #   is from bot user
-    #   or
-    #   is message in thread from bot user
-    # )
-    config = get_bot_config()
-
-    # demorgans the above
-    if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
-        print(f"skipping message {message.slack_id} - not in music poll channel")
-        return
-    elif (
-        message.slack_user_slack_id not in config.BOT_SLACK_USER_IDS
-        and message.parent_user_slack_id not in config.BOT_SLACK_USER_IDS
-    ):
-        print(
-            f"skipping message {message.slack_id} - not posted by bot user, or in bot user thread"
+    try:
+        message = SlackMessageCreate(
+            slack_id=event.get("client_msg_id"),
+            slack_team_slack_id=event.get("team"),
+            slack_channel_slack_id=event.get("channel"),  #
+            slack_user_slack_id=event.get("user"),
+            text=event.get("text"),
+            ts=ts_to_datetime(event.get("ts")),
+            thread_ts=event.get("thread_ts"),
+            parent_user_slack_id=event.get("parent_user_id"),
         )
-        return
+        print(event)
 
-    # if we reach this point, we can insert the message
-    # will be processed later
-    insert_message(message)
+        # Rules for inserting messages
+        # is in channel.is_music_poll
+        # and
+        # (
+        #   is from bot user
+        #   or
+        #   is message in thread from bot user
+        # )
+        config = get_bot_config()
+
+        # demorgans the above
+        if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
+            print(f"skipping message {message.slack_id} - not in music poll channel")
+            return
+        elif (
+            message.slack_user_slack_id not in config.BOT_SLACK_USER_IDS
+            and message.parent_user_slack_id not in config.BOT_SLACK_USER_IDS
+        ):
+            print(
+                f"skipping message {message.slack_id} - not posted by bot user, or in bot user thread"
+            )
+            return
+
+        # if we reach this point, we can insert the message
+        # will be processed later
+        msg = insert_message(message)
+        print(f"message inserted: {msg}")
+    except Exception as e:
+        print(f"exception encountered: {e}")
+        raise
 
 
 def ts_to_datetime(ts: str):

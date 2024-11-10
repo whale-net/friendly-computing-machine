@@ -83,19 +83,19 @@ def get_bot_slack_user_slack_ids() -> set[str]:
 
 
 # unsure how to structure this app, putting it here for now
-def insert_message(message: SlackMessageCreate):
-    _message = SlackMessage(
-        slack_id=message.slack_id,
-        slack_team_slack_id=message.slack_team_slack_id,
-        slack_channel_slack_id=message.slack_channel_slack_id,
-        slack_user_slack_id=message.slack_user_slack_id,
-        text=message.text,
-        ts=message.ts,
-        thread_ts=message.thread_ts,
-        parent_user_slack_id=message.parent_user_slack_id,
+def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
+    message = SlackMessage(
+        slack_id=in_message.slack_id,
+        slack_team_slack_id=in_message.slack_team_slack_id,
+        slack_channel_slack_id=in_message.slack_channel_slack_id,
+        slack_user_slack_id=in_message.slack_user_slack_id,
+        text=in_message.text,
+        ts=in_message.ts,
+        thread_ts=in_message.thread_ts,
+        parent_user_slack_id=in_message.parent_user_slack_id,
     )
     session = get_session()
     session.add(message)
     session.commit()
     session.refresh(message)
-    return
+    return message

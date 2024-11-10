@@ -3,7 +3,11 @@ from typing import Annotated, Optional
 
 import alembic.config
 
-from friendly_computing_machine.bot import run_slack_bot
+from friendly_computing_machine.bot import (
+    run_slack_bot,
+    slack_bot_who_am_i,
+    slack_send_message,
+)
 from friendly_computing_machine.db import (
     init_engine,
     run_migration,
@@ -11,6 +15,7 @@ from friendly_computing_machine.db import (
     should_run_migration,
 )
 
+# TODO - multi app - need to check multi app callback logic
 app = typer.Typer()
 
 cli_context = {
@@ -30,6 +35,10 @@ def cli_migration_create(message: Optional[str] = None):
     create_migration(cli_context["alembic_config"], message)
 
 
+# @app.command("migrations-test")
+# TODO - merge?
+
+
 @app.command("bot-run")
 def cli_run(skip_migration_check: bool = False):
     if not skip_migration_check and should_run_migration(cli_context["alembic_config"]):
@@ -37,6 +46,16 @@ def cli_run(skip_migration_check: bool = False):
     run_slack_bot(
         app_token=cli_context["SLACK_APP_TOKEN"]
     )  # , bot_token=cli_context["SLACK_BOT_TOKEN"])
+
+
+@app.command("bot-send-test-command")
+def cli_bot_test_message(channel: str, message: str):
+    slack_send_message(channel, message)
+
+
+@app.command("bot-who-am-i")
+def cli_bot_who_am_i():
+    slack_bot_who_am_i()
 
 
 @app.callback()
