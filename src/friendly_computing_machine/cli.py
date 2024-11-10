@@ -41,8 +41,12 @@ def cli_migration_create(message: Optional[str] = None):
 
 @app.command("bot-run")
 def cli_run(skip_migration_check: bool = False):
-    if not skip_migration_check and should_run_migration(cli_context["alembic_config"]):
+    if skip_migration_check:
+        print("skipping migration, starting normally")
+    elif should_run_migration(cli_context["alembic_config"]):
         raise RuntimeError("need to run migration")
+    else:
+        print("no migration, starting normally")
     run_slack_bot(
         app_token=cli_context["SLACK_APP_TOKEN"]
     )  # , bot_token=cli_context["SLACK_BOT_TOKEN"])

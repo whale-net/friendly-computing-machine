@@ -2,7 +2,7 @@ FROM python:3.11-alpine
 # not sure if it's necessary to pin uv for this project, but whatever may as well
 COPY --from=ghcr.io/astral-sh/uv:0.4.29 /uv /uvx /bin/
 
-# Sync the project into a new environment, using the frozen lockfile
+# Install the project into `/app`
 WORKDIR /app
 
 # Enable bytecode compilation
@@ -17,10 +17,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-# install
+# Then, add the rest of the project source code and install it
+# Installing separately from its dependencies allows optimal layer caching
 ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-ENV PATH="/app/.venv/bin:$PATH"
 
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["uv", "run", "fcm"]

@@ -1,4 +1,5 @@
 import datetime
+import threading
 import os
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -47,7 +48,12 @@ def run_slack_bot(app_token: str):  # ), bot_token: str):
     # for now, config is one time, requiring restart to reconfigure
     # also uses global, unsure hwo to pass additional context into slack event handler without it
     init_bot_config()
-    SocketModeHandler(app, app_token).start()
+    print("got config")
+    # testing
+    t = threading.Thread(target=SocketModeHandler(app, app_token).start)
+    t.start()
+    print("socket thread started")
+    t.join()
 
 
 def slack_bot_who_am_i():
