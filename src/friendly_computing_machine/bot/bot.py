@@ -12,7 +12,6 @@ from friendly_computing_machine.db.db import (
 )
 
 
-
 # Initializes your app with your bot token and socket mode handler
 
 # it is stupid as hell but I guess I need to create this out here with a token from env

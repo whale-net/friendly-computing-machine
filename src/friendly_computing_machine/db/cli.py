@@ -10,6 +10,7 @@ from friendly_computing_machine.db.db import (
 
 migration_app = typer.Typer()
 
+
 @migration_app.command("run")
 def cli_migration_run():
     context = CliContext.get_instance()

@@ -13,6 +13,7 @@ from friendly_computing_machine.db.db import (
 
 app = typer.Typer()
 
+
 @app.command("run")
 def cli_run(skip_migration_check: bool = False):
     context = CliContext.get_instance()
@@ -22,9 +23,7 @@ def cli_run(skip_migration_check: bool = False):
         raise RuntimeError("need to run migration")
     else:
         print("no migration, starting normally")
-    run_slack_bot(
-        app_token=context.slack_app_token
-    )
+    run_slack_bot(app_token=context.slack_app_token)
 
 
 @app.command("send-test-command")
