@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 
-from friendly_computing_machine.models import Base
+from friendly_computing_machine.models.slack import Base
 
 from alembic import context
 
