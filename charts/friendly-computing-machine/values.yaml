@@ -7,6 +7,7 @@ namespace: fcm
 
 deployment:
   name: ""
+  skip_migration_check: true
   replicas: 1
 
 env:

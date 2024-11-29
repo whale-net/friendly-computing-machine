@@ -25,7 +25,8 @@ k8s_yaml(
             'env.slack.botToken={}'.format(os.getenv('SLACK_BOT_TOKEN')),
             'env.slack.appToken={}'.format(os.getenv('SLACK_APP_TOKEN')),
             'env.db.url={}'.format(os.getenv('DATABASE_URL')),
-            'namespace={}'.format(namespace)
+            'namespace={}'.format(namespace),
+            'deployment.skip_migration_check=false'
         ]
     )
 )
