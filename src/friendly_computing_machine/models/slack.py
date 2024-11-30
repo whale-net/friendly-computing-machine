@@ -39,7 +39,12 @@ class SlackUser(SlackUserBase, table=True):
 
 
 class SlackUserCreate(SlackUserBase):
-    pass
+    def to_slack_user(self) -> SlackUser:
+        return SlackUser(
+            slack_id=self.slack_id,
+            name=self.name,
+            is_bot=self.is_bot,
+        )
 
 
 # -----

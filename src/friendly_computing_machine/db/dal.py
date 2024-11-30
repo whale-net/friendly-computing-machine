@@ -5,6 +5,7 @@ from friendly_computing_machine.db.db import get_session
 from friendly_computing_machine.models.slack import (
     SlackChannel,
     SlackUser,
+    SlackUserCreate,
     SlackMessageCreate,
     SlackMessage,
     SlackTeamCreate,
@@ -89,7 +90,6 @@ def select_distinct_slack_team_slack_id_from_slack_message() -> set[str]:
 
 
 def upsert_slack_teams(slack_teams: list[SlackTeamCreate]) -> list[SlackTeam]:
-    # no return, don't care (for now)
     session = get_session()
     out_teams = []
     for slack_team in slack_teams:
@@ -106,6 +106,38 @@ def upsert_slack_team(
     result = session.exec(stmt).one_or_none()
     if result is None:
         result = slack_team.to_slack_team()
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+
+    return result
+
+
+def select_distinct_slack_user_slack_id_from_slack_message() -> set[str]:
+    session = get_session()
+    # TODO - this will table scan, no index. need to watch out for performance at some far future point
+    stmt = select(SlackMessage.slack_user_slack_id).distinct()
+    results = session.exec(stmt).all()
+    return {row for row in results}
+
+
+def upsert_slack_users(slack_users: list[SlackUserCreate]) -> list[SlackUser]:
+    session = get_session()
+    out_users = []
+    for slack_user in slack_users:
+        out_users.append(upsert_slack_user(slack_user, session))
+    return out_users
+
+
+def upsert_slack_user(
+    slack_user: SlackUserCreate, session: Optional[Session] = None
+) -> SlackUser:
+    session = get_session(session)
+    # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+    stmt = select(SlackUser).where(SlackUser.slack_id == slack_user.slack_id)
+    result = session.exec(stmt).one_or_none()
+    if result is None:
+        result = slack_user.to_slack_user()
         session.add(result)
         session.commit()
         session.refresh(result)

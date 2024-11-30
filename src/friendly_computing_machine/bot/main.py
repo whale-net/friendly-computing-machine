@@ -40,8 +40,7 @@ def get_bot_config() -> SlackBotConfig:
     config = __GLOBALS.get("bot_config")
     if config is None:
         config = SlackBotConfig.create()
-
-    if config.as_of + SlackBotConfig.REFRESH_PERIOD < datetime.now():
+    elif config.as_of + SlackBotConfig.REFRESH_PERIOD < datetime.now():
         config = SlackBotConfig.create()
 
     return config

@@ -4,6 +4,7 @@ from datetime import timedelta
 from friendly_computing_machine.db.dal import upsert_tasks, insert_task_instances
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.bot.task.findteams import FindTeams
+from friendly_computing_machine.bot.task.findusers import FindUsers
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
 
@@ -71,4 +72,5 @@ def create_default_taskpool() -> TaskPool:
     # with the option to comment out individual ones while I work on this
     tp = TaskPool()
     tp.add_task(FindTeams())
+    tp.add_task(FindUsers())
     return tp
