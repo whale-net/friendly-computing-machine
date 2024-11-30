@@ -1,5 +1,6 @@
-from sqlalchemy import select
+from sqlmodel import select, Session
 
+from typing import Optional
 from friendly_computing_machine.db.db import get_session
 from friendly_computing_machine.models.slack import (
     SlackChannel,
@@ -7,6 +8,11 @@ from friendly_computing_machine.models.slack import (
     SlackMessageCreate,
     SlackMessage,
 )
+from friendly_computing_machine.models.task import TaskCreate, Task
+# from sqlalchemy.dialects.postgresql import insert
+
+# TODO - move all these into the db equivalents? idk . having one dal (is DAL still a term used to describe this?
+#   or too old now? it is still what it claims to be but idk how to best describe it)
 
 
 def get_music_poll_channel_slack_ids() -> set[str]:
@@ -45,3 +51,29 @@ def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
     session.commit()
     session.refresh(message)
     return message
+
+
+def upsert_tasks(tasks: list[TaskCreate]) -> list[Task]:
+    # RBAR BABY
+    # I tried to look into upserts with sa, but didn't want to rabbit hole myself for minimal gain here
+    session = get_session()
+    out_tasks = []
+    for task in tasks:
+        out_tasks.append(upsert_task(task, session))
+    return list(out_tasks)
+
+
+def upsert_task(task: TaskCreate, session: Optional[Session]) -> Task:
+    if session is None:
+        session = get_session()
+
+    # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+    stmt = select(Task).where(Task.name == task.name)
+    result = session.exec(stmt).one_or_none()
+    if result is None:
+        result = Task(name=task.name)
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+
+    return result

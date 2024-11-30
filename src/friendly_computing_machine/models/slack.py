@@ -1,17 +1,7 @@
 import datetime
-from sqlmodel import SQLModel, Field, MetaData
+from sqlmodel import Field
 
-
-class Base(SQLModel):
-    # set schema. not required because isolating apps+environments via database
-    # but may as well specify to avoid ambiguity
-    metadata = MetaData(schema="fcm")
-
-
-# Trying out a different way to build these models, copied from a tutorial that seems to have a better grasp on this
-# than I did when working on manman
-# So, rather than having one model for everything, going to create multiple classes that work together
-# unsure of benefits or drawbacks as of writing
+from friendly_computing_machine.models.base import Base
 
 
 # -----

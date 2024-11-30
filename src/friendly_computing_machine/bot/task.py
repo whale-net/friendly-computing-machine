@@ -2,8 +2,12 @@ import time
 from datetime import timedelta, datetime
 from abc import abstractmethod, ABC
 
+from friendly_computing_machine.models.task import TaskCreate, Task, TaskInstanceCreate
 
-class Task(ABC):
+from friendly_computing_machine.db.dal import upsert_tasks
+
+
+class AbstractTask(ABC):
     def __init__(self):
         """
         self.
@@ -18,6 +22,8 @@ class Task(ABC):
         # not that i anticipate on running into this situation often; hopefully just in debug
         self.__is_running = False
 
+        self._task: None | Task = None
+
     def should_run(self) -> bool:
         if self.__is_running:
             return False
@@ -27,6 +33,7 @@ class Task(ABC):
         """
         run the task if it should run
 
+        :param force_run: bypass the should_run check
         :param args:
         :param kwargs:
         :return:
@@ -58,23 +65,57 @@ class Task(ABC):
         pass
 
     @property
-    def name(self) -> str:
-        return self.__name__
+    def task_name(self) -> str:
+        return type(self).__name__
+
+    @property
+    def task(self) -> Task:
+        if self._task is None:
+            raise RuntimeError(
+                "retrieving task before synced, unexpected behavior (for now)"
+            )
+        return self._task
+
+    @task.setter
+    def set_task(self, task: Task):
+        self._task = task
 
     def __hash__(self):
-        return self.name.__hash__()
+        return self.task_name.__hash__()
+
+    def to_task_create(self) -> TaskCreate:
+        # should probably be a class method, but whatever
+        return TaskCreate(name=self.task_name)
+
+    def to_task_instance_create(self) -> TaskInstanceCreate:
+        return TaskInstanceCreate(
+            task_id=self.task.id,
+            # for now, this datetime is set here
+            as_of=datetime.now(),
+        )
 
 
 class TaskPool:
     def __init__(self, sleep_period=timedelta(seconds=5)):
-        self._tasks: set[Task] = set()
+        self._tasks: set[AbstractTask] = set()
         self._sleep_period_milliseconds = sleep_period.total_seconds() * 1000
         self.__should_run = True
+        self._is_finalized: bool = False
 
-    def add_task(self, task: Task):
+    def add_task(self, task: AbstractTask):
+        if self._is_finalized:
+            raise RuntimeError("task pool already finalized")
         self._tasks.add(task)
 
+    def finalize(self):
+        task_creates = [task.to_task_create() for task in self._tasks]
+        upsert_tasks(task_creates)
+
+        self._is_finalized = True
+
     def start(self):
+        if not self._is_finalized:
+            self.finalize()
         while self.__should_run:
             self._process_tasks()
             time.sleep(self._sleep_period_milliseconds)
@@ -94,7 +135,7 @@ class TaskPool:
         self.__should_run = False
 
 
-class FindTeams(Task):
+class FindTeams(AbstractTask):
     @property
     def period(self) -> timedelta:
         return timedelta(minutes=1)
