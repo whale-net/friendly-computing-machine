@@ -26,6 +26,7 @@ class TaskInstanceStatus(enum.Enum):
     UNKNOWN = 0
     OK = 1
     FAIL = 2
+    SKIPPED = 3
 
 
 class TaskInstanceBase(Base):
@@ -40,7 +41,13 @@ class TaskInstance(TaskInstanceBase, table=True):
 
 
 class TaskInstanceCreate(TaskInstanceBase):
-    pass
+    def to_task_instance(self) -> TaskInstance:
+        # there has to be a more intelligent way to do this
+        return TaskInstance(
+            task_id=self.task_id,
+            as_of=self.as_of,
+            status=self.status,
+        )
 
 
 # TODO - taskpool instance

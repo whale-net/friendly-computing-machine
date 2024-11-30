@@ -2,9 +2,14 @@ import time
 from datetime import timedelta, datetime
 from abc import abstractmethod, ABC
 
-from friendly_computing_machine.models.task import TaskCreate, Task, TaskInstanceCreate
+from friendly_computing_machine.models.task import (
+    TaskCreate,
+    Task,
+    TaskInstanceCreate,
+    TaskInstanceStatus,
+)
 
-from friendly_computing_machine.db.dal import upsert_tasks
+from friendly_computing_machine.db.dal import upsert_tasks, insert_task_instances
 
 
 class AbstractTask(ABC):
@@ -29,7 +34,7 @@ class AbstractTask(ABC):
             return False
         return self._last_attempt + self.period < datetime.now()
 
-    def run(self, force_run: bool = False, *args, **kwargs):
+    def run(self, force_run: bool = False, *args, **kwargs) -> TaskInstanceCreate:
         """
         run the task if it should run
 
@@ -42,13 +47,17 @@ class AbstractTask(ABC):
             try:
                 self.__is_running = True
                 self._last_attempt = datetime.now()
-                self._run(*args, **kwargs)
+                status = self._run(*args, **kwargs)
                 self._last_success = datetime.now()
             finally:
                 self.__is_running = False
+        else:
+            status = TaskInstanceStatus.SKIPPED
+
+        return self.to_task_instance_create(status=status)
 
     @abstractmethod
-    def _run(self, *args, **kwargs):
+    def _run(self, *args, **kwargs) -> TaskInstanceStatus:
         """
         implement this one, actually does the work
         :return:
@@ -77,7 +86,7 @@ class AbstractTask(ABC):
         return self._task
 
     @task.setter
-    def set_task(self, task: Task):
+    def task(self, task: Task):
         self._task = task
 
     def __hash__(self):
@@ -87,18 +96,19 @@ class AbstractTask(ABC):
         # should probably be a class method, but whatever
         return TaskCreate(name=self.task_name)
 
-    def to_task_instance_create(self) -> TaskInstanceCreate:
+    def to_task_instance_create(self, status: TaskInstanceStatus) -> TaskInstanceCreate:
         return TaskInstanceCreate(
             task_id=self.task.id,
             # for now, this datetime is set here
             as_of=datetime.now(),
+            status=status,
         )
 
 
 class TaskPool:
     def __init__(self, sleep_period=timedelta(seconds=5)):
         self._tasks: set[AbstractTask] = set()
-        self._sleep_period_milliseconds = sleep_period.total_seconds() * 1000
+        self._sleep_period_seconds = sleep_period.total_seconds()
         self.__should_run = True
         self._is_finalized: bool = False
 
@@ -108,8 +118,14 @@ class TaskPool:
         self._tasks.add(task)
 
     def finalize(self):
+        # get task config for the pool
         task_creates = [task.to_task_create() for task in self._tasks]
-        upsert_tasks(task_creates)
+        db_tasks = upsert_tasks(task_creates)
+
+        # connect tasks in pool to db for future instance foreign key tracking
+        db_name_map = {db_task.name: db_task for db_task in db_tasks}
+        for task in self._tasks:
+            task.task = db_name_map[task.task_name]
 
         self._is_finalized = True
 
@@ -118,13 +134,15 @@ class TaskPool:
             self.finalize()
         while self.__should_run:
             self._process_tasks()
-            time.sleep(self._sleep_period_milliseconds)
+            time.sleep(self._sleep_period_seconds)
 
     def _process_tasks(self):
         # TODO - thread pool this
         # most tasks will be API calls
+        instances = []
         for task in self._tasks:
-            task.run()
+            instances.append(task.run())
+        insert_task_instances(instances)
 
     def stop(self):
         """
@@ -138,10 +156,11 @@ class TaskPool:
 class FindTeams(AbstractTask):
     @property
     def period(self) -> timedelta:
-        return timedelta(minutes=1)
+        return timedelta(minutes=5)
 
-    def _run(self):
-        pass
+    def _run(self) -> TaskInstanceStatus:
+        print("find teams!")
+        return TaskInstanceStatus.OK
 
 
 def create_default_taskpool() -> TaskPool:

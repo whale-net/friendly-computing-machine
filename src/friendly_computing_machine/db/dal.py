@@ -8,7 +8,7 @@ from friendly_computing_machine.models.slack import (
     SlackMessageCreate,
     SlackMessage,
 )
-from friendly_computing_machine.models.task import TaskCreate, Task
+from friendly_computing_machine.models.task import TaskCreate, Task, TaskInstanceCreate
 # from sqlalchemy.dialects.postgresql import insert
 
 # TODO - move all these into the db equivalents? idk . having one dal (is DAL still a term used to describe this?
@@ -77,3 +77,10 @@ def upsert_task(task: TaskCreate, session: Optional[Session]) -> Task:
         session.refresh(result)
 
     return result
+
+
+def insert_task_instances(task_instances: list[TaskInstanceCreate]):
+    # no return for now, no need
+    session = get_session()
+    session.bulk_save_objects([ti.to_task_instance() for ti in task_instances])
+    session.commit()
