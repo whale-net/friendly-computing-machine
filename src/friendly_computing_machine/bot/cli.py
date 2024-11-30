@@ -1,7 +1,7 @@
 import typer
 
-from friendly_computing_machine.bot.bot import (
-    run_slack_bot,
+from friendly_computing_machine.bot.main import run_slack_bot
+from friendly_computing_machine.bot.util import (
     slack_bot_who_am_i,
     slack_send_message,
 )
