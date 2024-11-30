@@ -1,6 +1,7 @@
 from friendly_computing_machine.util import ts_to_datetime
 from friendly_computing_machine.models.slack import SlackMessageCreate
-from friendly_computing_machine.bot.main import app, get_bot_config
+from friendly_computing_machine.bot.main import get_bot_config
+from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.db.dal import insert_message
 
 
@@ -8,7 +9,6 @@ from friendly_computing_machine.db.dal import insert_message
 def handle_message(event, say):
     # TODO: typehint for event? or am I supposed to just yolo it?
     # TODO: logging
-    print("event")
     try:
         message = SlackMessageCreate(
             slack_id=event.get("client_msg_id"),

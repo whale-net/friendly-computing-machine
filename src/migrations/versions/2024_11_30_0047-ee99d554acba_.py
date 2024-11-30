@@ -36,7 +36,14 @@ def upgrade() -> None:
         sa.Column("as_of", sa.DateTime(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("UNKNOWN", "OK", "FAIL", "SKIPPED", name="taskinstancestatus"),
+            sa.Enum(
+                "UNKNOWN",
+                "OK",
+                "FAIL",
+                "SKIPPED",
+                "EXCEPTION",
+                name="taskinstancestatus",
+            ),
             nullable=False,
         ),
         sa.Column("id", sa.Integer(), nullable=False),

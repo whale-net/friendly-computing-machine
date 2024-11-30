@@ -27,6 +27,7 @@ class TaskInstanceStatus(enum.Enum):
     OK = 1
     FAIL = 2
     SKIPPED = 3
+    EXCEPTION = 4
 
 
 class TaskInstanceBase(Base):

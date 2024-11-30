@@ -1,7 +1,6 @@
-import os
 from datetime import datetime, timedelta
 
-from slack_bolt import App
+
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from dataclasses import dataclass
 from friendly_computing_machine.util import NamedThreadPool
@@ -9,12 +8,13 @@ from friendly_computing_machine.db.dal import (
     get_music_poll_channel_slack_ids,
     get_bot_slack_user_slack_ids,
 )
-from friendly_computing_machine.bot.task import create_default_taskpool
+from friendly_computing_machine.bot.task.taskpool import create_default_taskpool
+from friendly_computing_machine.bot.app import app
 
 
 # it is stupid as hell but I guess I need to create this out here with a token from env
 # It does not seem possible to create it here, use for decorators, and then authenticate during runtime
-app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
+
 
 __GLOBALS = {}
 

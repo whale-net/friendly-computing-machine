@@ -1,4 +1,3 @@
-import time
 from datetime import timedelta, datetime
 from abc import abstractmethod, ABC
 
@@ -8,8 +7,6 @@ from friendly_computing_machine.models.task import (
     TaskInstanceCreate,
     TaskInstanceStatus,
 )
-
-from friendly_computing_machine.db.dal import upsert_tasks, insert_task_instances
 
 
 class AbstractTask(ABC):
@@ -47,7 +44,12 @@ class AbstractTask(ABC):
             try:
                 self.__is_running = True
                 self._last_attempt = datetime.now()
-                status = self._run(*args, **kwargs)
+                try:
+                    status = self._run(*args, **kwargs)
+                except Exception as e:
+                    # TODO log exception
+                    print(e)
+                    status = TaskInstanceStatus.EXCEPTION
                 self._last_success = datetime.now()
             finally:
                 self.__is_running = False
@@ -103,69 +105,3 @@ class AbstractTask(ABC):
             as_of=datetime.now(),
             status=status,
         )
-
-
-class TaskPool:
-    def __init__(self, sleep_period=timedelta(seconds=5)):
-        self._tasks: set[AbstractTask] = set()
-        self._sleep_period_seconds = sleep_period.total_seconds()
-        self.__should_run = True
-        self._is_finalized: bool = False
-
-    def add_task(self, task: AbstractTask):
-        if self._is_finalized:
-            raise RuntimeError("task pool already finalized")
-        self._tasks.add(task)
-
-    def finalize(self):
-        # get task config for the pool
-        task_creates = [task.to_task_create() for task in self._tasks]
-        db_tasks = upsert_tasks(task_creates)
-
-        # connect tasks in pool to db for future instance foreign key tracking
-        db_name_map = {db_task.name: db_task for db_task in db_tasks}
-        for task in self._tasks:
-            task.task = db_name_map[task.task_name]
-
-        self._is_finalized = True
-
-    def start(self):
-        if not self._is_finalized:
-            self.finalize()
-        while self.__should_run:
-            self._process_tasks()
-            time.sleep(self._sleep_period_seconds)
-
-    def _process_tasks(self):
-        # TODO - thread pool this
-        # most tasks will be API calls
-        instances = []
-        for task in self._tasks:
-            instances.append(task.run())
-        insert_task_instances(instances)
-
-    def stop(self):
-        """
-        stop taskpool, intended to be externally triggered
-
-        :return:
-        """
-        self.__should_run = False
-
-
-class FindTeams(AbstractTask):
-    @property
-    def period(self) -> timedelta:
-        return timedelta(minutes=5)
-
-    def _run(self) -> TaskInstanceStatus:
-        print("find teams!")
-        return TaskInstanceStatus.OK
-
-
-def create_default_taskpool() -> TaskPool:
-    # unsure how to specify which tasks I actually want, so just going to make this register everything for now
-    # with the option to comment out individual ones while I work on this
-    tp = TaskPool()
-    tp.add_task(FindTeams())
-    return tp

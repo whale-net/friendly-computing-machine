@@ -7,6 +7,8 @@ from friendly_computing_machine.models.slack import (
     SlackUser,
     SlackMessageCreate,
     SlackMessage,
+    SlackTeamCreate,
+    SlackTeam,
 )
 from friendly_computing_machine.models.task import TaskCreate, Task, TaskInstanceCreate
 # from sqlalchemy.dialects.postgresql import insert
@@ -64,9 +66,7 @@ def upsert_tasks(tasks: list[TaskCreate]) -> list[Task]:
 
 
 def upsert_task(task: TaskCreate, session: Optional[Session]) -> Task:
-    if session is None:
-        session = get_session()
-
+    session = get_session(session)
     # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
     stmt = select(Task).where(Task.name == task.name)
     result = session.exec(stmt).one_or_none()
@@ -84,3 +84,36 @@ def insert_task_instances(task_instances: list[TaskInstanceCreate]):
     session = get_session()
     session.bulk_save_objects([ti.to_task_instance() for ti in task_instances])
     session.commit()
+
+
+def select_distinct_slack_team_slack_id_from_slack_message() -> set[str]:
+    session = get_session()
+    # TODO - this will table scan, no index. need to watch out for performance at some far future point
+    stmt = select(SlackMessage.slack_team_slack_id).distinct()
+    results = session.exec(stmt).all()
+    return {row for row in results}
+
+
+def upsert_slack_teams(slack_teams: list[SlackTeamCreate]) -> list[SlackTeam]:
+    # no return, don't care (for now)
+    session = get_session()
+    out_teams = []
+    for slack_team in slack_teams:
+        out_teams.append(upsert_slack_team(slack_team, session))
+    return out_teams
+
+
+def upsert_slack_team(
+    slack_team: SlackTeamCreate, session: Optional[Session] = None
+) -> SlackTeam:
+    session = get_session(session)
+    # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+    stmt = select(SlackTeam).where(SlackTeam.slack_id == slack_team.slack_id)
+    result = session.exec(stmt).one_or_none()
+    if result is None:
+        result = slack_team.to_slack_team()
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+
+    return result

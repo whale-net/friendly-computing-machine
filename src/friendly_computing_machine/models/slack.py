@@ -19,7 +19,11 @@ class SlackTeam(SlackTeamBase, table=True):
 # I think it's so that any extra creation info can be contained in this class rather in the base class
 # going to try it out
 class SlackTeamCreate(SlackTeamBase):
-    pass
+    def to_slack_team(self) -> SlackTeam:
+        return SlackTeam(
+            slack_id=self.slack_id,
+            name=self.name,
+        )
 
 
 # -----

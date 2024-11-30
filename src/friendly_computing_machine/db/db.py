@@ -26,7 +26,9 @@ def gen_get_session() -> Generator[Session, None, None]:
         yield session
 
 
-def get_session() -> Session:
+def get_session(session: Optional[Session] = None) -> Session:
+    if session is not None:
+        return session
     return next(gen_get_session())
 
 
