@@ -1,4 +1,4 @@
-from sqlmodel import select, Session
+from sqlmodel import select, Session, and_
 
 from typing import Optional
 from friendly_computing_machine.db.db import get_session
@@ -203,8 +203,10 @@ def get_last_successful_task_instance(task: Task) -> TaskInstance | None:
     stmt = (
         select(TaskInstance)
         .where(
-            TaskInstance.task_id == task.id
-            and TaskInstance.status == TaskInstanceStatus.OK
+            and_(
+                TaskInstance.task_id == task.id,
+                TaskInstance.status == TaskInstanceStatus.OK.name,
+            )
         )
         .order_by(TaskInstance.as_of.desc())
         .limit(1)
