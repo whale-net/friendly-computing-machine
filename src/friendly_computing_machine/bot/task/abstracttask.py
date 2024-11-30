@@ -1,6 +1,10 @@
 from datetime import timedelta, datetime
 from abc import abstractmethod, ABC
 
+from friendly_computing_machine.db.dal import (
+    upsert_task,
+    get_last_successful_task_instance,
+)
 from friendly_computing_machine.models.task import (
     TaskCreate,
     Task,
@@ -16,15 +20,21 @@ class AbstractTask(ABC):
         :param period:
         """
 
-        self._last_attempt = datetime.min
-        self._last_success = datetime.min
+        # RBAR for each task, but that's fine for the volume
+        self._task: Task = upsert_task(self.to_task_create())
+
+        last_task_instance = get_last_successful_task_instance(self._task)
+        if last_task_instance is not None:
+            self._last_success = last_task_instance.as_of
+        else:
+            self._last_success = datetime.min
+        # default to last success for now
+        self._last_attempt = self._last_success
 
         # internal bool for basic synchronization
         # i think bool updates are atomic in python. at least I hope they are
         # not that i anticipate on running into this situation often; hopefully just in debug
         self.__is_running = False
-
-        self._task: None | Task = None
 
     def should_run(self) -> bool:
         if self.__is_running:
@@ -79,18 +89,6 @@ class AbstractTask(ABC):
     def task_name(self) -> str:
         return type(self).__name__
 
-    @property
-    def task(self) -> Task:
-        if self._task is None:
-            raise RuntimeError(
-                "retrieving task before synced, unexpected behavior (for now)"
-            )
-        return self._task
-
-    @task.setter
-    def task(self, task: Task):
-        self._task = task
-
     def __hash__(self):
         return self.task_name.__hash__()
 
@@ -100,8 +98,16 @@ class AbstractTask(ABC):
 
     def to_task_instance_create(self, status: TaskInstanceStatus) -> TaskInstanceCreate:
         return TaskInstanceCreate(
-            task_id=self.task.id,
+            task_id=self._task.id,
             # for now, this datetime is set here
             as_of=datetime.now(),
             status=status,
         )
+
+
+class PersistentScheduledAbstractTask(AbstractTask, ABC):
+    @property
+    @abstractmethod
+    def start_date(self) -> datetime:
+        """when this"""
+        pass

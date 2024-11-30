@@ -1,5 +1,6 @@
 import datetime
 from sqlmodel import Field
+from typing import Optional
 
 from friendly_computing_machine.models.base import Base
 
@@ -32,18 +33,23 @@ class SlackUserBase(Base):
     slack_id: str = Field(index=True, unique=True)
     name: str
     is_bot: bool = False
+    slack_team_slack_id: str = Field(nullable=True)
 
 
 class SlackUser(SlackUserBase, table=True):
     id: int = Field(default=None, nullable=False, primary_key=True)
+    slack_team_id: int = Field(nullable=True, foreign_key="slackteam.id", index=True)
 
 
 class SlackUserCreate(SlackUserBase):
-    def to_slack_user(self) -> SlackUser:
+    def to_slack_user(self, slack_team_id: Optional[int] = None) -> SlackUser:
+        # TBD if slack_team_id should be non-optional
         return SlackUser(
             slack_id=self.slack_id,
             name=self.name,
             is_bot=self.is_bot,
+            slack_team_slack_id=self.slack_team_slack_id,
+            slack_team_id=slack_team_id,
         )
 
 
@@ -66,10 +72,14 @@ class SlackMessage(SlackMessageBase, table=True):
     id: int = Field(default=None, nullable=False, primary_key=True)
     # time that this message was processed and updated
     processed_date: datetime.datetime | None
-    slack_team_id: int = Field(nullable=True, foreign_key="slackteam.id")
-    slack_channel_id: int = Field(nullable=True, foreign_key="slackchannel.id")
-    slack_user_id: int = Field(nullable=True, foreign_key="slackuser.id")
-    slack_parent_user_id: int = Field(nullable=True, foreign_key="slackuser.id")
+    slack_team_id: int = Field(nullable=True, foreign_key="slackteam.id", index=True)
+    slack_channel_id: int = Field(
+        nullable=True, foreign_key="slackchannel.id", index=True
+    )
+    slack_user_id: int = Field(nullable=True, foreign_key="slackuser.id", index=True)
+    slack_parent_user_id: int = Field(
+        nullable=True, foreign_key="slackuser.id", index=True
+    )
 
 
 class SlackMessageCreate(SlackMessageBase):

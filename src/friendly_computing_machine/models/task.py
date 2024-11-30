@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import func
-from sqlmodel import Field
+from sqlmodel import Field, Index
 from friendly_computing_machine.models.base import Base
 
 
@@ -39,6 +39,9 @@ class TaskInstanceBase(Base):
 
 class TaskInstance(TaskInstanceBase, table=True):
     id: int = Field(default=None, nullable=False, primary_key=True)
+
+
+Index("ix_status_as_of", TaskInstance.status, TaskInstance.as_of.desc())
 
 
 class TaskInstanceCreate(TaskInstanceBase):

@@ -1,7 +1,7 @@
 import time
 from datetime import timedelta
 
-from friendly_computing_machine.db.dal import upsert_tasks, insert_task_instances
+from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.bot.task.findteams import FindTeams
 from friendly_computing_machine.bot.task.findusers import FindUsers
@@ -25,14 +25,7 @@ class TaskPool:
 
     def finalize(self):
         # get task config for the pool
-        task_creates = [task.to_task_create() for task in self._tasks]
-        db_tasks = upsert_tasks(task_creates)
-
-        # connect tasks in pool to db for future instance foreign key tracking
-        db_name_map = {db_task.name: db_task for db_task in db_tasks}
-        for task in self._tasks:
-            task.task = db_name_map[task.task_name]
-
+        # for now, just everything
         self._is_finalized = True
 
     def start(self):

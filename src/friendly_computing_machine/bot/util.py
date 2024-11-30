@@ -1,4 +1,4 @@
-from friendly_computing_machine.bot.main import app
+from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.db.dal import insert_message
 from friendly_computing_machine.models.slack import SlackMessageCreate
 from friendly_computing_machine.util import ts_to_datetime
