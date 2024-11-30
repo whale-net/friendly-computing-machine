@@ -18,23 +18,17 @@ from friendly_computing_machine.models.task import TaskCreate, Task, TaskInstanc
 
 
 def get_music_poll_channel_slack_ids() -> set[str]:
-    ids = set()
     stmt = select(SlackChannel.slack_id).where(SlackChannel.is_music_poll)
     session = get_session()
-    result = session.exec(stmt)
-    for row in result:
-        ids.add(row.slack_id)
-    return ids
+    results = session.exec(stmt)
+    return {row for row in results}
 
 
 def get_bot_slack_user_slack_ids() -> set[str]:
-    ids = set()
     stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
     session = get_session()
-    result = session.exec(stmt)
-    for row in result:
-        ids.add(row.slack_id)
-    return ids
+    results = session.exec(stmt)
+    return {row for row in results}
 
 
 def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
