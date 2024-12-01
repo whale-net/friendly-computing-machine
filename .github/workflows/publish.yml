@@ -59,3 +59,63 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # hardcoding while it's runnin off main
           # tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v0
+
+  publish-helm-chart:
+    # depending on default permission settings for your org (contents being read-only or read-write for workloads), you will have to add permissions
+    # see: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # is this still needed?
+        # using API for commit count
+        # this may be needed for tags and building index.yaml
+        with:
+          fetch-depth: 0
+
+
+      # TODO - github. variables https://docs.github.com/en/actions/writing-workflows/quickstart
+      # https://gist.github.com/0penBrain/7be59a48aba778c955d992aa69e524c5 it's fine
+      - name: Pull git commit count
+        id: commit_count
+        run: |
+          COMMIT_COUNT=$(curl -I -k "https://api.github.com/repos/${{ github.repository }}/commits?per_page=1&sha=${{ github.sha }}" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p')
+          echo commit_count=$COMMIT_COUNT >> "$GITHUB_OUTPUT"
+          echo $COMMIT_COUNT
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.30"
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install the project
+        run: uv sync
+
+      - name: Update Helm version
+        run: uv run fcm tools update-helm-chart-version ${{ github.ref }} ${{ steps.commit_count.outputs.commit_count }}
+        env:
+          SKIP_SLACK_APP_INIT: ya
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

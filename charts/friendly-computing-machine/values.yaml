@@ -1,0 +1,18 @@
+image:
+  name: "ghcr.io/whale-net/friendly-computing-machine"
+  # this shouldn't need to be set, but struggling to have default fallback
+  tag: "v0"
+
+namespace: fcm
+
+deployment:
+  name: ""
+  skip_migration_check: true
+  replicas: 1
+
+env:
+  db:
+    url: <postgresql+psycopg2://user:password@host:port/database>
+  slack:
+    botToken: <slack_bot_token>
+    appToken: <slack_app_token>

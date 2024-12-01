@@ -2,15 +2,8 @@ import alembic
 import alembic.command
 import alembic.config
 from typing import Optional, Generator
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine
 from sqlmodel import create_engine, Session
-
-from friendly_computing_machine.models import (
-    SlackMessageCreate,
-    SlackMessage,
-    SlackUser,
-    SlackChannel,
-)
 
 __GLOBALS = {"engine": None}
 
@@ -18,7 +11,9 @@ __GLOBALS = {"engine": None}
 def init_engine(url: str, echo: bool = False):
     if __GLOBALS["engine"] is not None:
         raise RuntimeError("double engine init")
-    __GLOBALS["engine"] = create_engine(url, echo=echo)
+    __GLOBALS["engine"] = create_engine(
+        url, echo=echo, pool_pre_ping=True, pool_recycle=60
+    )
 
 
 def get_engine() -> Engine:
@@ -33,7 +28,9 @@ def gen_get_session() -> Generator[Session, None, None]:
         yield session
 
 
-def get_session() -> Session:
+def get_session(session: Optional[Session] = None) -> Session:
+    if session is not None:
+        return session
     return next(gen_get_session())
 
 
@@ -60,42 +57,3 @@ def create_migration(config: alembic.config.Config, message: Optional[str]):
     with get_engine().begin() as conn:
         config.attributes["connection"] = conn
         alembic.command.revision(config, message=message, autogenerate=True)
-
-
-def get_music_poll_channel_slack_ids() -> set[str]:
-    ids = set()
-    stmt = select(SlackChannel.slack_id).where(SlackChannel.is_music_poll)
-    session = get_session()
-    result = session.exec(stmt)
-    for row in result:
-        ids.add(row.slack_id)
-    return ids
-
-
-def get_bot_slack_user_slack_ids() -> set[str]:
-    ids = set()
-    stmt = select(SlackUser.slack_id).where(SlackUser.is_bot)
-    session = get_session()
-    result = session.exec(stmt)
-    for row in result:
-        ids.add(row.slack_id)
-    return ids
-
-
-# unsure how to structure this app, putting it here for now
-def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
-    message = SlackMessage(
-        slack_id=in_message.slack_id,
-        slack_team_slack_id=in_message.slack_team_slack_id,
-        slack_channel_slack_id=in_message.slack_channel_slack_id,
-        slack_user_slack_id=in_message.slack_user_slack_id,
-        text=in_message.text,
-        ts=in_message.ts,
-        thread_ts=in_message.thread_ts,
-        parent_user_slack_id=in_message.parent_user_slack_id,
-    )
-    session = get_session()
-    session.add(message)
-    session.commit()
-    session.refresh(message)
-    return message
