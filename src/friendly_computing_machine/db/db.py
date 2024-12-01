@@ -11,7 +11,9 @@ __GLOBALS = {"engine": None}
 def init_engine(url: str, echo: bool = False):
     if __GLOBALS["engine"] is not None:
         raise RuntimeError("double engine init")
-    __GLOBALS["engine"] = create_engine(url, echo=echo, pool_pre_ping=True)
+    __GLOBALS["engine"] = create_engine(
+        url, echo=echo, pool_pre_ping=True, pool_recycle=60
+    )
 
 
 def get_engine() -> Engine:
