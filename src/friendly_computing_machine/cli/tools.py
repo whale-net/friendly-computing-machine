@@ -23,5 +23,5 @@ def update_helm_chart_version(ref: str, commit_count: int):
             else:
                 file_lines.append(line)
 
-    with open("./charts/friendly-computing-machines/Chart.yaml", "w") as chart:
+    with open("./charts/friendly-computing-machine/Chart.yaml", "w") as chart:
         chart.writelines(file_lines)
