@@ -1,4 +1,4 @@
-from sqlmodel import select, Session, and_
+from sqlmodel import select, Session, and_, update, column, null
 
 from typing import Optional
 from friendly_computing_machine.db.db import get_session
@@ -212,3 +212,61 @@ def get_last_successful_task_instance(task: Task) -> TaskInstance | None:
         .limit(1)
     )
     return session.exec(stmt).one_or_none()
+
+
+def backfill_slack_messages_slack_user_id():
+    session = get_session()
+    stmt = (
+        update(SlackMessage)
+        .where(column("slack_user_id").is_(null()))
+        .values(
+            slack_user_id=(
+                select(SlackUser.id)
+                # no index, but should be fine due to low table size
+                .where(SlackUser.slack_id == SlackMessage.slack_user_slack_id)
+                .limit(1)
+                .scalar_subquery()
+            )
+        )
+    )
+    session.exec(stmt)
+    session.commit()
+    # not done - slack_parent_user_id
+
+
+def backfill_slack_messages_slack_channel_id():
+    session = get_session()
+    stmt = (
+        update(SlackMessage)
+        .where(column("slack_channel_id").is_(null()))
+        .values(
+            slack_channel_id=(
+                select(SlackChannel.id)
+                # no index, but should be fine due to low table size
+                .where(SlackChannel.slack_id == SlackMessage.slack_channel_slack_id)
+                .limit(1)
+                .scalar_subquery()
+            )
+        )
+    )
+    session.exec(stmt)
+    session.commit()
+
+
+def backfill_slack_messages_slack_team_id():
+    session = get_session()
+    stmt = (
+        update(SlackMessage)
+        .where(column("slack_team_id").is_(null()))
+        .values(
+            slack_team_id=(
+                select(SlackTeam.id)
+                # no index, but should be fine due to low table size
+                .where(SlackTeam.slack_id == SlackMessage.slack_team_slack_id)
+                .limit(1)
+                .scalar_subquery()
+            )
+        )
+    )
+    session.exec(stmt)
+    session.commit()

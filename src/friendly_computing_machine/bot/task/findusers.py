@@ -8,6 +8,7 @@ from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.db.dal import (
     get_user_teams_from_messages,
     upsert_slack_users,
+    backfill_slack_messages_slack_user_id,
 )
 
 
@@ -42,7 +43,7 @@ class FindUsers(AbstractTask):
             except Exception as e:
                 # TODO log
                 print(e)
-                pass
 
         upsert_slack_users(slack_user_creates)
+        backfill_slack_messages_slack_user_id()
         return TaskInstanceStatus.OK

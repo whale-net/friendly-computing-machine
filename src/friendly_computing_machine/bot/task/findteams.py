@@ -7,6 +7,7 @@ from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.db.dal import (
     select_distinct_slack_team_slack_id_from_slack_message,
     upsert_slack_teams,
+    backfill_slack_messages_slack_team_id,
 )
 
 
@@ -27,5 +28,5 @@ class FindTeams(AbstractTask):
         ]
 
         upsert_slack_teams(slack_team_creates)
-
+        backfill_slack_messages_slack_team_id()
         return TaskInstanceStatus.OK

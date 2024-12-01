@@ -26,7 +26,7 @@ class MusicPollPostPoll(ScheduledAbstractTask):
                 channel_slack_id, ":thread: starter", thread_ts=base_message.ts
             )
 
-        return TaskInstanceStatus.EXCEPTION
+        return TaskInstanceStatus.OK
 
     @property
     def period(self) -> timedelta:
@@ -34,4 +34,4 @@ class MusicPollPostPoll(ScheduledAbstractTask):
 
     @property
     def start_date(self) -> datetime:
-        return datetime(2024, 11, 29)
+        return datetime(2024, 11, 30)

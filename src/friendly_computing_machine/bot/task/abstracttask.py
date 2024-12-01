@@ -25,7 +25,6 @@ class AbstractTask(ABC):
         self._task: Task = upsert_task(self.to_task_create())
 
         last_task_instance = get_last_successful_task_instance(self._task)
-        print("last instnace", last_task_instance)
         if last_task_instance is not None:
             self._last_success = last_task_instance.as_of
         else:

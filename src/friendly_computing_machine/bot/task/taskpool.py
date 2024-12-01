@@ -3,7 +3,10 @@ from datetime import timedelta
 
 from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
+from friendly_computing_machine.bot.task.findusers import FindUsers
+from friendly_computing_machine.bot.task.findteams import FindTeams
 from friendly_computing_machine.bot.task.musicpoll import MusicPollPostPoll
+from friendly_computing_machine.bot.task.findchannels import ChannelUpdateTask
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
 
@@ -64,9 +67,8 @@ def create_default_taskpool() -> TaskPool:
     # unsure how to specify which tasks I actually want, so just going to make this register everything for now
     # with the option to comment out individual ones while I work on this
     tp = TaskPool()
-    # TODO - find out why updates fail after a while due to EOL
-    # tp.add_task(FindTeams())
-    # tp.add_task(FindUsers())
-
+    tp.add_task(FindTeams())
+    tp.add_task(FindUsers())
     tp.add_task(MusicPollPostPoll())
+    tp.add_task(ChannelUpdateTask())
     return tp
