@@ -116,6 +116,6 @@ jobs:
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
-        if: ${{ github.event_name != ! 'pull_request' }}
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
