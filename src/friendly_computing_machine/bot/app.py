@@ -37,7 +37,12 @@ def init_client():
     )
 
 
-app = App(client=init_client())
+if os.environ.get("SKIP_SLACK_APP_INIT") == "ya":
+    from unittest.mock import MagicMock
+
+    app = MagicMock()
+else:
+    app = App(client=init_client())
 
 
 @dataclass

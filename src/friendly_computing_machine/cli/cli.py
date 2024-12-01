@@ -17,8 +17,8 @@ app.add_typer(migration_app, name="migration")
 app.add_typer(tool_app, name="tools")
 
 
-#
-@app.callback()
+@bot_app.callback()
+@migration_app.callback()
 def callback(
     slack_app_token: Annotated[str, typer.Option(envvar="SLACK_APP_TOKEN")],
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
