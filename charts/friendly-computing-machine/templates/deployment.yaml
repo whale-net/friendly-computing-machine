@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fcm-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: friendly-computing-machine
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: friendly-computing-machine
+  template:
+    metadata:
+      namespace: fcm
+      labels:
+        app: friendly-computing-machine
+    spec:
+      initContainers:
+        - name: fcm-migrations
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          args:
+            - migration
+            - run
+          env:
+            - name: SLACK_BOT_TOKEN
+              value: {{ .Values.env.slack.botToken }}
+            - name: SLACK_APP_TOKEN
+              value: {{ .Values.env.slack.appToken }}
+            - name: DATABASE_URL
+              value: {{ .Values.env.db.url }}
+      containers:
+      - name: friendly-computing-machine
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        args:
+          - bot
+          - run
+          # migrations run as init-container using (almost certainly) the same image
+          # so no need to check
+          {{- if .Values.deployment.skip_migration_check}}
+          - --skip-migration-check
+          {{- end}}
+        # TODO - improve how secrets are sourced in this template
+        env:
+          - name: SLACK_BOT_TOKEN
+            value: {{ .Values.env.slack.botToken }}
+          - name: SLACK_APP_TOKEN
+            value: {{ .Values.env.slack.appToken }}
+          - name: DATABASE_URL
+            value: {{ .Values.env.db.url }}
