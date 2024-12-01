@@ -106,6 +106,9 @@ jobs:
 
       - name: Update Helm version
         run: uv run fcm tools update-helm-chart-version ${{ github.ref }} ${{ steps.commit_count.outputs.commit_count }}
+        env:
+          SLACK_BOT_TOKEN: "dummy"
+          DATABASE_URL: "dummy"
 
       - name: Install Helm
         uses: azure/setup-helm@v4
