@@ -18,3 +18,10 @@ run the bot (or whatever this currently is)
 ```
 uv run fcm
 ```
+
+
+### other
+
+```
+uvx ruff check --select I --fix .
+```

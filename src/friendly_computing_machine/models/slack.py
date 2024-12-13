@@ -1,6 +1,7 @@
 import datetime
-from sqlmodel import Field
 from typing import Optional
+
+from sqlmodel import Field
 
 from friendly_computing_machine.models.base import Base
 

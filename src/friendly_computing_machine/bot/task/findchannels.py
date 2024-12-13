@@ -1,10 +1,8 @@
 from datetime import timedelta
 
-from friendly_computing_machine.models.task import TaskInstanceStatus
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
-from friendly_computing_machine.db.dal import (
-    backfill_slack_messages_slack_channel_id,
-)
+from friendly_computing_machine.db.dal import backfill_slack_messages_slack_channel_id
+from friendly_computing_machine.models.task import TaskInstanceStatus
 
 
 class ChannelUpdateTask(AbstractTask):

@@ -1,11 +1,16 @@
+import logging
+from typing import Generator, Optional
+
 import alembic
 import alembic.command
 import alembic.config
-from typing import Optional, Generator
 from sqlalchemy import Engine
-from sqlmodel import create_engine, Session
+from sqlmodel import Session, create_engine
 
 __GLOBALS = {"engine": None}
+
+
+logger = logging.getLogger(__name__)
 
 
 def init_engine(url: str, echo: bool = False):
@@ -14,6 +19,7 @@ def init_engine(url: str, echo: bool = False):
     __GLOBALS["engine"] = create_engine(
         url, echo=echo, pool_pre_ping=True, pool_recycle=60
     )
+    logger.info("engine created")
 
 
 def get_engine() -> Engine:
@@ -25,7 +31,9 @@ def get_engine() -> Engine:
 def gen_get_session() -> Generator[Session, None, None]:
     # would be useful if fastapi was ever needed in this app
     with Session(get_engine()) as session:
+        logger.debug("sqlalchemy session created")
         yield session
+        logger.debug("sqlalchemy session completed")
 
 
 def get_session(session: Optional[Session] = None) -> Session:
@@ -53,6 +61,7 @@ def should_run_migration(config: alembic.config.Config) -> bool:
 
 def create_migration(config: alembic.config.Config, message: Optional[str]):
     if not should_run_migration(config):
+        logger.info("no migration required")
         raise RuntimeError("no migration required")
     with get_engine().begin() as conn:
         config.attributes["connection"] = conn

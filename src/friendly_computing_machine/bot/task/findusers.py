@@ -1,15 +1,17 @@
+import logging
 from datetime import timedelta
-
-from friendly_computing_machine.models.slack import SlackUserCreate
-from friendly_computing_machine.models.task import TaskInstanceStatus
 
 from friendly_computing_machine.bot.app import get_client
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.db.dal import (
+    backfill_slack_messages_slack_user_id,
     get_user_teams_from_messages,
     upsert_slack_users,
-    backfill_slack_messages_slack_user_id,
 )
+from friendly_computing_machine.models.slack import SlackUserCreate
+from friendly_computing_machine.models.task import TaskInstanceStatus
+
+logger = logging.getLogger(__name__)
 
 
 class FindUsers(AbstractTask):
@@ -41,8 +43,7 @@ class FindUsers(AbstractTask):
                     )
                 )
             except Exception as e:
-                # TODO log
-                print(e)
+                logger.exception(e)
 
         upsert_slack_users(slack_user_creates)
         backfill_slack_messages_slack_user_id()

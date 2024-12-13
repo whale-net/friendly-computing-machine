@@ -1,13 +1,16 @@
+import logging
 import time
 from datetime import timedelta
 
-from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
-from friendly_computing_machine.bot.task.findusers import FindUsers
-from friendly_computing_machine.bot.task.findteams import FindTeams
-from friendly_computing_machine.bot.task.musicpoll import MusicPollPostPoll
 from friendly_computing_machine.bot.task.findchannels import ChannelUpdateTask
+from friendly_computing_machine.bot.task.findteams import FindTeams
+from friendly_computing_machine.bot.task.findusers import FindUsers
+from friendly_computing_machine.bot.task.musicpoll import MusicPollPostPoll
+from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.models.task import TaskInstanceStatus
+
+logger = logging.getLogger(__name__)
 
 
 class TaskPool:
@@ -19,6 +22,7 @@ class TaskPool:
         self.__should_run = True
         self._is_finalized: bool = False
         self._log_skipped_tasks = log_skipped_tasks
+        logger.info("task pool init")
 
     def add_task(self, task: AbstractTask):
         if self._is_finalized:
@@ -29,6 +33,7 @@ class TaskPool:
         # get task config for the pool
         # for now, just everything
         self._is_finalized = True
+        logger.info("task pool is finalized, no more tasks can be created")
 
     def start(self):
         if not self._is_finalized:
@@ -41,6 +46,7 @@ class TaskPool:
         # TODO - thread pool this
         # most tasks will be API calls
         instances = []
+        logger.info("task pool will attempt to process %s tasks", len(self._tasks))
         for task in self._tasks:
             instances.append(task.run())
 
@@ -51,7 +57,7 @@ class TaskPool:
                 if instance.status != TaskInstanceStatus.SKIPPED
             ]
         if len(instances) > 0:
-            print(f"processed {len(instances)} tasks")
+            logger.info(f"processed {len(instances)} tasks")
             insert_task_instances(instances)
 
     def stop(self):
@@ -60,6 +66,7 @@ class TaskPool:
 
         :return:
         """
+        logger.info("taskpool stopping")
         self.__should_run = False
 
 
@@ -71,4 +78,5 @@ def create_default_taskpool() -> TaskPool:
     tp.add_task(FindUsers())
     tp.add_task(MusicPollPostPoll())
     tp.add_task(ChannelUpdateTask())
+    logger.info("default task pol created")
     return tp
