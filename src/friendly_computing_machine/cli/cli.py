@@ -25,7 +25,6 @@ def callback(
     slack_app_token: Annotated[str, typer.Option(envvar="SLACK_APP_TOKEN")],
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     database_url: Annotated[str, typer.Option(envvar="DATABASE_URL")],
-    debug: bool = False,
 ):
     CliContext(
         slack_app_token,
@@ -37,6 +36,4 @@ def callback(
 
     init_engine(database_url)
 
-    log_level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(level=log_level)
     logger.info("CLI callback complete")

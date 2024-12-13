@@ -37,7 +37,7 @@ def init_client():
     if "slack_web_client" in __GLOBALS:
         raise RuntimeError("double slack web client init")
     __GLOBALS["slack_web_client"] = SlackWebClientFCM(
-        token=os.environ.get("SLACK_BOT_TOKEN"), logger=logger
+        token=os.environ.get("SLACK_BOT_TOKEN")  # , logger=logger
     )
 
 

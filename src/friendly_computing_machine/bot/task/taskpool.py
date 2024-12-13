@@ -46,7 +46,7 @@ class TaskPool:
         # TODO - thread pool this
         # most tasks will be API calls
         instances = []
-        logger.info("task pool will attempt to process %s tasks", len(self._tasks))
+        logger.debug("task pool will attempt to process %s tasks", len(self._tasks))
         for task in self._tasks:
             instances.append(task.run())
 
