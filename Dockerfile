@@ -17,6 +17,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
+
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 ADD . /app
@@ -25,4 +26,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
-ENTRYPOINT ["uv", "run", "fcm"]
+
+# logging
+ENV OTEL_SERVICE_NAME='friendly-computing-machine'
+ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+# for now, log to console as well
+ENV OTEL_LOGS_EXPORTER=console,otlp
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=none
+# don't ask
+ENV OTEL_EXPORTER_OTLP_INSECURE=true
+
+RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
+
+#ENTRYPOINT ["uv", "run", "fcm"]
+ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "python", "src/friendly_computing_machine/__main__.py"]

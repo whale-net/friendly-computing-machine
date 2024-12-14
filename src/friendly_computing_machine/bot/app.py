@@ -3,6 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from threading import Lock
 
 from slack_bolt import App
 from slack_sdk import WebClient
@@ -16,6 +17,7 @@ __GLOBALS = {}
 
 
 logger = logging.getLogger(__name__)
+bot_config_lock = Lock()
 
 
 class SlackWebClientFCM(WebClient):
@@ -37,7 +39,8 @@ def init_client():
     if "slack_web_client" in __GLOBALS:
         raise RuntimeError("double slack web client init")
     __GLOBALS["slack_web_client"] = SlackWebClientFCM(
-        token=os.environ.get("SLACK_BOT_TOKEN")  # , logger=logger
+        token=os.environ.get("SLACK_BOT_TOKEN"),
+        logger=logging.getLogger("slack_web"),
     )
 
 
@@ -49,7 +52,7 @@ if os.environ.get("SKIP_SLACK_APP_INIT") == "ya":
 
     app = MagicMock()
 else:
-    app = App(client=init_client())
+    app = App(client=init_client(), logger=logging.getLogger("slack_bolt"))
 
 
 @dataclass
@@ -70,14 +73,19 @@ class SlackBotConfig:
 
 
 def get_bot_config() -> SlackBotConfig:
+    # assuming that this function is not thread safe when called by bolt
     config = __GLOBALS.get("bot_config")
+    if not bot_config_lock.acquire(timeout=10):
+        raise RuntimeError("bot lock timeout")
     if config is None:
         logger.info("creating slackbot config for the first time")
         config = SlackBotConfig.create()
     elif config.as_of + SlackBotConfig.REFRESH_PERIOD < datetime.now():
         logger.info("slackbot config has expired, refreshing")
         config = SlackBotConfig.create()
-
+    __GLOBALS["bot_config"] = config
+    bot_config_lock.release()
+    # even if another thread somehow overwrites, this object will still exist
     return config
 
 

@@ -25,12 +25,16 @@ def callback(
     slack_app_token: Annotated[str, typer.Option(envvar="SLACK_APP_TOKEN")],
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     database_url: Annotated[str, typer.Option(envvar="DATABASE_URL")],
+    debug: bool = False,
 ):
+    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    logger.info("CLI callback starting")
+
     CliContext(
         slack_app_token,
         # TODO: this default may prove problematic with containerization
         # TODO - is this overwritten or ignored? I think it may be but idc enough to test
-        alembic.config.Config("./alembic.ini"),
+        alembic.config.Config("../../alembic.ini"),
     )
     # print(context)
 

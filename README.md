@@ -23,5 +23,5 @@ uv run fcm
 ### other
 
 ```
-uvx ruff check --select I --fix .
+uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 ```
