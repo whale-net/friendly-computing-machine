@@ -3,6 +3,16 @@ entries:
   friendly-computing-machine:
   - apiVersion: v2
     appVersion: v0
+    created: "2024-12-28T22:41:19.335101051Z"
+    description: slackbot
+    digest: 364def89092185559c9708c5bd0112a0060b079e9eb4141684c096fd7d9a2ac6
+    name: friendly-computing-machine
+    type: application
+    urls:
+    - https://github.com/whale-net/friendly-computing-machine/releases/download/friendly-computing-machine-0.1.1/friendly-computing-machine-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: v0
     created: "2024-12-28T22:28:59.927887515Z"
     description: slackbot
     digest: 8fbf4c44a149c901cc4dbacba015b09a706811008b5ae62210c0f460d8a96cb9
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://github.com/whale-net/friendly-computing-machine/releases/download/friendly-computing-machine-0.0.3/friendly-computing-machine-0.0.3.tgz
     version: 0.0.3
-generated: "2024-12-28T22:28:59.927898796Z"
+generated: "2024-12-28T22:41:19.335534664Z"
