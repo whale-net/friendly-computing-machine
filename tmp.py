@@ -13,6 +13,7 @@ C = 3 / 4 + 15 / 16 * sys.maxsize
 # the flat file configs hurt my head
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# uv run opentelemetry-instrument --logs_exporter console,otlp python friendly_computing_machine/__main__.py bot run
 
 
 def hell_o_world():

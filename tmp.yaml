@@ -24,9 +24,9 @@ service:
     logs:
       receivers: [otlp]
       # processors: [memory_limiter, batch]
-      processors:
+      #processors:
       exporters: [debug]
-    traces:
-      receivers: [otlp]
-      #processors: [batch]
-      exporters: [debug]
+#    traces:
+#      receivers: [otlp]
+#      #processors: [batch]
+#      exporters: [debug]

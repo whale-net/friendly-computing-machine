@@ -34,7 +34,7 @@ def callback(
         slack_app_token,
         # TODO: this default may prove problematic with containerization
         # TODO - is this overwritten or ignored? I think it may be but idc enough to test
-        alembic.config.Config("../../alembic.ini"),
+        alembic.config.Config("./alembic.ini"),
     )
     # print(context)
 

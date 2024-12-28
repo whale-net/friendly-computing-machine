@@ -96,7 +96,7 @@ name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de", size = 336121 }
 wheels = [
@@ -130,6 +130,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "opentelemetry-api" },
     { name = "opentelemetry-distro" },
     { name = "opentelemetry-exporter-otlp" },
     { name = "opentelemetry-sdk" },
@@ -144,6 +145,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.14.0" },
+    { name = "opentelemetry-api", specifier = ">=1.29.0" },
     { name = "opentelemetry-distro", specifier = ">=0.50b0" },
     { name = "opentelemetry-exporter-otlp", specifier = ">=1.29.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.29.0" },

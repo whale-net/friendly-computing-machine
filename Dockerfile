@@ -1,12 +1,13 @@
 FROM python:3.11-alpine
 # not sure if it's necessary to pin uv for this project, but whatever may as well
-COPY --from=ghcr.io/astral-sh/uv:0.4.29 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
 
 # Install the project into `/app`
 WORKDIR /app
 
 # Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
+# For now disabling this
+ENV UV_COMPILE_BYTECODE=0
 
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
@@ -28,16 +29,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PATH="/app/.venv/bin:$PATH"
 
 # logging
-ENV OTEL_SERVICE_NAME='friendly-computing-machine'
+#ENV OTEL_SERVICE_NAME='friendly-computing-machine'
 ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
 # for now, log to console as well
-ENV OTEL_LOGS_EXPORTER=console,otlp
-ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_LOGS_EXPORTER=console
+#,otlp
+ENV OTEL_TRACES_EXPORTER=none
 ENV OTEL_METRICS_EXPORTER=none
 # don't ask
 ENV OTEL_EXPORTER_OTLP_INSECURE=true
 
 RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 
-#ENTRYPOINT ["uv", "run", "fcm"]
-ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "python", "src/friendly_computing_machine/__main__.py"]
+ENTRYPOINT ["uv", "run", "fcm"]
+#ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "python", "-m", "friendly_computing_machine"]
+#ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "fcm"]
