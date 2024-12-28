@@ -27,7 +27,7 @@ fcm = "friendly_computing_machine:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-sources = ["."]
+# sources = ["."]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
