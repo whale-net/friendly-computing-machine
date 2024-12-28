@@ -30,17 +30,15 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # logging
 #ENV OTEL_SERVICE_NAME='friendly-computing-machine'
-ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
-# for now, log to console as well
-ENV OTEL_LOGS_EXPORTER=console
-#,otlp
-ENV OTEL_TRACES_EXPORTER=none
-ENV OTEL_METRICS_EXPORTER=none
-# don't ask
-ENV OTEL_EXPORTER_OTLP_INSECURE=true
+#ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+## for now, log to console as well
+#ENV OTEL_LOGS_EXPORTER=console
+##,otlp
+#ENV OTEL_TRACES_EXPORTER=none
+#ENV OTEL_METRICS_EXPORTER=none
+## don't ask
+#ENV OTEL_EXPORTER_OTLP_INSECURE=true
 
-RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
+#RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 
 ENTRYPOINT ["uv", "run", "fcm"]
-#ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "python", "-m", "friendly_computing_machine"]
-#ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "fcm"]

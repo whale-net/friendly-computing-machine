@@ -34,6 +34,8 @@ spec:
               value: {{ .Values.env.slack.botToken }}
             - name: SLACK_APP_TOKEN
               value: {{ .Values.env.slack.appToken }}
+            - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+              value: {{ .Values.env.otelCollector.logs.endpoint }}
             - name: DATABASE_URL
               value: {{ .Values.env.db.url }}
       containers:

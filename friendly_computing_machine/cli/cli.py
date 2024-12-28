@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Annotated
 
 import alembic.config
@@ -9,6 +10,14 @@ from friendly_computing_machine.cli.tools import app as tool_app
 from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.cli import migration_app
 from friendly_computing_machine.db.db import init_engine
+
+
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+from opentelemetry.sdk._logs.export import ConsoleLogExporter
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.resources import Resource
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +35,40 @@ def callback(
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     database_url: Annotated[str, typer.Option(envvar="DATABASE_URL")],
     debug: bool = False,
+    log_otlp: bool = True,
+    log_console: bool = False,
 ):
+    # OTEL logging setup
+    logger_provider = LoggerProvider(
+        resource=Resource.create(
+            {
+                "service.name": "friendly-computing-machine",
+                "service.instance.id": os.uname().nodename,
+            }
+        ),
+    )
+    set_logger_provider(logger_provider)
+
+    if log_otlp:
+        otlp_exporter = OTLPLogExporter(
+            endpoint=os.getenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT")
+            or "http://0.0.0.0:4317",
+            insecure=True,
+        )
+        logger_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_exporter))
+
+    if log_console:
+        console_exporter = ConsoleLogExporter()
+        logger_provider.add_log_record_processor(
+            BatchLogRecordProcessor(console_exporter)
+        )
+
+    handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+    logging.getLogger().addHandler(handler)
+
+    # logger = logging.getLogger(__name__)
     logger.info("CLI callback starting")
 
     CliContext(
