@@ -1,17 +1,20 @@
-from datetime import timedelta, datetime
-from abc import abstractmethod, ABC
+import logging
+from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 from typing import Optional
 
 from friendly_computing_machine.db.dal import (
-    upsert_task,
     get_last_successful_task_instance,
+    upsert_task,
 )
 from friendly_computing_machine.models.task import (
-    TaskCreate,
     Task,
+    TaskCreate,
     TaskInstanceCreate,
     TaskInstanceStatus,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractTask(ABC):
@@ -25,9 +28,14 @@ class AbstractTask(ABC):
         self._task: Task = upsert_task(self.to_task_create())
 
         last_task_instance = get_last_successful_task_instance(self._task)
+        logger.info("task %s last instance %s", self.task_name, last_task_instance)
         if last_task_instance is not None:
             self._last_success = last_task_instance.as_of
         else:
+            logger.info(
+                "task %s has no previous instance, defaulting to min date",
+                self.task_name,
+            )
             self._last_success = datetime.min
         # default to last success for now
         self._last_attempt = self._last_success
@@ -53,18 +61,23 @@ class AbstractTask(ABC):
         """
         if force_run or self.should_run():
             try:
+                logger.info("task %s is starting", self.task_name)
                 self._is_running = True
                 self._last_attempt = datetime.now()
                 try:
                     status = self._run(*args, **kwargs)
+                    logger.info("task %s has completed", self.task_name)
                 except Exception as e:
-                    # TODO log exception
-                    print(e)
+                    logger.warning("task %s failed due to exception")
+                    logger.exception(e)
                     status = TaskInstanceStatus.EXCEPTION
+                # NOTE: this sets the last success, even if we had an exception
+                # TODO last_success vs last_attempt
                 self._last_success = datetime.now()
             finally:
                 self._is_running = False
         else:
+            logger.debug("task %s does not need to run", self.task_name)
             status = TaskInstanceStatus.SKIPPED
 
         return self.to_task_instance_create(status=status)

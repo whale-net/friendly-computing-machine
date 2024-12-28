@@ -16,3 +16,10 @@ env:
   slack:
     botToken: <slack_bot_token>
     appToken: <slack_app_token>
+  otelCollector:
+    logs:
+      endpoint: <logs_endpoint>
+    traces:
+      endpoint: <traces_endpoint>
+#    metrics:
+#      endpoint: <metrics_endpoint>

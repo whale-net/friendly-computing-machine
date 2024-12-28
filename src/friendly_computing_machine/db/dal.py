@@ -1,24 +1,27 @@
-from sqlmodel import select, Session, and_, update, column, null
-
+import logging
 from typing import Optional
+
+from sqlmodel import Session, and_, column, null, select, update
+
 from friendly_computing_machine.db.db import get_session
 from friendly_computing_machine.models.slack import (
     SlackChannel,
+    SlackMessage,
+    SlackMessageCreate,
+    SlackTeam,
+    SlackTeamCreate,
     SlackUser,
     SlackUserCreate,
-    SlackMessageCreate,
-    SlackMessage,
-    SlackTeamCreate,
-    SlackTeam,
 )
 from friendly_computing_machine.models.task import (
-    TaskCreate,
     Task,
-    TaskInstanceCreate,
+    TaskCreate,
     TaskInstance,
+    TaskInstanceCreate,
     TaskInstanceStatus,
 )
 
+logger = logging.getLogger(__name__)
 
 # from sqlalchemy.dialects.postgresql import insert
 
@@ -233,6 +236,9 @@ def backfill_slack_messages_slack_user_id():
     session.commit()
     # not done - slack_parent_user_id
 
+    # just want some logs for now. not going to retrofit everything in this file for logging
+    logger.info("backfill_slack_messages_slack_user_id complete")
+
 
 def backfill_slack_messages_slack_channel_id():
     session = get_session()
@@ -252,6 +258,9 @@ def backfill_slack_messages_slack_channel_id():
     session.exec(stmt)
     session.commit()
 
+    # just want some logs for now. not going to retrofit everything in this file for logging
+    logger.info("backfill_slack_messages_slack_channel_id complete")
+
 
 def backfill_slack_messages_slack_team_id():
     session = get_session()
@@ -270,3 +279,6 @@ def backfill_slack_messages_slack_team_id():
     )
     session.exec(stmt)
     session.commit()
+
+    # just want some logs for now. not going to retrofit everything in this file for logging
+    logger.info("backfill_slack_messages_slack_team_id complete")

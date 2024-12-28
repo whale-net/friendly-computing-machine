@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, MetaData
+from sqlmodel import MetaData, SQLModel
 
 
 class Base(SQLModel):

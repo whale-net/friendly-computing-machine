@@ -1,9 +1,12 @@
-from datetime import timedelta, datetime
+import logging
+from datetime import datetime, timedelta
 
-from friendly_computing_machine.bot.task.abstracttask import ScheduledAbstractTask
 from friendly_computing_machine.bot.app import get_bot_config
-from friendly_computing_machine.models.task import TaskInstanceStatus
+from friendly_computing_machine.bot.task.abstracttask import ScheduledAbstractTask
 from friendly_computing_machine.bot.util import slack_send_message
+from friendly_computing_machine.models.task import TaskInstanceStatus
+
+logger = logging.getLogger(__name__)
 
 
 class MusicPollPostPoll(ScheduledAbstractTask):
@@ -18,6 +21,7 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         # this is a bit of an anti-pattern but whatever (for now)
         # it is convenient to have same shared cache-type object as the event listener thread
         config = get_bot_config()
+        logger.info("music poll IDs %s", config.MUSIC_POLL_CHANNEL_IDS)
         for channel_slack_id in config.MUSIC_POLL_CHANNEL_IDS:
             base_message = slack_send_message(
                 channel_slack_id, MusicPollPostPoll.TEMPLATE

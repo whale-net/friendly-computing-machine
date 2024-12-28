@@ -1,8 +1,11 @@
-from friendly_computing_machine.util import ts_to_datetime
-from friendly_computing_machine.models.slack import SlackMessageCreate
-from friendly_computing_machine.bot.app import get_bot_config
-from friendly_computing_machine.bot.app import app
+import logging
+
+from friendly_computing_machine.bot.app import app, get_bot_config
 from friendly_computing_machine.db.dal import insert_message
+from friendly_computing_machine.models.slack import SlackMessageCreate
+from friendly_computing_machine.util import ts_to_datetime
+
+logger = logging.getLogger(__name__)
 
 
 @app.event("message")
@@ -10,12 +13,11 @@ def handle_message(event, say):
     # TODO: typehint for event? or am I supposed to just yolo it?
     # TODO: logging
     try:
-        print(event)
-        message_event = None
+        logger.debug(event)
         sub_type = event.get("subtype", "")
         if sub_type == "message_changed":
-            # TODO - update message - for now, will use latest message
-            print("skipping update, not implemented yet")
+            # TODO - update message - for now, will use latest message for poll
+            logger.info("message update received. not updating, not implemented (yet)")
             return
         else:
             message_event = event
@@ -44,21 +46,24 @@ def handle_message(event, say):
 
         # demorgans the above
         if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
-            print(f"skipping message {message.slack_id} - not in music poll channel")
+            logger.info(
+                "skipping message %s - not in music poll channel", message.slack_id
+            )
             return
         elif (
             message.slack_user_slack_id not in config.BOT_SLACK_USER_IDS
             and message.parent_user_slack_id not in config.BOT_SLACK_USER_IDS
         ):
-            print(
-                f"skipping message {message.slack_id} - not posted by bot user, or in bot user thread"
+            logger.info(
+                "skipping message %s - not posted by bot user, or in bot user thread",
+                message.slack_id,
             )
             return
 
         # if we reach this point, we can insert the message
         # will be processed later
         msg = insert_message(message)
-        print(f"message inserted: {msg}")
+        logger.info("message inserted. id=%s, slack_id=%s", msg.id, msg.slack_id)
     except Exception as e:
-        print(f"exception encountered: {e}")
+        logger.warning("exception encountered: %s", e)
         raise
