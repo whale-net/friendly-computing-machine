@@ -27,9 +27,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-# logging
+# note: This service name is defined both here and in-code (cli callback).
 ENV OTEL_SERVICE_NAME='friendly-computing-machine'
-# auto logging is not desired
+# auto logging is not desired, see readme
 ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=false
 #ENV OTEL_LOGS_EXPORTER=console
 ENV OTEL_TRACES_EXPORTER=otlp
