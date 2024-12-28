@@ -73,10 +73,11 @@ class SlackBotConfig:
 
 
 def get_bot_config() -> SlackBotConfig:
-    # assuming that this function is not thread safe when called by bolt
-    config = __GLOBALS.get("bot_config")
+    # assuming that this function is not thread safe when called by bolt and adding a lock
+    # TODO - improve config access
     if not bot_config_lock.acquire(timeout=10):
         raise RuntimeError("bot lock timeout")
+    config = __GLOBALS.get("bot_config")
     if config is None:
         logger.info("creating slackbot config for the first time")
         config = SlackBotConfig.create()
@@ -85,7 +86,6 @@ def get_bot_config() -> SlackBotConfig:
         config = SlackBotConfig.create()
     __GLOBALS["bot_config"] = config
     bot_config_lock.release()
-    # even if another thread somehow overwrites, this object will still exist
     return config
 
 
