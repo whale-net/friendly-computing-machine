@@ -30,7 +30,7 @@ jobs:
       - name: Install the project
         run: uv sync
 
-      - name: Update Helm version
+      - name: Run pytest
         run: uv run pytest --cov=friendly-computing-machine -n 8
 
       - name: Upload coverage reports to Codecov
