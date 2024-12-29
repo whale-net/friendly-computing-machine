@@ -32,6 +32,9 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest --cov=friendly-computing-machine -n 8
+        # anything slack bolt will be mocked using this
+        env:
+          SKIP_SLACK_APP_INIT: ya
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
