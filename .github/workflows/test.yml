@@ -31,7 +31,7 @@ jobs:
         run: uv sync
 
       - name: Run pytest
-        run: uv run pytest --cov=friendly_computing_machine -n 8
+        run: uv run pytest --cov=friendly_computing_machine --cov-branch --cov-report=xml -n 8
         # anything slack bolt will be mocked using this
         env:
           SKIP_SLACK_APP_INIT: ya
