@@ -1,5 +1,6 @@
 FROM python:3.11-alpine
 # not sure if it's necessary to pin uv for this project, but whatever may as well
+# NOTE: update in github actions too
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
 
 # Install the project into `/app`

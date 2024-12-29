@@ -91,9 +91,9 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
-          version: "0.4.30"
+          version: "0.5.13"
           enable-cache: true
 
       - name: Set up Python
