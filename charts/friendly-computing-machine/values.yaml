@@ -1,7 +1,6 @@
 image:
   name: "ghcr.io/whale-net/friendly-computing-machine"
-  # this shouldn't need to be set, but struggling to have default fallback
-  tag: "v0"
+  tag: ""
 
 namespace: fcm
 
