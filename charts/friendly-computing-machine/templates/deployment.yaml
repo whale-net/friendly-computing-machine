@@ -44,6 +44,8 @@ spec:
               value: "deployment-name={{ .Values.deployment.name }}"
             - name: DATABASE_URL
               value: {{ .Values.env.db.url }}
+            - name: GOOGLE_API_KEY
+              value: {{ .Values.env.google.api_key }}
       containers:
       - name: friendly-computing-machine
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"

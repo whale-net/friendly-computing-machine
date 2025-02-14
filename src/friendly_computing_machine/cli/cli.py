@@ -34,6 +34,7 @@ def callback(
     slack_app_token: Annotated[str, typer.Option(envvar="SLACK_APP_TOKEN")],
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     database_url: Annotated[str, typer.Option(envvar="DATABASE_URL")],
+    google_api_key: Annotated[str, typer.Option(envvar="GOOGLE_API_KEY")],
     debug: bool = False,
     log_otlp: bool = True,
     log_console: bool = False,
@@ -76,6 +77,7 @@ def callback(
         # TODO: this default may prove problematic with containerization
         # TODO - is this overwritten or ignored? I think it may be but idc enough to test
         alembic.config.Config("./alembic.ini"),
+        google_api_key,
     )
     # print(context)
 
