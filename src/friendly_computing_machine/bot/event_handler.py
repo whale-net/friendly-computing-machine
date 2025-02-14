@@ -67,3 +67,18 @@ def handle_message(event, say):
     except Exception as e:
         logger.warning("exception encountered: %s", e)
         raise
+
+
+# Name TBD, good enough for now, and doesn't reserve "ai" as a slash command
+@app.command("/wai")
+def handle_whale_ai_command(ack, say, command):
+    ack()
+
+    say(text="responded")
+
+
+@app.error
+def global_error_handler(error, body, logger):
+    """Handles errors globally."""
+    logger.exception(f"Error: {error}")
+    logger.info(f"Request body: {body}")

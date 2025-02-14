@@ -28,6 +28,7 @@ k8s_yaml(
         #values=['path/to'],
         set=[
             'image.name=fcm',
+            'image.tag=dev',
             'env.slack.botToken={}'.format(os.getenv('SLACK_BOT_TOKEN')),
             'env.slack.appToken={}'.format(os.getenv('SLACK_APP_TOKEN')),
             'env.db.url={}'.format(os.getenv('DATABASE_URL')),
