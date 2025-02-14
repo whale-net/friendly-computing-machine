@@ -6,6 +6,7 @@ from friendly_computing_machine.bot.main import run_slack_bot
 from friendly_computing_machine.bot.util import slack_bot_who_am_i, slack_send_message
 from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.db import should_run_migration
+from friendly_computing_machine.gemini.ai import init
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,9 @@ def cli_run(skip_migration_check: bool = False):
         raise RuntimeError("need to run migration")
     else:
         logger.info("migration check passed, starting normally")
+
+    init()
+    logger.info("genai setup")
 
     run_slack_bot(app_token=context.slack_app_token)
 
