@@ -2,6 +2,7 @@ import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
 from friendly_computing_machine.db.dal import insert_message
+from friendly_computing_machine.gemini.ai import generate_text
 from friendly_computing_machine.models.slack import SlackMessageCreate
 from friendly_computing_machine.util import ts_to_datetime
 
@@ -67,3 +68,27 @@ def handle_message(event, say):
     except Exception as e:
         logger.warning("exception encountered: %s", e)
         raise
+
+
+# Name TBD, good enough for now, and doesn't reserve "ai" as a slash command
+@app.command("/wai")
+def handle_whale_ai_command(ack, say, command):
+    ack()
+
+    user_name = command["user_name"]
+    text = command["text"]
+    # ai_response, ai_feedback, ai_safety = generate_text(username, text)
+    ai_response, _ = generate_text(user_name, text)
+    if ai_response is None:
+        say(
+            "error processing your response. It has been entirely ignored and you should feel bad for trying."
+        )
+
+    say(text=ai_response)
+
+
+@app.error
+def global_error_handler(error, body, logger):
+    """Handles errors globally."""
+    logger.exception(f"Error: {error}")
+    logger.info(f"Request body: {body}")

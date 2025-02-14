@@ -28,8 +28,10 @@ k8s_yaml(
         #values=['path/to'],
         set=[
             'image.name=fcm',
+            'image.tag=dev',
             'env.slack.botToken={}'.format(os.getenv('SLACK_BOT_TOKEN')),
             'env.slack.appToken={}'.format(os.getenv('SLACK_APP_TOKEN')),
+            'env.google.api_key={}'.format(os.getenv('GOOGLE_API_KEY')),
             'env.db.url={}'.format(os.getenv('DATABASE_URL')),
             'env.otelCollector.logs.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
             'env.otelCollector.traces.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
