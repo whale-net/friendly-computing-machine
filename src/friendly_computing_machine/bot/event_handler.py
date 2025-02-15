@@ -3,7 +3,7 @@ import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
 from friendly_computing_machine.db.dal import insert_message
-from friendly_computing_machine.gemini.ai import generate_text
+from friendly_computing_machine.gemini.ai import generate_text_with_slack_context
 from friendly_computing_machine.models.slack import SlackMessageCreate
 from friendly_computing_machine.util import ts_to_datetime
 
@@ -100,7 +100,9 @@ def handle_whale_ai_command(ack, say, command):
         )
     )
     # ai_response, ai_feedback, ai_safety = generate_text(username, text)
-    ai_response, _ = generate_text(user_name, text)
+    ai_response, _ = generate_text_with_slack_context(
+        user_name, text, genai_text.slack_channel_slack_id
+    )
     if ai_response is None:
         logger.info(
             "%s (%s) just triggered a bad response. See genai_text=%s",
