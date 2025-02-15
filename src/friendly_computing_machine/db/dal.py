@@ -310,6 +310,19 @@ def get_genai_texts(
     return list(session.exec(stmt).all())
 
 
+def get_genai_texts_by_slack_channel(
+    slack_channel_slack_id: str, limit: int = 10, session: Optional[Session] = None
+) -> list[GenAIText]:
+    session = get_session(session)
+    stmt = (
+        select(GenAIText)
+        .where(GenAIText.slack_channel_slack_id == slack_channel_slack_id)
+        .order_by(GenAIText.created_at.desc())
+        .limit(limit)
+    )
+    return list(session.exec(stmt).all())
+
+
 def get_genai_text_by_id(
     genai_text_id: int, session: Optional[Session] = None
 ) -> GenAIText | None:
