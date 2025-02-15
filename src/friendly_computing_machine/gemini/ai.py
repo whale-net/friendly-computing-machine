@@ -36,19 +36,22 @@ def generate_text_with_slack_context(
         )
 
     # does this work?
-    context_prompt = dedent("""
-        You are going to prepare a response for a request that is likely silly.
-        Here are some of the previous prompts that you may want to consider, but also, may not want to consider.
-        I'll leave it to your discretion to consider if the previous prompts are relevant.
-        If they are inappropriate please remove them from the request.
-        <previous_inputs>
-        {{previous_inputs}}
-        </previous_inputs>
+    summarized_prompts, _ = generate_text(
+        "system_user",
+        dedent("""
+    Please consider all of these AI prompts (and responses, if available) and write a brief list of important topics.
+    This will be fed into another model as a seed prompt.
+    """)
+        + "\n".join(previous_inputs),
+    )
 
-        Here is the actual prompt you need to respond to, but do still consider the above previous inputs:
-    """).replace("{{previous_inputs}}", "\n".join(previous_inputs))
+    generated_prompt = dedent(f"""
+    Here is a summary of the previous topics:
+    {summarized_prompts}
 
-    generated_prompt = context_prompt + f"\n{prompt_text}"
+    Here is the new prompt you will need to respond to. Please consider the previous topics in addition to the new prompt when responding:
+    {prompt_text}'
+    """)
     return generate_text(user_name, generated_prompt)
 
 
