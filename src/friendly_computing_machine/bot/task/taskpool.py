@@ -6,6 +6,7 @@ from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.bot.task.findchannels import ChannelUpdateTask
 from friendly_computing_machine.bot.task.findteams import FindTeams
 from friendly_computing_machine.bot.task.findusers import FindUsers
+from friendly_computing_machine.bot.task.genai import GenAISlackIDUpdateTask
 from friendly_computing_machine.bot.task.musicpoll import MusicPollPostPoll
 from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.models.task import TaskInstanceStatus
@@ -78,5 +79,6 @@ def create_default_taskpool() -> TaskPool:
     tp.add_task(FindUsers())
     tp.add_task(MusicPollPostPoll())
     tp.add_task(ChannelUpdateTask())
+    tp.add_task(GenAISlackIDUpdateTask())
     logger.info("default task pol created")
     return tp

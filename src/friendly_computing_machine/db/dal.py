@@ -347,3 +347,53 @@ def update_genai_text_response(
         session.commit()
         session.refresh(genai_text)
     return genai_text
+
+
+def backfill_genai_text_slack_channel_id(session: Optional[Session] = None):
+    """
+    Backfills the `slack_channel_id` for existing GenAIText entries based on
+    the `slack_channel_slack_id` and the SlackChannel table.
+    """
+    session = get_session(session)
+
+    stmt = (
+        update(GenAIText)
+        .where(
+            column("slack_channel_id").is_(null())
+        )  # Correctly references the column
+        .values(
+            slack_channel_id=(
+                select(SlackChannel.id)
+                .where(SlackChannel.slack_id == GenAIText.slack_channel_slack_id)
+                .limit(1)
+                .scalar_subquery()
+            )
+        )
+    )
+    session.exec(stmt)
+    session.commit()
+    logger.info("backfill_genai_text_slack_channel_id complete")
+
+
+def backfill_genai_text_slack_user_id(session: Optional[Session] = None):
+    """
+    Backfills the `slack_user_id` for existing GenAIText entries based on
+    the `slack_user_slack_id` and the SlackUser table.
+    """
+    session = get_session(session)
+
+    stmt = (
+        update(GenAIText)
+        .where(column("slack_user_id").is_(null()))  # Correctly references the column
+        .values(
+            slack_user_id=(
+                select(SlackUser.id)
+                .where(SlackUser.slack_id == GenAIText.slack_user_slack_id)
+                .limit(1)
+                .scalar_subquery()
+            )
+        )
+    )
+    session.exec(stmt)
+    session.commit()
+    logger.info("backfill_genai_text_slack_user_id complete")
