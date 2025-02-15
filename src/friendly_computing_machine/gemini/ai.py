@@ -53,6 +53,7 @@ def generate_text_with_slack_context(
     Here is the new prompt you will need to respond to.
     Please consider the previous topics when responding, but don't make mention of them.
     Additionally, your response should not be too long. Ideally around 100-150 words, but you can go with more if needed.
+    If the user specifies that it should be a long response, then feel free to disregard that warning entirely.
     {prompt_text}'
     """)
     return generate_text(user_name, generated_prompt)
