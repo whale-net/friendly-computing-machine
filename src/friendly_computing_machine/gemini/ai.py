@@ -44,12 +44,15 @@ def generate_text_with_slack_context(
     """)
         + "\n".join(previous_inputs),
     )
+    logger.info("summarized prompts: %s", summarized_prompts[:100])
 
     generated_prompt = dedent(f"""
     Here is a summary of the previous topics:
     {summarized_prompts}
 
-    Here is the new prompt you will need to respond to. Please consider the previous topics in addition to the new prompt when responding:
+    Here is the new prompt you will need to respond to.
+    Please consider the previous topics when responding, but don't make mention of them.
+    Additionally, your response should not be too long. Ideally around 100-150 words, but you can go with more if needed.
     {prompt_text}'
     """)
     return generate_text(user_name, generated_prompt)
@@ -59,7 +62,7 @@ def generate_text(user_name: str, prompt_text: str) -> tuple:
     try:
         # TODO - model name - using default for now
         model = genai.GenerativeModel()
-        logger.info("about to generate response for %s", prompt_text)
+        logger.info("about to generate response for %s", prompt_text[:100])
         response = model.generate_content(prompt_text)
 
         response_text = response.text
