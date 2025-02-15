@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
@@ -5,6 +6,13 @@ from friendly_computing_machine.db.dal import insert_message
 from friendly_computing_machine.gemini.ai import generate_text
 from friendly_computing_machine.models.slack import SlackMessageCreate
 from friendly_computing_machine.util import ts_to_datetime
+
+from friendly_computing_machine.db.dal import (
+    insert_genai_text,
+    update_genai_text_response,
+)
+from friendly_computing_machine.models.genai import GenAITextCreate
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,17 +82,44 @@ def handle_message(event, say):
 @app.command("/wai")
 def handle_whale_ai_command(ack, say, command):
     ack()
+    logger.info("slack-ack")
 
     user_name = command["user_name"]
+    user_id = command["user_id"]
+    channel_id = command["channel_id"]
     text = command["text"]
+
+    # create and log request right away
+    genai_text = insert_genai_text(
+        GenAITextCreate(
+            slack_channel_slack_id=channel_id,
+            slack_user_slack_id=user_id,
+            prompt=text,
+            # TODO: am I stupid?
+            created_at=datetime.datetime.now(),
+        )
+    )
     # ai_response, ai_feedback, ai_safety = generate_text(username, text)
     ai_response, _ = generate_text(user_name, text)
     if ai_response is None:
+        logger.info(
+            "%s (%s) just triggered a bad response. See genai_text=%s",
+            user_name,
+            user_id,
+            genai_text.id,
+        )
         say(
             "error processing your response. It has been entirely ignored and you should feel bad for trying."
         )
+        update_genai_text_response(
+            genai_text_id=genai_text.id, response="WARNING: bad response produced"
+        )
+
+    update_genai_text_response(genai_text_id=genai_text.id, response=ai_response)
 
     say(text=ai_response)
+
+    logger.info("successfully processed /wai")
 
 
 @app.error

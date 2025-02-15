@@ -1,4 +1,5 @@
 import logging
+import datetime
 from typing import Optional
 
 from sqlmodel import Session, and_, column, null, select, update
@@ -12,6 +13,10 @@ from friendly_computing_machine.models.slack import (
     SlackTeamCreate,
     SlackUser,
     SlackUserCreate,
+)
+from friendly_computing_machine.models.genai import (
+    GenAIText,
+    GenAITextCreate,
 )
 from friendly_computing_machine.models.task import (
     Task,
@@ -282,3 +287,50 @@ def backfill_slack_messages_slack_team_id():
 
     # just want some logs for now. not going to retrofit everything in this file for logging
     logger.info("backfill_slack_messages_slack_team_id complete")
+
+
+def insert_genai_text(
+    genai_text: GenAITextCreate,
+    session: Optional[Session] = None,
+) -> GenAIText:
+    session = get_session(session)
+    # db_genai_text = GenAIText.model_validate(genai_text)
+    db_genai_text = genai_text.to_genai_text()
+    session.add(db_genai_text)
+    session.commit()
+    session.refresh(db_genai_text)
+    return db_genai_text
+
+
+def get_genai_texts(
+    session: Optional[Session] = None, skip: int = 0, limit: int = 100
+) -> list[GenAIText]:
+    session = get_session(session)
+    stmt = select(GenAIText).offset(skip).limit(limit)
+    return list(session.exec(stmt).all())
+
+
+def get_genai_text_by_id(
+    genai_text_id: int, session: Optional[Session] = None
+) -> GenAIText | None:
+    session = get_session(session)
+    stmt = select(GenAIText).where(GenAIText.id == genai_text_id)
+    return session.exec(stmt).one_or_none()
+
+
+def update_genai_text_response(
+    genai_text_id: int,
+    response: str,
+    response_as_of: datetime.datetime = None,
+    session: Optional[Session] = None,
+) -> GenAIText | None:
+    # TODO - this is ai generated. should this also take in or have the option to take in the genAI object?
+    session = get_session(session)
+    genai_text = session.get(GenAIText, genai_text_id)
+    if genai_text:
+        genai_text.response = response
+        genai_text.response_as_of = response_as_of or datetime.datetime.now()
+        session.add(genai_text)
+        session.commit()
+        session.refresh(genai_text)
+    return genai_text

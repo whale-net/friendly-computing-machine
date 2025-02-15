@@ -15,8 +15,8 @@ class GenAITextBase(Base):
             DateTime(timezone=True), server_default=func.current_timestamp(), index=True
         ),
     )
-    response: str
-    response_as_of: datetime.datetime = Field(index=True, nullable=True)
+    response: str = Field(nullable=True, default=None)
+    response_as_of: datetime.datetime = Field(index=True, nullable=True, default=None)
 
 
 class GenAIText(GenAITextBase, table=True):
@@ -28,4 +28,13 @@ class GenAIText(GenAITextBase, table=True):
 
 
 class GenAITextCreate(GenAITextBase):
-    pass
+    # TODO surely a better pattern exists
+    def to_genai_text(self) -> GenAIText:
+        return GenAIText(
+            slack_channel_slack_id=self.slack_channel_slack_id,
+            slack_user_slack_id=self.slack_user_slack_id,
+            prompt=self.prompt,
+            created_at=self.created_at,
+            response=self.response,
+            response_as_of=self.response_as_of,
+        )
