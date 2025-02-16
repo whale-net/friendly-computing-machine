@@ -50,7 +50,27 @@ if os.environ.get("SKIP_SLACK_APP_INIT") == "ya":
     # the magic mock is to just make all decorator stuff work because this is structured poorly
     from unittest.mock import MagicMock
 
-    app = MagicMock()
+    # app = MagicMock()
+    class MockWebClient(WebClient):
+        def __init__(self, *args, **kwargs):
+            # Skip parent init to avoid token validation
+            self.token = kwargs.get("token", "xoxb-mock-token")
+            # Mock the required methods
+            self.api_call = MagicMock()
+            self.auth_test = MagicMock(return_value={"ok": True})
+            self.team_info = MagicMock(
+                return_value={"ok": True, "team": {"id": "T12345"}}
+            )
+            # Add any other methods you need to mock
+            self.chat_postMessage = MagicMock(return_value={"ok": True})
+            self.conversations_info = MagicMock(return_value={"ok": True})
+
+    mock_client = MockWebClient(token="xoxb-mock-token")
+    app = App(
+        client=mock_client,
+        process_before_response=False,
+        token="xoxb-mock-token",
+    )
 else:
     app = App(client=init_client(), logger=logging.getLogger("slack_bolt"))
 
