@@ -4,7 +4,7 @@ from friendly_computing_machine.gemini.ai import generate_text_with_slack_contex
 
 @patch("ai.get_genai_texts_by_slack_channel")
 @patch("ai.generate_text")
-def generate_text_with_slack_context_generates_correct_text(
+def test_generate_text_with_slack_context_generates_correct_text(
     mock_generate_text, mock_get_genai_texts
 ):
     mock_get_genai_texts.return_value = [
@@ -23,7 +23,7 @@ def generate_text_with_slack_context_generates_correct_text(
 
 @patch("ai.get_genai_texts_by_slack_channel")
 @patch("ai.generate_text")
-def generate_text_with_slack_context_handles_empty_previous_messages(
+def test_generate_text_with_slack_context_handles_empty_previous_messages(
     mock_generate_text, mock_get_genai_texts
 ):
     mock_get_genai_texts.return_value = []
