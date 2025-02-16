@@ -63,8 +63,9 @@ spec:
           httpGet:
             path: /
             port: health
-          initialDelaySeconds: 120
+          initialDelaySeconds: 30
           periodSeconds: 10
+          failureThreshold: 2
         readinessProbe:
           httpGet:
             path: /

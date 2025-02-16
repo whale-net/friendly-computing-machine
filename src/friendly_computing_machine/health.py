@@ -20,7 +20,6 @@ def _run_health_server():
 
 
 def run_health_server():
-    logger.info("health server starting")
     # Start the health check server in a separate thread
     health_thread = threading.Thread(target=_run_health_server)  # Or any port
     # TODO is this good?
