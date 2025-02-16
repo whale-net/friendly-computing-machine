@@ -5,6 +5,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.task.taskpool import create_default_taskpool
 from friendly_computing_machine.util import NamedThreadPool
+from friendly_computing_machine.health import run_health_server
 
 logger = logging.getLogger(__name__)
 
@@ -20,4 +21,5 @@ def run_slack_bot(app_token: str):  # ), bot_token: str):
 
         executor.submit(slack_socket_handler.start, thread_name="bolt")
         executor.submit(task_pool.start, thread_name="task")
+        run_health_server()
         logger.info("slack bot work submit, should be running")

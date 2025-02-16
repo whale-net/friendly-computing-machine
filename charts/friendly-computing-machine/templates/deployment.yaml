@@ -56,6 +56,23 @@ spec:
           limits:
             cpu: 100m
             memory: 128Mi
+        ports:
+        - containerPort: 7654
+          name: health
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 5
         args:
           - bot
           - run
