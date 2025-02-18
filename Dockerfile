@@ -1,32 +1,8 @@
-#FROM python:3.11-alpine
-# not sure if it's necessary to pin uv for this project, but whatever may as well
 # NOTE: update in github actions too
 FROM python:3.11-slim
 
-# Explanation:
-# 1. Update package lists
-# 2. Install build tools for Python dependencies
-# 3. Avoid compiling from source where possible
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        libssl-dev \
-        libffi-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Then install your Python dependencies (or use precompiled wheels)
-RUN pip install --no-cache-dir grpcio
-
+# not sure if it's necessary to pin uv for this project, but whatever may as well
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
-
-#RUN apk add --no-cache \
-#    build-base \
-#    gfortran \
-#    openssl-dev \
-#    libstdc\+\+
-
-
-
 
 # Install the project into `/app`
 WORKDIR /app
