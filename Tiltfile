@@ -36,7 +36,8 @@ k8s_yaml(
             'env.otelCollector.logs.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
             'env.otelCollector.traces.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
             'namespace={}'.format(namespace),
-            'deployment.skip_migration_check=false'
+            'deployment.skip_migration_check=false',
+            'deployment.health.enabled=false'
         ]
     )
 )
