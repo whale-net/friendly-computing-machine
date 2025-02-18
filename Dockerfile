@@ -1,7 +1,6 @@
-# NOTE: update in github actions too
 FROM python:3.11-slim
-
 # not sure if it's necessary to pin uv for this project, but whatever may as well
+# NOTE: update in github actions too
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
 
 # Install the project into `/app`
@@ -12,9 +11,6 @@ ENV UV_COMPILE_BYTECODE=1
 
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
-
-#RUN pip install --no-cache-dir --only-binary=:all: grpcio
-#RUN uv pip install --no-cache-dir --only-binary=:all: grpcio-tools
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,target=/root/.cache/uv \
