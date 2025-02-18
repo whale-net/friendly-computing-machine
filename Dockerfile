@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.11-slim
 # not sure if it's necessary to pin uv for this project, but whatever may as well
 # NOTE: update in github actions too
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/

@@ -9,6 +9,9 @@ deployment:
   skip_migration_check: true
   replicas: 1
 
+  health:
+    enabled: true
+
 env:
   db:
     url: <postgresql+psycopg2://user:password@host:port/database>
