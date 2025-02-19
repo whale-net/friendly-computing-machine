@@ -51,8 +51,11 @@ def gen_get_session() -> Generator[Session, None, None]:
 
 class SessionManager:
     def __init__(self, session: Optional[Session] = None):
-        # don't want to close the session if it was passed in, that session's context manager will handle it
-        self._is_passthrough = session is not None
+        # TODO autocommit
+        # TODO rollback on error
+        # TODO transaction? this suggestion came from AI
+        # close the session if it was made by this instance
+        self.should_close = session is None
         # session is established during init instead of enter.
         # shouldn't be problematic, but maybe in some odd situation
         self.session = session or Session(get_engine())
@@ -64,21 +67,20 @@ class SessionManager:
         # unexpected to get here
         if self.session is None:
             raise RuntimeError("session is none, exit called without init")
-        if self._is_passthrough:
-            logger.debug("session is passthrough, not closing")
-        else:
+        if self.should_close:
             self.session.close()
+        else:
+            logger.debug("session is passthrough, not closing")
 
 
 @deprecated(
     "this is not the right way to interact with this, and I believe will cause issues"
 )
-def get_session(session: Optional[Session] = None) -> Generator[Session]:
+def get_session(session: Optional[Session] = None) -> Session:
     if session is not None:
         return session
-    session = gen_get_session()
-    yield session
-    session.close()
+    session = next(gen_get_session())
+    return session
 
 
 def run_migration(config: alembic.config.Config):
