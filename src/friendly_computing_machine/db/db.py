@@ -1,6 +1,5 @@
 import logging
-from typing import Generator, Optional
-from typing_extensions import deprecated
+from typing import Optional
 
 import alembic
 import alembic.command
@@ -29,26 +28,6 @@ def get_engine() -> Engine:
     return __GLOBALS["engine"]
 
 
-@deprecated(
-    "this is not the right way to interact with this, and I believe will cause issues"
-)
-def gen_get_session() -> Generator[Session, None, None]:
-    # would be useful if fastapi was ever needed in this app
-    with Session(get_engine()) as session:
-        logger.debug("sqlalchemy session created")
-        yield session
-        logger.debug("sqlalchemy session completed")
-
-
-# TODO - sessions are not properly being closed. This is a problem
-# I need to close the session when appropriate. Need to check if yield is appropriate
-# otherwise, I can use a context manager and explicitly close the session
-# context manager would also allow the pass-through and optional close via
-# a member variable. definitely need to consider
-# could also consider a factory style default session? with pass through?
-# idk I hate context managers for the forever indentation
-
-
 class SessionManager:
     def __init__(self, session: Optional[Session] = None):
         # TODO autocommit
@@ -71,16 +50,6 @@ class SessionManager:
             self.session.close()
         else:
             logger.debug("session is passthrough, not closing")
-
-
-@deprecated(
-    "this is not the right way to interact with this, and I believe will cause issues"
-)
-def get_session(session: Optional[Session] = None) -> Session:
-    if session is not None:
-        return session
-    session = next(gen_get_session())
-    return session
 
 
 def run_migration(config: alembic.config.Config):
