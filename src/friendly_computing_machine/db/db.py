@@ -1,5 +1,6 @@
 import logging
 from typing import Generator, Optional
+from typing_extensions import deprecated
 
 import alembic
 import alembic.command
@@ -28,6 +29,9 @@ def get_engine() -> Engine:
     return __GLOBALS["engine"]
 
 
+@deprecated(
+    "this is not the right way to interact with this, and I believe will cause issues"
+)
 def gen_get_session() -> Generator[Session, None, None]:
     # would be useful if fastapi was ever needed in this app
     with Session(get_engine()) as session:
@@ -36,10 +40,45 @@ def gen_get_session() -> Generator[Session, None, None]:
         logger.debug("sqlalchemy session completed")
 
 
-def get_session(session: Optional[Session] = None) -> Session:
+# TODO - sessions are not properly being closed. This is a problem
+# I need to close the session when appropriate. Need to check if yield is appropriate
+# otherwise, I can use a context manager and explicitly close the session
+# context manager would also allow the pass-through and optional close via
+# a member variable. definitely need to consider
+# could also consider a factory style default session? with pass through?
+# idk I hate context managers for the forever indentation
+
+
+class SessionManager:
+    def __init__(self, session: Optional[Session] = None):
+        # don't want to close the session if it was passed in, that session's context manager will handle it
+        self._is_passthrough = session is not None
+        # session is established during init instead of enter.
+        # shouldn't be problematic, but maybe in some odd situation
+        self.session = session or Session(get_engine())
+
+    def __enter__(self):
+        return self.session
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # unexpected to get here
+        if self.session is None:
+            raise RuntimeError("session is none, exit called without init")
+        if self._is_passthrough:
+            logger.debug("session is passthrough, not closing")
+        else:
+            self.session.close()
+
+
+@deprecated(
+    "this is not the right way to interact with this, and I believe will cause issues"
+)
+def get_session(session: Optional[Session] = None) -> Generator[Session]:
     if session is not None:
         return session
-    return next(gen_get_session())
+    session = gen_get_session()
+    yield session
+    session.close()
 
 
 def run_migration(config: alembic.config.Config):
