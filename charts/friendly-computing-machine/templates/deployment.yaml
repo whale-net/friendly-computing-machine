@@ -60,20 +60,20 @@ spec:
         - containerPort: 7654
           name: health
         {{- if .Values.deployment.health.enabled }}
-          livenessProbe:
-            httpGet:
-              path: /
-              port: health
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 2
-          readinessProbe:
-            httpGet:
-              path: /
-              port: health
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 5
         {{- end }}
         args:
           - bot
