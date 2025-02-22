@@ -1,5 +1,5 @@
 import logging
-from typing import Generator, Optional
+from typing import Optional
 
 import alembic
 import alembic.command
@@ -28,18 +28,28 @@ def get_engine() -> Engine:
     return __GLOBALS["engine"]
 
 
-def gen_get_session() -> Generator[Session, None, None]:
-    # would be useful if fastapi was ever needed in this app
-    with Session(get_engine()) as session:
-        logger.debug("sqlalchemy session created")
-        yield session
-        logger.debug("sqlalchemy session completed")
+class SessionManager:
+    def __init__(self, session: Optional[Session] = None):
+        # TODO autocommit
+        # TODO rollback on error
+        # TODO transaction? this suggestion came from AI
+        # close the session if it was made by this instance
+        self.should_close = session is None
+        # session is established during init instead of enter.
+        # shouldn't be problematic, but maybe in some odd situation
+        self.session = session or Session(get_engine())
 
+    def __enter__(self):
+        return self.session
 
-def get_session(session: Optional[Session] = None) -> Session:
-    if session is not None:
-        return session
-    return next(gen_get_session())
+    def __exit__(self, exc_type, exc_value, traceback):
+        # unexpected to get here
+        if self.session is None:
+            raise RuntimeError("session is none, exit called without init")
+        if self.should_close:
+            self.session.close()
+        else:
+            logger.debug("session is passthrough, not closing")
 
 
 def run_migration(config: alembic.config.Config):
