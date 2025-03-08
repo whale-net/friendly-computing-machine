@@ -65,7 +65,7 @@ class MusicPollInstanceCreate(MusicPollInstanceBase):
     def to_music_poll_instance(self) -> MusicPollInstance:
         return MusicPollInstance(
             music_poll_id=self.music_poll_id,
-            slack_mesage_id=self.slack_message_id,
+            slack_message_id=self.slack_message_id,
             created_at=self.created_at,
             next_instance_id=self.next_instance_id,
         )

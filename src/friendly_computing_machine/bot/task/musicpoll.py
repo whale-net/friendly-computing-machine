@@ -34,9 +34,12 @@ class MusicPollPostPoll(ScheduledAbstractTask):
             poll_message = slack_send_message(
                 poll_info.slack_channel.slack_id, ":catjam: any cat jammers? :catjam:"
             )
+            logger.info("sent poll message id=%s", poll_message.id)
             insert_music_poll_instance(
                 poll_info.music_poll.to_instance(poll_message.id)
             )
+            # close last instance
+
             # No need to start thread anymore
             # slack_send_message(
             #     channel_slack_id, ":thread: starter", thread_ts=base_message.ts
