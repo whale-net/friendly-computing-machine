@@ -176,4 +176,30 @@ class ScheduledAbstractTask(AbstractTask):  # , ABC):
         return start_date + (period * expected_runs_since_start)
 
 
-# TODO : one-off tasks
+class OneOffTask(AbstractTask):
+    """
+    Represents a task that should run only once.
+    Once it has been successfully executed, it will not run again.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def period(self) -> timedelta:
+        """
+        One-off tasks don't have a real period, but we need to provide one
+        for the AbstractTask interface. Using a large value effectively
+        prevents re-runs based on time period.
+        """
+        return timedelta(days=36500)  # ~100 years
+
+    def should_run(self) -> bool:
+        """
+        One-off task should run only if it has never succeeded before.
+        """
+        if self._is_running:
+            return False
+
+        # If _last_success is datetime.min, it means the task has never run successfully
+        return self._last_success == datetime.min
