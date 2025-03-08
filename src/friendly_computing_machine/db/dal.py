@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update
+from sqlmodel import Session, and_, column, null, select, update, or_
 
 from friendly_computing_machine.db.db import SessionManager
 from friendly_computing_machine.models.slack import (
@@ -504,6 +504,42 @@ def delete_music_poll_instance(
         return False
 
 
+def get_music_poll_instance_by_datetime(
+    music_poll_id: int, as_of: datetime.datetime, session: Optional[Session] = None
+) -> MusicPollInstance | None:
+    with SessionManager(session) as session:
+        stmt = (
+            select(MusicPollInstance)
+            .where(
+                and_(
+                    MusicPollInstance.music_poll_id == music_poll_id,
+                    MusicPollInstance.created_at <= as_of,
+                    or_(
+                        MusicPollInstance.closed_at.is_(None),
+                        MusicPollInstance.closed_at >= as_of,
+                    ),
+                )
+                # sort ascending by created_at to get the first instance
+            )
+            .order_by(MusicPollInstance.created_at.asc())
+        )
+        return session.exec(stmt).one_or_none()
+
+
+def close_music_poll_instance(
+    instance_id: int, session: Optional[Session] = None
+) -> MusicPollInstance | None:
+    with SessionManager(session) as session:
+        instance = session.get(MusicPollInstance, instance_id)
+        if instance:
+            instance.closed_at = datetime.datetime.now()
+            session.add(instance)
+            session.commit()
+            session.refresh(instance)
+            return instance
+        return None
+
+
 def insert_music_poll_response(
     response: MusicPollResponseCreate, session: Optional[Session] = None
 ) -> MusicPollResponse:
@@ -550,3 +586,34 @@ def delete_music_poll_response(
             session.commit()
             return True
         return False
+
+
+def get_slack_channel(
+    slack_channel_id: int | None = None,
+    slack_channel_slack_id: str | None = None,
+    session: Optional[Session] = None,
+) -> SlackChannel | None:
+    """
+    Get a SlackChannel by either slack_channel_id or slack_channel_slack_id.
+
+    :param slack_channel_id: database id
+    :param slack_channel_slack_id: slack id
+    :param session:
+    :return:
+    """
+    if slack_channel_id is None and slack_channel_slack_id is None:
+        raise ValueError(
+            "Either slack_channel_id or slack_channel_slack_id must be provided"
+        )
+    if slack_channel_id is not None and slack_channel_slack_id is not None:
+        raise ValueError(
+            "Only one of slack_channel_id or slack_channel_slack_id must be provided"
+        )
+
+    with SessionManager(session) as session:
+        stmt = select(SlackChannel)
+        if slack_channel_id is not None:
+            stmt = stmt.where(SlackChannel.id == slack_channel_id)
+        elif slack_channel_slack_id is not None:
+            stmt = stmt.where(SlackChannel.slack_id == slack_channel_slack_id)
+        return session.exec(stmt).one_or_none()

@@ -10,6 +10,23 @@ class MusicPollBase(Base):
     slack_channel_id: int = Field(foreign_key="slackchannel.id", index=True)
     start_date: datetime.datetime = Field()
     name: str = Field()
+    # TODO - template for message
+    # TODO - option to disable always log?
+
+
+def to_instance(self) -> "MusicPollInstanceCreate":
+    """
+    Generate a MusicPollInstanceCreate object from current MusicPoll configuration
+
+    Returns:
+        MusicPollInstanceCreate: A MusicPollInstanceCreate object with attributes set.
+    """
+    return MusicPollInstanceCreate(
+        music_poll_id=self.id,
+        # TODO - figure out default handling
+        created_at=datetime.datetime.now(),
+        closed_at=None,
+    )
 
 
 class MusicPoll(MusicPollBase, table=True):
@@ -33,7 +50,11 @@ class MusicPollInstanceBase(Base):
             server_default=func.current_timestamp(),
         ),
     )
-    closed_at: datetime.datetime = Field(nullable=True)
+    # this should probably have a unique filtered index, but not worrying about it for now
+    # the actual work required to support that is not worth it
+    next_instance: int = Field(
+        default=None, nullable=True, foreign_key="musicpollinstance.id"
+    )
 
 
 class MusicPollInstance(MusicPollInstanceBase, table=True):
