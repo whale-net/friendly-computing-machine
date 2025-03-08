@@ -12,11 +12,14 @@ docker_build(
     context='.'
 )
 
-k8s_yaml([
-    'charts/friendly-computing-machine/dev/otel_collector/config.yaml',
-    'charts/friendly-computing-machine/dev/otel_collector/deployment.yaml',
-    'charts/friendly-computing-machine/dev/otel_collector/service.yaml'
-])
+load('ext://helm_resource', 'helm_resource', 'helm_repo')
+helm_repo('dev-util', 'https://whale-net.github.io/dev-util')
+# setup postgres
+helm_resource('otelcollector-dev', 'dev-util/otelcollector-dev', resource_deps=['dev-util'],
+    flags=['--set=namespace={}'.format(namespace)]
+)
+# no need to publicly expose otel collector
+#k8s_resource(workload='otelcollector-dev', port_forwards='4317:4317')
 
 # create fcm app
 k8s_yaml(
