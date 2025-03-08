@@ -44,7 +44,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_music_poll_channel_slack_ids() -> set[str]:
-    stmt = select(SlackChannel.slack_id).where(SlackChannel.is_music_poll)
+    stmt = select(SlackChannel.slack_id).join(
+        MusicPoll, MusicPoll.slack_channel_id == SlackChannel.id
+    )
     with SessionManager() as session:
         results = session.exec(stmt)
     return {row for row in results}
