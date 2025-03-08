@@ -1,8 +1,8 @@
-"""empty message
+"""musicpoll
 
-Revision ID: 84c9ddd72f4c
+Revision ID: 761581310309
 Revises: ae220408773c
-Create Date: 2025-03-08 12:30:50.911863
+Create Date: 2025-03-08 16:35:44.055075
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "84c9ddd72f4c"
+revision: str = "761581310309"
 down_revision: Union[str, None] = "ae220408773c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -45,17 +45,26 @@ def upgrade() -> None:
     op.create_table(
         "musicpollinstance",
         sa.Column("music_poll_id", sa.Integer(), nullable=False),
+        sa.Column("slack_message_id", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
             server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
-        sa.Column("closed_at", sa.DateTime(), nullable=True),
+        sa.Column("next_instance", sa.Integer(), nullable=True),
         sa.Column("id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["music_poll_id"],
             ["fcm.musicpoll.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["next_instance"],
+            ["fcm.musicpollinstance.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["slack_message_id"],
+            ["fcm.slackmessage.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         schema="fcm",
@@ -64,6 +73,13 @@ def upgrade() -> None:
         op.f("ix_fcm_musicpollinstance_music_poll_id"),
         "musicpollinstance",
         ["music_poll_id"],
+        unique=False,
+        schema="fcm",
+    )
+    op.create_index(
+        op.f("ix_fcm_musicpollinstance_slack_message_id"),
+        "musicpollinstance",
+        ["slack_message_id"],
         unique=False,
         schema="fcm",
     )
@@ -137,6 +153,11 @@ def downgrade() -> None:
         schema="fcm",
     )
     op.drop_table("musicpollresponse", schema="fcm")
+    op.drop_index(
+        op.f("ix_fcm_musicpollinstance_slack_message_id"),
+        table_name="musicpollinstance",
+        schema="fcm",
+    )
     op.drop_index(
         op.f("ix_fcm_musicpollinstance_music_poll_id"),
         table_name="musicpollinstance",
