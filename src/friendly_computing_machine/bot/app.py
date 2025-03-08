@@ -10,8 +10,11 @@ from slack_sdk import WebClient
 
 from friendly_computing_machine.db.dal import (
     get_bot_slack_user_slack_ids,
-    get_music_poll_channel_slack_ids,
+    get_music_polls,
+    get_slack_channel,
 )
+from friendly_computing_machine.models.slack import SlackChannel
+from friendly_computing_machine.models.music_poll import MusicPoll
 
 __GLOBALS = {}
 
@@ -56,8 +59,14 @@ else:
 
 
 @dataclass
+class MusicPollInfo:
+    music_poll: MusicPoll
+    slack_channel: SlackChannel
+
+
+@dataclass
 class SlackBotConfig:
-    MUSIC_POLL_CHANNEL_IDS: set[str]
+    music_poll_infos: list[MusicPollInfo]
     BOT_SLACK_USER_IDS: set[str]
     as_of: datetime
 
@@ -65,16 +74,29 @@ class SlackBotConfig:
 
     @classmethod
     def create(cls):
+        # this is not an ideal solution, but it works for now
+        music_polls = get_music_polls()
+        music_poll_infos = [
+            MusicPollInfo(
+                music_poll=poll,
+                slack_channel=get_slack_channel(poll.slack_channel_id),
+            )
+            for poll in music_polls
+        ]
+
         return SlackBotConfig(
-            MUSIC_POLL_CHANNEL_IDS=get_music_poll_channel_slack_ids(),
+            music_poll_infos=music_poll_infos,
             BOT_SLACK_USER_IDS=get_bot_slack_user_slack_ids(),
             as_of=datetime.now(),
         )
 
 
-def get_bot_config() -> SlackBotConfig:
+def get_bot_config(should_ignore_cache: bool = False) -> SlackBotConfig:
     # assuming that this function is not thread safe when called by bolt and adding a lock
     # TODO - improve config access
+    if should_ignore_cache:
+        logger.info("ignoring slackbot config cache")
+        return SlackBotConfig.create()
     if not bot_config_lock.acquire(timeout=10):
         raise RuntimeError("bot lock timeout")
     config = __GLOBALS.get("bot_config")

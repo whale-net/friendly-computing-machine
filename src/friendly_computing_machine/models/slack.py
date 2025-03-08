@@ -93,7 +93,8 @@ class SlackChannelBase(Base):
     slack_id: str = Field(index=True, unique=True)
     name: str
     channel_type: str
-    is_music_poll: bool = False
+    # TODO deprecated
+    is_music_poll: bool = Field(default=False)
 
 
 class SlackChannel(SlackChannelBase, table=True):

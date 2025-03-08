@@ -76,3 +76,9 @@ def create_migration(config: alembic.config.Config, message: Optional[str]):
     with get_engine().begin() as conn:
         config.attributes["connection"] = conn
         alembic.command.revision(config, message=message, autogenerate=True)
+
+
+def run_downgrade(config: alembic.config.Config, revision: str):
+    with get_engine().begin() as connection:
+        config.attributes["connection"] = connection
+        alembic.command.downgrade(config, revision)

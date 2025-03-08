@@ -69,8 +69,7 @@ def callback(
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     logging.getLogger().addHandler(handler)
 
-    # logger = logging.getLogger(__name__)
-    logger.info("CLI callback starting")
+    logger.debug("CLI callback starting")
 
     CliContext(
         slack_app_token,
@@ -83,4 +82,4 @@ def callback(
 
     init_engine(database_url)
 
-    logger.info("CLI callback complete")
+    logger.debug("CLI callback complete")

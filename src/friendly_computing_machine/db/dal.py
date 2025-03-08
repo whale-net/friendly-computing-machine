@@ -25,6 +25,15 @@ from friendly_computing_machine.models.task import (
     TaskInstanceCreate,
     TaskInstanceStatus,
 )
+from friendly_computing_machine.models.music_poll import (
+    MusicPoll,
+    MusicPollCreate,
+    MusicPollInstance,
+    MusicPollInstanceCreate,
+    MusicPollResponse,
+    MusicPollResponseCreate,
+)
+from friendly_computing_machine.db.util import db_update
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +44,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_music_poll_channel_slack_ids() -> set[str]:
-    stmt = select(SlackChannel.slack_id).where(SlackChannel.is_music_poll)
+    stmt = select(SlackChannel.slack_id).join(
+        MusicPoll, MusicPoll.slack_channel_id == SlackChannel.id
+    )
     with SessionManager() as session:
         results = session.exec(stmt)
     return {row for row in results}
@@ -399,3 +410,174 @@ def backfill_genai_text_slack_user_id(session: Optional[Session] = None):
         session.exec(stmt)
         session.commit()
         logger.info("backfill_genai_text_slack_user_id complete")
+
+
+def insert_music_poll(
+    music_poll: MusicPollCreate, session: Optional[Session] = None
+) -> MusicPoll:
+    with SessionManager(session) as session:
+        db_music_poll = music_poll.to_music_poll()
+        session.add(db_music_poll)
+        session.commit()
+        session.refresh(db_music_poll)
+        return db_music_poll
+
+
+def get_music_poll_by_id(
+    music_poll_id: int, session: Optional[Session] = None
+) -> MusicPoll | None:
+    with SessionManager(session) as session:
+        return session.get(MusicPoll, music_poll_id)
+
+
+def get_music_polls(
+    session: Optional[Session] = None, skip: int = 0, limit: int = 100
+) -> list[MusicPoll]:
+    with SessionManager(session) as session:
+        stmt = select(MusicPoll).offset(skip).limit(limit)
+        return list(session.exec(stmt).all())
+
+
+def update_music_poll(
+    music_poll_id: int, updates: dict[str, any], session: Optional[Session] = None
+) -> MusicPoll | None:
+    with SessionManager(session) as session:
+        music_poll = db_update(session, MusicPoll, music_poll_id, updates)
+    return music_poll
+
+
+def delete_music_poll(music_poll_id: int, session: Optional[Session] = None) -> bool:
+    with SessionManager(session) as session:
+        music_poll = session.get(MusicPoll, music_poll_id)
+        if music_poll:
+            session.delete(music_poll)
+            session.commit()
+            return True
+        return False
+
+
+def insert_music_poll_instance(
+    instance: MusicPollInstanceCreate, session: Optional[Session] = None
+) -> MusicPollInstance:
+    with SessionManager(session) as session:
+        db_instance = instance.to_music_poll_instance()
+        session.add(db_instance)
+        session.commit()
+        session.refresh(db_instance)
+        return db_instance
+
+
+def get_music_poll_instance_by_id(
+    instance_id: int, session: Optional[Session] = None
+) -> MusicPollInstance | None:
+    with SessionManager(session) as session:
+        return session.get(MusicPollInstance, instance_id)
+
+
+def get_music_poll_instances(
+    music_poll_id: int, session: Optional[Session] = None
+) -> list[MusicPollInstance]:
+    with SessionManager(session) as session:
+        stmt = select(MusicPollInstance).where(
+            MusicPollInstance.music_poll_id == music_poll_id
+        )
+        return list(session.exec(stmt).all())
+
+
+def update_music_poll_instance(
+    instance_id: int, updates: dict, session: Optional[Session] = None
+) -> MusicPollInstance | None:
+    with SessionManager(session) as session:
+        instance = db_update(session, MusicPollInstance, instance_id, updates)
+    return instance
+
+
+def delete_music_poll_instance(
+    instance_id: int, session: Optional[Session] = None
+) -> bool:
+    with SessionManager(session) as session:
+        instance = session.get(MusicPollInstance, instance_id)
+        if instance:
+            session.delete(instance)
+            session.commit()
+            return True
+        return False
+
+
+def insert_music_poll_response(
+    response: MusicPollResponseCreate, session: Optional[Session] = None
+) -> MusicPollResponse:
+    with SessionManager(session) as session:
+        db_response = response.to_music_poll_response()
+        session.add(db_response)
+        session.commit()
+        session.refresh(db_response)
+        return db_response
+
+
+def get_music_poll_response_by_id(
+    response_id: int, session: Optional[Session] = None
+) -> MusicPollResponse | None:
+    with SessionManager(session) as session:
+        return session.get(MusicPollResponse, response_id)
+
+
+def get_music_poll_responses(
+    instance_id: int, session: Optional[Session] = None
+) -> list[MusicPollResponse]:
+    with SessionManager(session) as session:
+        stmt = select(MusicPollResponse).where(
+            MusicPollResponse.music_poll_instance_id == instance_id
+        )
+        return list(session.exec(stmt).all())
+
+
+def update_music_poll_response(
+    response_id: int, updates: dict, session: Optional[Session] = None
+) -> MusicPollResponse | None:
+    with SessionManager(session) as session:
+        response = db_update(session, MusicPollResponse, response_id, updates)
+    return response
+
+
+def delete_music_poll_response(
+    response_id: int, session: Optional[Session] = None
+) -> bool:
+    with SessionManager(session) as session:
+        response = session.get(MusicPollResponse, response_id)
+        if response:
+            session.delete(response)
+            session.commit()
+            return True
+        return False
+
+
+def get_slack_channel(
+    slack_channel_id: int | None = None,
+    slack_channel_slack_id: str | None = None,
+    session: Optional[Session] = None,
+) -> SlackChannel | None:
+    """
+    Get a SlackChannel by either slack_channel_id or slack_channel_slack_id.
+
+    :param slack_channel_id: database id
+    :param slack_channel_slack_id: slack id
+    :param session:
+    :return:
+    """
+    if slack_channel_id is None and slack_channel_slack_id is None:
+        raise ValueError(
+            "Either slack_channel_id or slack_channel_slack_id must be provided"
+        )
+    if slack_channel_id is not None and slack_channel_slack_id is not None:
+        raise ValueError(
+            "Only one of slack_channel_id or slack_channel_slack_id must be provided"
+        )
+
+    with SessionManager(session) as session:
+        stmt = select(SlackChannel)
+        if slack_channel_id is not None:
+            stmt = stmt.where(SlackChannel.id == slack_channel_id)
+        elif slack_channel_slack_id is not None:
+            stmt = stmt.where(SlackChannel.slack_id == slack_channel_slack_id)
+        return session.exec(stmt).one_or_none()
