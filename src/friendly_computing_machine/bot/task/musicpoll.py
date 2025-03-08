@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class MusicPollPostPoll(ScheduledAbstractTask):
-    TEMPLATE: str = """:catjam: `IT'S` :catjam: `CAT` :catjam: `JAM` :catjam: `TIME` :catjam:
+    OLD_TEMPLATE: str = """:catjam: `IT'S` :catjam: `CAT` :catjam: `JAM` :catjam: `TIME` :catjam:
 
 :arrow_down_small: Post a song in the thread below :thread: :arrow_down_small: :whale:
 """
@@ -23,12 +23,11 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         config = get_bot_config()
         logger.info("music poll IDs %s", config.MUSIC_POLL_CHANNEL_IDS)
         for channel_slack_id in config.MUSIC_POLL_CHANNEL_IDS:
-            base_message = slack_send_message(
-                channel_slack_id, MusicPollPostPoll.TEMPLATE
-            )
-            slack_send_message(
-                channel_slack_id, ":thread: starter", thread_ts=base_message.ts
-            )
+            slack_send_message(channel_slack_id, ":catjam: any cat jammers? :catjam:")
+            # No need to start thread anymore
+            # slack_send_message(
+            #     channel_slack_id, ":thread: starter", thread_ts=base_message.ts
+            # )
 
         return TaskInstanceStatus.OK
 

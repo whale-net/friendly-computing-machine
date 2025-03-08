@@ -45,27 +45,13 @@ def handle_message(event, say):
 
         # Rules for inserting messages
         # is in channel.is_music_poll
-        # and
-        # (
-        #   is from bot user
-        #   or
-        #   is message in thread from bot user
-        # )
+        # there used to be a rule about bot user, bot thread, but that was removed
         config = get_bot_config()
 
         # demorgans the above
         if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
             logger.info(
                 "skipping message %s - not in music poll channel", message.slack_id
-            )
-            return
-        elif (
-            message.slack_user_slack_id not in config.BOT_SLACK_USER_IDS
-            and message.parent_user_slack_id not in config.BOT_SLACK_USER_IDS
-        ):
-            logger.info(
-                "skipping message %s - not posted by bot user, or in bot user thread",
-                message.slack_id,
             )
             return
 
