@@ -73,7 +73,7 @@ spec:
             port: health
           initialDelaySeconds: 5
           periodSeconds: 10
-          failureThreshold: 5
+          failureThreshold: 10
         {{- end }}
         args:
           - bot
