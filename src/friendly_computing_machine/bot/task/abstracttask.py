@@ -174,3 +174,6 @@ class ScheduledAbstractTask(AbstractTask):  # , ABC):
         seconds_since_start = (now - start_date).total_seconds()
         expected_runs_since_start = seconds_since_start // period.total_seconds()
         return start_date + (period * expected_runs_since_start)
+
+
+# TODO : one-off tasks

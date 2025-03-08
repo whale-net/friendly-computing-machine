@@ -44,6 +44,7 @@ class MusicPollCreate(MusicPollBase):
 
 class MusicPollInstanceBase(Base):
     music_poll_id: int = Field(foreign_key="musicpoll.id", index=True)
+    slack_message_id: int = Field(foreign_key="slackmessage.id", index=True)
     created_at: datetime.datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
