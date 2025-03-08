@@ -27,7 +27,8 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         # TODO - templates from db
 
         # it is convenient to have same shared cache-type object as the event listener thread
-        config = get_bot_config()
+        # ignore cache, since this job runs less frequently
+        config = get_bot_config(should_ignore_cache=True)
         logger.info("music poll info %s", config.music_poll_infos)
         for poll_info in config.music_poll_infos:
             poll_message = slack_send_message(

@@ -91,9 +91,12 @@ class SlackBotConfig:
         )
 
 
-def get_bot_config() -> SlackBotConfig:
+def get_bot_config(should_ignore_cache: bool = False) -> SlackBotConfig:
     # assuming that this function is not thread safe when called by bolt and adding a lock
     # TODO - improve config access
+    if should_ignore_cache:
+        logger.info("ignoring slackbot config cache")
+        return SlackBotConfig.create()
     if not bot_config_lock.acquire(timeout=10):
         raise RuntimeError("bot lock timeout")
     config = __GLOBALS.get("bot_config")
