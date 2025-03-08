@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update, or_
+from sqlmodel import Session, and_, column, null, select, update
 
 from friendly_computing_machine.db.db import SessionManager
 from friendly_computing_machine.models.slack import (
@@ -502,42 +502,6 @@ def delete_music_poll_instance(
             session.commit()
             return True
         return False
-
-
-def get_music_poll_instance_by_datetime(
-    music_poll_id: int, as_of: datetime.datetime, session: Optional[Session] = None
-) -> MusicPollInstance | None:
-    with SessionManager(session) as session:
-        stmt = (
-            select(MusicPollInstance)
-            .where(
-                and_(
-                    MusicPollInstance.music_poll_id == music_poll_id,
-                    MusicPollInstance.created_at <= as_of,
-                    or_(
-                        MusicPollInstance.closed_at.is_(None),
-                        MusicPollInstance.closed_at >= as_of,
-                    ),
-                )
-                # sort ascending by created_at to get the first instance
-            )
-            .order_by(MusicPollInstance.created_at.asc())
-        )
-        return session.exec(stmt).one_or_none()
-
-
-def close_music_poll_instance(
-    instance_id: int, session: Optional[Session] = None
-) -> MusicPollInstance | None:
-    with SessionManager(session) as session:
-        instance = session.get(MusicPollInstance, instance_id)
-        if instance:
-            instance.closed_at = datetime.datetime.now()
-            session.add(instance)
-            session.commit()
-            session.refresh(instance)
-            return instance
-        return None
 
 
 def insert_music_poll_response(

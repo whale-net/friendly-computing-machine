@@ -25,7 +25,6 @@ class MusicPollBase(Base):
             # TODO - figure out default handling
             slack_message_id=slack_message_id,
             created_at=datetime.datetime.now(),
-            closed_at=None,
         )
 
 
@@ -66,8 +65,9 @@ class MusicPollInstanceCreate(MusicPollInstanceBase):
     def to_music_poll_instance(self) -> MusicPollInstance:
         return MusicPollInstance(
             music_poll_id=self.music_poll_id,
+            slack_mesage_id=self.slack_message_id,
             created_at=self.created_at,
-            closed_at=self.closed_at,
+            next_instance_id=self.next_instance_id,
         )
 
 
