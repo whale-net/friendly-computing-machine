@@ -11,6 +11,7 @@ from friendly_computing_machine.db.dal import insert_music_poll_instance
 from friendly_computing_machine.db.jobsql import (
     backfill_init_music_polls,
     backfill_init_music_poll_instances,
+    backfill_music_poll_instance_next_id,
 )
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
@@ -38,7 +39,8 @@ class MusicPollPostPoll(ScheduledAbstractTask):
             insert_music_poll_instance(
                 poll_info.music_poll.to_instance(poll_message.id)
             )
-            # close last instance
+
+            backfill_music_poll_instance_next_id()
 
             # No need to start thread anymore
             # slack_send_message(

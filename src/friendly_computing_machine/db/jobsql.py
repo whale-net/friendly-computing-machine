@@ -1,4 +1,6 @@
-from sqlmodel import text
+from typing import Optional
+
+from sqlmodel import text, Session
 from friendly_computing_machine.db.db import SessionManager
 
 
@@ -50,19 +52,26 @@ def backfill_init_music_poll_instances() -> None:
         """)
         )
 
+        backfill_music_poll_instance_next_id(session)
+
+
+def backfill_music_poll_instance_next_id(in_session: Optional[Session] = None):
+    # TODO - this may become non-performant with large data sets
+    # but this is also unlikely to ever be a large dataset
+    with SessionManager(in_session) as session:
         session.execute(
             text("""
-            with next_ids as (
-                select
-                    id,
-                    lead(id, 1) over (partition by music_poll_id order by created_at) as next_id
-                from fcm.musicpollinstance
-            )
-            update fcm.musicpollinstance mpi
-            set next_instance_id = next_ids.next_id
-            from next_ids
-            where mpi.id = next_ids.id
-              and mpi.next_instance_id is null
-        """)
+                with next_ids as (
+                    select
+                        id,
+                        lead(id, 1) over (partition by music_poll_id order by created_at) as next_id
+                    from fcm.musicpollinstance
+                )
+                update fcm.musicpollinstance mpi
+                set next_instance_id = next_ids.next_id
+                from next_ids
+                where mpi.id = next_ids.id
+                  and mpi.next_instance_id is null
+            """)
         )
         session.commit()
