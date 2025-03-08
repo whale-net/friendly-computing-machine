@@ -13,20 +13,20 @@ class MusicPollBase(Base):
     # TODO - template for message
     # TODO - option to disable always log?
 
+    def to_instance(self, slack_message_id: int) -> "MusicPollInstanceCreate":
+        """
+        Generate a MusicPollInstanceCreate object from current MusicPoll configuration
 
-def to_instance(self) -> "MusicPollInstanceCreate":
-    """
-    Generate a MusicPollInstanceCreate object from current MusicPoll configuration
-
-    Returns:
-        MusicPollInstanceCreate: A MusicPollInstanceCreate object with attributes set.
-    """
-    return MusicPollInstanceCreate(
-        music_poll_id=self.id,
-        # TODO - figure out default handling
-        created_at=datetime.datetime.now(),
-        closed_at=None,
-    )
+        Returns:
+            MusicPollInstanceCreate: A MusicPollInstanceCreate object with attributes set.
+        """
+        return MusicPollInstanceCreate(
+            music_poll_id=self.id,
+            # TODO - figure out default handling
+            slack_message_id=slack_message_id,
+            created_at=datetime.datetime.now(),
+            closed_at=None,
+        )
 
 
 class MusicPoll(MusicPollBase, table=True):
@@ -53,7 +53,7 @@ class MusicPollInstanceBase(Base):
     )
     # this should probably have a unique filtered index, but not worrying about it for now
     # the actual work required to support that is not worth it
-    next_instance: int = Field(
+    next_instance_id: int = Field(
         default=None, nullable=True, foreign_key="musicpollinstance.id"
     )
 

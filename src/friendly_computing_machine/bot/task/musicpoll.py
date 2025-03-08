@@ -2,9 +2,16 @@ import logging
 from datetime import datetime, timedelta
 
 from friendly_computing_machine.bot.app import get_bot_config
-from friendly_computing_machine.bot.task.abstracttask import ScheduledAbstractTask
+from friendly_computing_machine.bot.task.abstracttask import (
+    ScheduledAbstractTask,
+    OneOffTask,
+)
 from friendly_computing_machine.bot.util import slack_send_message
 from friendly_computing_machine.db.dal import insert_music_poll_instance
+from friendly_computing_machine.db.jobsql import (
+    backfill_init_music_polls,
+    backfill_init_music_poll_instances,
+)
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
 logger = logging.getLogger(__name__)
@@ -23,10 +30,11 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         config = get_bot_config()
         logger.info("music poll info %s", config.music_poll_infos)
         for poll_info in config.music_poll_infos:
-            # pick up last, if any, will mark as closed
-            insert_music_poll_instance(poll_info.music_poll.to_instance())
-            slack_send_message(
+            poll_message = slack_send_message(
                 poll_info.slack_channel.slack_id, ":catjam: any cat jammers? :catjam:"
+            )
+            insert_music_poll_instance(
+                poll_info.music_poll.to_instance(poll_message.id)
             )
             # No need to start thread anymore
             # slack_send_message(
@@ -42,3 +50,17 @@ class MusicPollPostPoll(ScheduledAbstractTask):
     @property
     def start_date(self) -> datetime:
         return datetime(2024, 11, 30)
+
+
+class MusicPollInit(OneOffTask):
+    """
+    The music poll response logging was added before any musicpoll database stuff was added.
+    So this will initialize the database with the past polls
+    """
+
+    def _run(self) -> TaskInstanceStatus:
+        backfill_init_music_polls()
+        logger.info("music poll backfilled for init")
+        backfill_init_music_poll_instances()
+        logger.info("music poll instance backfilled for init")
+        return TaskInstanceStatus.OK

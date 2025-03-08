@@ -1,8 +1,8 @@
 """musicpoll
 
-Revision ID: 761581310309
+Revision ID: c59bf523de2d
 Revises: ae220408773c
-Create Date: 2025-03-08 16:35:44.055075
+Create Date: 2025-03-08 17:05:52.094377
 
 """
 
@@ -14,7 +14,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = "761581310309"
+revision: str = "c59bf523de2d"
 down_revision: Union[str, None] = "ae220408773c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -52,14 +52,14 @@ def upgrade() -> None:
             server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=True,
         ),
-        sa.Column("next_instance", sa.Integer(), nullable=True),
+        sa.Column("next_instance_id", sa.Integer(), nullable=True),
         sa.Column("id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["music_poll_id"],
             ["fcm.musicpoll.id"],
         ),
         sa.ForeignKeyConstraint(
-            ["next_instance"],
+            ["next_instance_id"],
             ["fcm.musicpollinstance.id"],
         ),
         sa.ForeignKeyConstraint(
