@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime, timedelta, UTC
 from typing import Optional
 
@@ -13,7 +14,13 @@ from friendly_computing_machine.bot.task.abstracttask import (
     AbstractTask,
 )
 from friendly_computing_machine.bot.util import slack_send_message
-from friendly_computing_machine.db.dal import insert_music_poll_instance, upsert_message
+from friendly_computing_machine.db.dal import (
+    insert_music_poll_instance,
+    upsert_message,
+    get_unprocessed_music_poll_instances,
+    find_poll_instance_messages,
+    insert_music_poll_responses,
+)
 from friendly_computing_machine.db.jobsql import (
     backfill_init_music_polls,
     backfill_init_music_poll_instances,
@@ -21,6 +28,10 @@ from friendly_computing_machine.db.jobsql import (
     delete_slack_message_duplicates,
 )
 from friendly_computing_machine.models.task import TaskInstanceStatus
+from friendly_computing_machine.models.music_poll import (
+    MusicPollInstance,
+    MusicPollResponseCreate,
+)
 from friendly_computing_machine.models.slack import SlackMessageCreate
 
 logger = logging.getLogger(__name__)
@@ -51,6 +62,8 @@ class MusicPollPostPoll(ScheduledAbstractTask):
 
             backfill_music_poll_instance_next_id()
 
+            # TODO - process the most recent poll here
+
             # No need to start thread anymore
             # slack_send_message(
             #     channel_slack_id, ":thread: starter", thread_ts=base_message.ts
@@ -67,6 +80,52 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         return datetime(2024, 11, 30)
 
 
+class MusicPollProcessPoll(AbstractTask):
+    @property
+    def period(self) -> timedelta:
+        # this should really be set to run once the post poll is complete
+        # but doing this spinning style for now
+        # TODO - dependent tasks
+        return timedelta(hours=1)
+
+    def _run(self) -> TaskInstanceStatus:
+        # find unprocessed polls
+        # TODO - live poll processing - maybe better suited for the event handler
+        # TODO - this will pick up polls that had no responses
+        #   need some other way to track this state such as a new field
+        #   this could also help simplify the above todo and all sql
+        instances_to_process = get_unprocessed_music_poll_instances()
+
+        for poll_instance in instances_to_process:
+            logger.info("processing poll instance %s", poll_instance.id)
+            MusicPollProcessPoll._process_poll_instance(poll_instance)
+        return TaskInstanceStatus.FAIL
+
+    @staticmethod
+    def _process_poll_instance(poll_instance: MusicPollInstance):
+        messages = find_poll_instance_messages(poll_instance)
+        for message in messages:
+            # Extract URLs from message text
+            urls = re.findall(
+                r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:/[-\w%!.~\'()*+,;=:@&=+$#]*)*(?:\?[-\w%!.~\'()*+,;=:@&=+$#]*)?",
+                message.text,
+            )
+            responses = [
+                MusicPollResponseCreate(
+                    music_poll_instance_id=poll_instance.id,
+                    slack_message_id=message.id,
+                    slack_user_id=message.slack_user_id,
+                    url=url,
+                    # TODO - this should be whatever timezone the db is in
+                    # hopefully there is a conversion
+                    # but for now this field at least doesn't matter
+                    created_at=datetime.now(),
+                )
+                for url in urls
+            ]
+            insert_music_poll_responses(responses)
+
+
 class MusicPollInit(OneOffTask):
     """
     The music poll response logging was added before any musicpoll database stuff was added.
@@ -81,6 +140,7 @@ class MusicPollInit(OneOffTask):
         return TaskInstanceStatus.OK
 
 
+# TODO - this should probably not be a job, and instead moved into the music poll processor
 class MusicPollArchiveMessages(AbstractTask):
     """
     Archive the messages in the music poll channels

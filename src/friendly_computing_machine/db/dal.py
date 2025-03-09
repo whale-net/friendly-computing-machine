@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update, or_
+from sqlmodel import Session, and_, column, null, select, update, or_, exists, not_
 
 from friendly_computing_machine.db.db import SessionManager
 from friendly_computing_machine.models.slack import (
@@ -550,6 +550,34 @@ def get_music_poll_instances(
         return list(session.exec(stmt).all())
 
 
+def get_unprocessed_music_poll_instances(
+    in_session: Optional[Session] = None,
+) -> list[MusicPollInstance]:
+    with SessionManager(in_session) as session:
+        stmt = select(MusicPollInstance).where(
+            and_(
+                MusicPollInstance.next_instance_id is not null(),
+                not_(
+                    exists().where(
+                        MusicPollResponse.music_poll_instance_id == MusicPollInstance.id
+                    )
+                ),
+            )
+        )
+        return list(session.exec(stmt).all())
+
+
+def get_recent_music_poll_instances(
+    in_session: Optional[Session] = None,
+    delta: datetime.timedelta = datetime.timedelta(days=10),
+) -> list[MusicPollInstance]:
+    with SessionManager(in_session) as session:
+        stmt = select(MusicPollInstance).where(
+            MusicPollInstance.created_at >= datetime.datetime.now() - delta
+        )
+        return list(session.exec(stmt).all())
+
+
 def update_music_poll_instance(
     instance_id: int, updates: dict, session: Optional[Session] = None
 ) -> MusicPollInstance | None:
@@ -568,6 +596,20 @@ def delete_music_poll_instance(
             session.commit()
             return True
         return False
+
+
+def insert_music_poll_responses(
+    responses: list[MusicPollResponseCreate], session: Optional[Session] = None
+):
+    with SessionManager(session) as session:
+        db_responses = [
+            MusicPollResponse.model_validate(response) for response in responses
+        ]
+        session.bulk_save_objects(db_responses)
+        session.commit()
+        # for response in db_responses:
+        #     session.refresh(response)
+        # return db_responses
 
 
 def insert_music_poll_response(
@@ -647,3 +689,32 @@ def get_slack_channel(
         elif slack_channel_slack_id is not None:
             stmt = stmt.where(SlackChannel.slack_id == slack_channel_slack_id)
         return session.exec(stmt).one_or_none()
+
+
+def find_poll_instance_messages(poll_instance: MusicPollInstance) -> list[SlackMessage]:
+    with SessionManager() as session:
+        # this will return the next poll, so if there is ever some graph fuckery this
+        # should hopefully prevent corruption by at least being deterministic
+        # although some messages will be dropped
+        # still a very edge case situation, that should be redesigned
+        next_instance_subquery = (
+            select(MusicPollInstance.created_at)
+            .where(MusicPollInstance.id == poll_instance.next_instance_id)
+            .order_by(MusicPollInstance.created_at)
+            .limit(1)
+            .scalar_subquery()
+        )
+        # TODO - should just join it in, but this will work I suppose
+        slack_channel_id_subquery = (
+            select(MusicPoll.slack_channel_id)
+            .where(MusicPoll.id == poll_instance.music_poll_id)
+            .scalar_subquery()
+        )
+        stmt = select(SlackMessage).where(
+            and_(
+                SlackMessage.slack_channel_id == slack_channel_id_subquery,
+                SlackMessage.ts >= poll_instance.created_at,
+                SlackMessage.ts < next_instance_subquery,
+            )
+        )
+        return list(session.exec(stmt).all())

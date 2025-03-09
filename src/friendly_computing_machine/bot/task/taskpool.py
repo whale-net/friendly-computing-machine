@@ -11,6 +11,7 @@ from friendly_computing_machine.bot.task.musicpoll import (
     MusicPollPostPoll,
     MusicPollInit,
     MusicPollArchiveMessages,
+    MusicPollProcessPoll,
 )
 from friendly_computing_machine.bot.task.slack_qod import SlackMessageDuplicateCleanup
 from friendly_computing_machine.db.dal import insert_task_instances
@@ -95,6 +96,7 @@ def create_default_taskpool() -> TaskPool:
     tp.add_task(GenAISlackIDUpdateTask())
     tp.add_task(MusicPollArchiveMessages())
     tp.add_task(SlackMessageDuplicateCleanup())
+    tp.add_task(MusicPollProcessPoll())
 
     logger.info("default task pol created")
     return tp
