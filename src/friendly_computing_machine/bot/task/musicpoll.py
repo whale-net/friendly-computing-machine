@@ -20,6 +20,9 @@ from friendly_computing_machine.db.dal import (
     get_unprocessed_music_poll_instances,
     find_poll_instance_messages,
     insert_music_poll_responses,
+    backfill_slack_messages_slack_channel_id,
+    backfill_slack_messages_slack_user_id,
+    backfill_slack_messages_slack_team_id,
 )
 from friendly_computing_machine.db.jobsql import (
     backfill_init_music_polls,
@@ -173,6 +176,13 @@ class MusicPollArchiveMessages(AbstractTask):
                 slack_client,
                 max_ts_offset=search_start_unix_timestamp,
             )
+        logger.info("primary message backfill completed")
+
+        # run extra backfill tasks
+        backfill_slack_messages_slack_channel_id()
+        backfill_slack_messages_slack_user_id()
+        backfill_slack_messages_slack_team_id()
+        logger.info("extra backfill tasks completed")
 
         return TaskInstanceStatus.OK
 
@@ -210,7 +220,7 @@ class MusicPollArchiveMessages(AbstractTask):
                 # logger.info('upserting message %s %s %s', create.slack_id, create.ts, create.text)
                 message_instance = upsert_message(create)
                 ids.append(message_instance.id)
-                logger.info("upserted message %s", message_instance.id)
+                logger.debug("upserted message %s", message_instance.id)
 
                 # if this is a thread message, pick up replies
                 if msg.get("thread_ts") is not None and msg.get("ts") == msg.get(
@@ -255,7 +265,7 @@ class MusicPollArchiveMessages(AbstractTask):
             message_batch, thread_batch, updated_ids = archive_message_batch(
                 message_batch, thread_batch
             )
-            logger.info("bulk upserted %s messages", len(updated_ids))
+            logger.info("upserted %s messages", len(updated_ids))
 
     @staticmethod
     def _fetch_slack_messages(
