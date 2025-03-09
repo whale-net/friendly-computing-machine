@@ -79,6 +79,23 @@ def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
     return message
 
 
+def upsert_message(slack_message: SlackMessageCreate) -> SlackMessage:
+    with SessionManager() as session:
+        # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+        stmt = select(SlackMessage).where(
+            SlackMessage.slack_id == slack_message.slack_id
+        )
+        result = session.exec(stmt).one_or_none()
+        if result is None:
+            result = insert_message(slack_message)
+        else:
+            # TODO - make generic, I think I can probably reuse another function
+            update_dict = slack_message.model_dump(exclude_unset=True)
+            result = db_update(session, SlackMessage, result.id, update_dict)
+
+    return result
+
+
 def upsert_tasks(tasks: list[TaskCreate]) -> list[Task]:
     # RBAR BABY
     # I tried to look into upserts with sa, but didn't want to rabbit hole myself for minimal gain here
@@ -106,7 +123,9 @@ def upsert_task(task: TaskCreate, session: Optional[Session] = None) -> Task:
 def insert_task_instances(task_instances: list[TaskInstanceCreate]):
     # no return for now, no need
     with SessionManager() as session:
-        session.bulk_save_objects([ti.to_task_instance() for ti in task_instances])
+        session.bulk_save_objects(
+            [TaskInstance.model_validate(ti) for ti in task_instances]
+        )
         # print(f'{len(task_instances)} inserted')
         session.commit()
 

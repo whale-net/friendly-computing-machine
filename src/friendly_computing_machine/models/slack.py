@@ -1,9 +1,10 @@
 import datetime
-from typing import Optional
+from typing import Optional, Any, Dict
 
 from sqlmodel import Field
 
 from friendly_computing_machine.models.base import Base
+from friendly_computing_machine.util import ts_to_datetime
 
 
 # -----
@@ -84,7 +85,22 @@ class SlackMessage(SlackMessageBase, table=True):
 
 
 class SlackMessageCreate(SlackMessageBase):
-    pass
+    @classmethod
+    def from_slack_message_json(
+        cls, message_event: Dict[str, Any]
+    ) -> "SlackMessageCreate":
+        thread_ts = message_event.get("thread_ts")
+        message = SlackMessageCreate(
+            slack_id=message_event.get("client_msg_id"),
+            slack_team_slack_id=message_event.get("team"),
+            slack_channel_slack_id=message_event.get("channel"),  #
+            slack_user_slack_id=message_event.get("user"),
+            text=message_event.get("text"),
+            ts=ts_to_datetime(message_event.get("ts")),
+            thread_ts=ts_to_datetime(thread_ts) if thread_ts else None,
+            parent_user_slack_id=message_event.get("parent_user_id"),
+        )
+        return message
 
 
 # -----

@@ -111,7 +111,7 @@ def get_bot_config(should_ignore_cache: bool = False) -> SlackBotConfig:
     return config
 
 
-def get_client() -> SlackWebClientFCM:
+def get_slack_web_client() -> SlackWebClientFCM:
     client = __GLOBALS.get("slack_web_client")
     if client is None:
         raise RuntimeError("client not init")
