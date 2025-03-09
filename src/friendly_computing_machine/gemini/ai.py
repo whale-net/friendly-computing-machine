@@ -29,7 +29,7 @@ def generate_text_with_slack_context(
         {msg.prompt}
         </prompt>
         <response>
-        {msg.response or ''}
+        {msg.response or ""}
         </response>
         </input>
         """)
