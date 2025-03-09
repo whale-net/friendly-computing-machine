@@ -104,7 +104,9 @@ class MusicPollArchiveMessages(AbstractTask):
                 for message in messages:
                     # upsert the message
                     slack_message_create = SlackMessageCreate.from_slack_message_json(
-                        message
+                        message,
+                        # specify because we pulled it down and I don't think it's included in the response
+                        slack_channel_slack_id=channel_slack_id,
                     )
                     slack_message = upsert_message(slack_message_create)
                     logger.debug("upserted message %s", slack_message.id)
@@ -112,7 +114,7 @@ class MusicPollArchiveMessages(AbstractTask):
                 logger.info("finished batch of messages %s", upserted_message_ids)
 
                 # get the next batch
-                oldest_ts = messages[-1]["ts"]
+                oldest_ts = min(map(lambda msg: msg["ts"], messages))
                 if float(oldest_ts) < search_start_unix_timestamp:
                     logger.info(
                         "reached message %s before search start timestamp %s",
@@ -122,7 +124,7 @@ class MusicPollArchiveMessages(AbstractTask):
                     break
                 response = slack_client.conversations_history(
                     channel=channel_slack_id,
-                    oldest=oldest_ts,
+                    latest=oldest_ts,
                 )
                 messages = response["messages"]
 

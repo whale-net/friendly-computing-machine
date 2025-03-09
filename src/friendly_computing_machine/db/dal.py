@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update
+from sqlmodel import Session, and_, column, null, select, update, or_
 
 from friendly_computing_machine.db.db import SessionManager
 from friendly_computing_machine.models.slack import (
@@ -82,8 +82,27 @@ def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
 def upsert_message(slack_message: SlackMessageCreate) -> SlackMessage:
     with SessionManager() as session:
         # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+        # TODO - covering index? this may be an expensive query
+        # the id is always equal (null safe I guess)
+        # and then it finds the match on the slack_id, or finds a match on ts
+        # this should work around any timezone flaws with ts logging manually
         stmt = select(SlackMessage).where(
-            SlackMessage.slack_id == slack_message.slack_id
+            and_(
+                SlackMessage.slack_id == slack_message.slack_id,
+                or_(
+                    SlackMessage.slack_id.is_not(None),
+                    and_(
+                        SlackMessage.slack_id.is_(None),
+                        # unique on ts and channel
+                        # channel unique on team and channel
+                        SlackMessage.ts == slack_message.ts,
+                        SlackMessage.slack_team_slack_id
+                        == slack_message.slack_team_slack_id,
+                        SlackMessage.slack_channel_slack_id
+                        == slack_message.slack_channel_slack_id,
+                    ),
+                ),
+            )
         )
         result = session.exec(stmt).one_or_none()
         if result is None:

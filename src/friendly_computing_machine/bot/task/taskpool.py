@@ -95,5 +95,6 @@ def create_default_taskpool() -> TaskPool:
     tp.add_task(GenAISlackIDUpdateTask())
     tp.add_task(MusicPollArchiveMessages())
     tp.add_task(SlackMessageDuplicateCleanup())
+
     logger.info("default task pol created")
     return tp

@@ -2,7 +2,7 @@ import datetime
 import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
-from friendly_computing_machine.db.dal import insert_message
+from friendly_computing_machine.db.dal import upsert_message
 from friendly_computing_machine.gemini.ai import generate_text_with_slack_context
 from friendly_computing_machine.models.slack import SlackMessageCreate
 
@@ -46,7 +46,7 @@ def handle_message(event, say):
 
         # if we reach this point, we can insert the message
         # will be processed later
-        msg = insert_message(message)
+        msg = upsert_message(message)
         logger.info("message inserted. id=%s, slack_id=%s", msg.id, msg.slack_id)
     except Exception:
         raise
