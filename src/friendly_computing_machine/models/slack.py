@@ -87,15 +87,21 @@ class SlackMessage(SlackMessageBase, table=True):
 class SlackMessageCreate(SlackMessageBase):
     @classmethod
     def from_slack_message_json(
-        cls, message_event: Dict[str, Any], slack_channel_slack_id: Optional[str] = None
+        cls,
+        message_event: Dict[str, Any],
+        slack_channel_slack_id: Optional[str] = None,
+        team_slack_id: Optional[str] = None,
     ) -> "SlackMessageCreate":
         thread_ts = message_event.get("thread_ts")
         channel_id = message_event.get("channel", slack_channel_slack_id)
         if channel_id is None:
             raise ValueError("channel_id cannot be None")
+        team_id = message_event.get("team") or team_slack_id
+        if team_id is None:
+            raise ValueError("team_id cannot be None")
         message = SlackMessageCreate(
             slack_id=message_event.get("client_msg_id"),
-            slack_team_slack_id=message_event.get("team"),
+            slack_team_slack_id=team_id,
             slack_channel_slack_id=channel_id,
             slack_user_slack_id=message_event.get("user"),
             text=message_event.get("text"),

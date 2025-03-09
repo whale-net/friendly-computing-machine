@@ -215,6 +215,7 @@ class MusicPollArchiveMessages(AbstractTask):
                     msg,
                     # specify because we pulled it down and I don't think it's included in the response
                     slack_channel_slack_id=slack_channel_slack_id,
+                    team_slack_id=slack_client.team_id,
                 )
                 # this is too much info but was useful for debug, although not useful enough
                 # logger.info('upserting message %s %s %s', create.slack_id, create.ts, create.text)
