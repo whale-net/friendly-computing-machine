@@ -73,6 +73,7 @@ class AbstractTask(ABC):
                     status = TaskInstanceStatus.EXCEPTION
                 # NOTE: this sets the last success, even if we had an exception
                 # TODO last_success vs last_attempt
+                #   this is kind of beneficial for debugging jobs locally
                 self._last_success = datetime.now()
             finally:
                 self._is_running = False

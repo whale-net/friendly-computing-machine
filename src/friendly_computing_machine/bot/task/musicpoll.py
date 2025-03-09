@@ -81,6 +81,10 @@ class MusicPollPostPoll(ScheduledAbstractTask):
 
 
 class MusicPollProcessPoll(AbstractTask):
+    URL_PATTERN = re.compile(
+        r"(?:http[s]?://|www\.)(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    )
+
     @property
     def period(self) -> timedelta:
         # this should really be set to run once the post poll is complete
@@ -99,17 +103,15 @@ class MusicPollProcessPoll(AbstractTask):
         for poll_instance in instances_to_process:
             logger.info("processing poll instance %s", poll_instance.id)
             MusicPollProcessPoll._process_poll_instance(poll_instance)
-        return TaskInstanceStatus.FAIL
+
+        return TaskInstanceStatus.OK
 
     @staticmethod
     def _process_poll_instance(poll_instance: MusicPollInstance):
         messages = find_poll_instance_messages(poll_instance)
         for message in messages:
             # Extract URLs from message text
-            urls = re.findall(
-                r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:/[-\w%!.~\'()*+,;=:@&=+$#]*)*(?:\?[-\w%!.~\'()*+,;=:@&=+$#]*)?",
-                message.text,
-            )
+            urls = re.findall(MusicPollProcessPoll.URL_PATTERN, message.text)
             responses = [
                 MusicPollResponseCreate(
                     music_poll_instance_id=poll_instance.id,
