@@ -75,3 +75,23 @@ def backfill_music_poll_instance_next_id(in_session: Optional[Session] = None):
             """)
         )
         session.commit()
+
+
+def delete_slack_message_duplicates():
+    with SessionManager() as session:
+        # too lazy to redo with sqlmodel
+        session.execute(
+            text("""
+        delete from fcm.slackmessage sm
+        where slack_id is not null
+        and exists
+            (select *
+            from fcm.slackmessage sm2
+            -- trusting that this is truly globally unique at slack
+            -- otherwise, need to add ts or something
+            where sm2.slack_id = sm.slack_id
+            and sm2.id < sm.id
+            )
+        """)
+        )
+        session.commit()
