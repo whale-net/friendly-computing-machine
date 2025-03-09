@@ -83,25 +83,26 @@ def upsert_message(slack_message: SlackMessageCreate) -> SlackMessage:
     with SessionManager() as session:
         # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
         # TODO - covering index? this may be an expensive query
-        # the id is always equal (null safe I guess)
-        # and then it finds the match on the slack_id, or finds a match on ts
-        # this should work around any timezone flaws with ts logging manually
+
+        # by_id
+        condition_by_id = and_(
+            SlackMessage.slack_id == slack_message.slack_id,
+            SlackMessage.slack_id.is_not(None),
+        )
+        # by_ts
+        condition_by_ts = and_(
+            SlackMessage.slack_id.is_(None),
+            # unique on ts and channel
+            # channel unique on team and channel
+            SlackMessage.slack_team_slack_id == slack_message.slack_team_slack_id,
+            SlackMessage.slack_channel_slack_id == slack_message.slack_channel_slack_id,
+            SlackMessage.ts == slack_message.ts,
+        )
+
         stmt = select(SlackMessage).where(
-            and_(
-                SlackMessage.slack_id == slack_message.slack_id,
-                or_(
-                    SlackMessage.slack_id.is_not(None),
-                    and_(
-                        SlackMessage.slack_id.is_(None),
-                        # unique on ts and channel
-                        # channel unique on team and channel
-                        SlackMessage.ts == slack_message.ts,
-                        SlackMessage.slack_team_slack_id
-                        == slack_message.slack_team_slack_id,
-                        SlackMessage.slack_channel_slack_id
-                        == slack_message.slack_channel_slack_id,
-                    ),
-                ),
+            or_(
+                condition_by_id,
+                condition_by_ts,
             )
         )
         result = session.exec(stmt).one_or_none()
@@ -109,13 +110,40 @@ def upsert_message(slack_message: SlackMessageCreate) -> SlackMessage:
             result = insert_message(slack_message)
         else:
             # TODO - make generic, I think I can probably reuse another function
+            # do we need a model class for each variant? do we even need creates?
             update_dict = slack_message.model_dump(exclude_unset=True)
             result = db_update(session, SlackMessage, result.id, update_dict)
 
     return result
 
 
+# def bulk_upsert_messages(slack_messages: list[SlackMessageCreate]) -> None:
+# unresolved on_conflict_do_update
+# need to do more research into how this is meant to be used
+#
+# with SessionManager() as session:
+#     out_messages = []
+#     table = SlackMessage.__table__
+#     insert_stmt = table.insert().on_conflict_do_update(
+#         index_elements=["slack_id"],
+#         set_={
+#             # these don't change
+#             # "slack_team_slack_id": insert_stmt.excluded.slack_team_slack_id,
+#             # "slack_channel_slack_id": insert_stmt.excluded.slack_channel_slack_id,
+#             # "slack_user_slack_id": insert_stmt.excluded.slack_user_slack_id,
+#             "text": table.excluded.text,
+#             # ts shouldn't be updated, a thread_ts is more harmless
+#             #"ts": insert_stmt.excluded.ts,
+#             "thread_ts": table.excluded.thread_ts,
+#             "parent_user_slack_id": table.excluded.parent_user_slack_id,
+#         },
+#     )
+#     session.execute(insert_stmt, slack_messages)
+#     session.commit()
+
+
 def upsert_tasks(tasks: list[TaskCreate]) -> list[Task]:
+    # DO NOT USE?
     # RBAR BABY
     # I tried to look into upserts with sa, but didn't want to rabbit hole myself for minimal gain here
     with SessionManager() as session:

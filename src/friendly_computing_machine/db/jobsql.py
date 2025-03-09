@@ -1,7 +1,10 @@
+import logging
 from typing import Optional
 
 from sqlmodel import text, Session
 from friendly_computing_machine.db.db import SessionManager
+
+logger = logging.getLogger(__name__)
 
 
 def backfill_init_music_polls() -> None:
@@ -80,7 +83,7 @@ def backfill_music_poll_instance_next_id(in_session: Optional[Session] = None):
 def delete_slack_message_duplicates():
     with SessionManager() as session:
         # too lazy to redo with sqlmodel
-        session.execute(
+        slack_id_dupe_count = session.execute(
             text("""
         delete from fcm.slackmessage sm
         where slack_id is not null
@@ -93,5 +96,24 @@ def delete_slack_message_duplicates():
             and sm2.id < sm.id
             )
         """)
-        )
+        ).rowcount
+        slack_ts_dupe_count = session.execute(
+            text("""
+        delete from fcm.slackmessage sm
+        where exists
+            (select *
+            from fcm.slackmessage sm2
+            where sm2.slack_team_slack_id = sm.slack_team_slack_id
+            and sm2.slack_channel_slack_id = sm.slack_channel_slack_id
+            and sm2.ts = sm.ts
+            and sm2.id < sm.id
+            )
+        """)
+        ).rowcount
         session.commit()
+        logger.info(
+            "slack_id_dupe_count=%s slack_ts_dupe_count=%s total=%s",
+            slack_id_dupe_count,
+            slack_ts_dupe_count,
+            slack_id_dupe_count + slack_ts_dupe_count,
+        )
