@@ -40,6 +40,7 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         config = get_bot_config(should_ignore_cache=True)
         logger.info("music poll info %s", config.music_poll_infos)
         for poll_info in config.music_poll_infos:
+            # all polls must have a message to start. For some reason.
             poll_message = slack_send_message(
                 poll_info.slack_channel.slack_id, ":catjam: any cat jammers? :catjam:"
             )
@@ -117,7 +118,7 @@ class MusicPollArchiveMessages(AbstractTask):
     def _archive_slack_channel(
         slack_channel_slack_id: str,
         slack_client: SlackWebClientFCM,
-        max_ts_offset: Optional[None] = None,
+        max_ts_offset: Optional[float] = None,
     ) -> None:
         if max_ts_offset is None:
             # 30 day lookback by default, should be enough
