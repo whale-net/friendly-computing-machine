@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from friendly_computing_machine.bot.app import get_client
+from friendly_computing_machine.bot.app import get_slack_web_client
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.db.dal import (
     backfill_slack_messages_slack_user_id,
@@ -20,7 +20,7 @@ class FindUsers(AbstractTask):
         return timedelta(minutes=5)
 
     def _run(self) -> TaskInstanceStatus:
-        slack_client = get_client()
+        slack_client = get_slack_web_client()
         slack_client.team_info()
         slack_user_team_pairs = get_user_teams_from_messages(
             slack_team_slack_id=slack_client.team_id

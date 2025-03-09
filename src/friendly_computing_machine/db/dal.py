@@ -2,7 +2,7 @@ import logging
 import datetime
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update
+from sqlmodel import Session, and_, column, null, select, update, or_, exists, not_
 
 from friendly_computing_machine.db.db import SessionManager
 from friendly_computing_machine.models.slack import (
@@ -79,7 +79,71 @@ def insert_message(in_message: SlackMessageCreate) -> SlackMessage:
     return message
 
 
+def upsert_message(slack_message: SlackMessageCreate) -> SlackMessage:
+    with SessionManager() as session:
+        # check if exists and insert. very non-optimal, especially if rbar, but small table so no prob
+        # TODO - covering index? this may be an expensive query
+
+        # by_id
+        condition_by_id = and_(
+            SlackMessage.slack_id == slack_message.slack_id,
+            SlackMessage.slack_id.is_not(None),
+        )
+        # by_ts
+        condition_by_ts = and_(
+            SlackMessage.slack_id.is_(None),
+            # unique on ts and channel
+            # channel unique on team and channel
+            SlackMessage.slack_team_slack_id == slack_message.slack_team_slack_id,
+            SlackMessage.slack_channel_slack_id == slack_message.slack_channel_slack_id,
+            SlackMessage.ts == slack_message.ts,
+        )
+
+        stmt = select(SlackMessage).where(
+            or_(
+                condition_by_id,
+                condition_by_ts,
+            )
+        )
+        result = session.exec(stmt).one_or_none()
+        if result is None:
+            result = insert_message(slack_message)
+        else:
+            # TODO - make generic, I think I can probably reuse another function
+            # do we need a model class for each variant? do we even need creates?
+            update_dict = slack_message.model_dump(exclude_unset=True)
+            result = db_update(session, SlackMessage, result.id, update_dict)
+
+    return result
+
+
+# def bulk_upsert_messages(slack_messages: list[SlackMessageCreate]) -> None:
+# unresolved on_conflict_do_update
+# need to do more research into how this is meant to be used
+#
+# with SessionManager() as session:
+#     out_messages = []
+#     table = SlackMessage.__table__
+#     insert_stmt = table.insert().on_conflict_do_update(
+#         index_elements=["slack_id"],
+#         set_={
+#             # these don't change
+#             # "slack_team_slack_id": insert_stmt.excluded.slack_team_slack_id,
+#             # "slack_channel_slack_id": insert_stmt.excluded.slack_channel_slack_id,
+#             # "slack_user_slack_id": insert_stmt.excluded.slack_user_slack_id,
+#             "text": table.excluded.text,
+#             # ts shouldn't be updated, a thread_ts is more harmless
+#             #"ts": insert_stmt.excluded.ts,
+#             "thread_ts": table.excluded.thread_ts,
+#             "parent_user_slack_id": table.excluded.parent_user_slack_id,
+#         },
+#     )
+#     session.execute(insert_stmt, slack_messages)
+#     session.commit()
+
+
 def upsert_tasks(tasks: list[TaskCreate]) -> list[Task]:
+    # DO NOT USE?
     # RBAR BABY
     # I tried to look into upserts with sa, but didn't want to rabbit hole myself for minimal gain here
     with SessionManager() as session:
@@ -106,7 +170,9 @@ def upsert_task(task: TaskCreate, session: Optional[Session] = None) -> Task:
 def insert_task_instances(task_instances: list[TaskInstanceCreate]):
     # no return for now, no need
     with SessionManager() as session:
-        session.bulk_save_objects([ti.to_task_instance() for ti in task_instances])
+        session.bulk_save_objects(
+            [TaskInstance.model_validate(ti) for ti in task_instances]
+        )
         # print(f'{len(task_instances)} inserted')
         session.commit()
 
@@ -484,6 +550,34 @@ def get_music_poll_instances(
         return list(session.exec(stmt).all())
 
 
+def get_unprocessed_music_poll_instances(
+    in_session: Optional[Session] = None,
+) -> list[MusicPollInstance]:
+    with SessionManager(in_session) as session:
+        stmt = select(MusicPollInstance).where(
+            and_(
+                MusicPollInstance.next_instance_id is not null(),
+                not_(
+                    exists().where(
+                        MusicPollResponse.music_poll_instance_id == MusicPollInstance.id
+                    )
+                ),
+            )
+        )
+        return list(session.exec(stmt).all())
+
+
+def get_recent_music_poll_instances(
+    in_session: Optional[Session] = None,
+    delta: datetime.timedelta = datetime.timedelta(days=10),
+) -> list[MusicPollInstance]:
+    with SessionManager(in_session) as session:
+        stmt = select(MusicPollInstance).where(
+            MusicPollInstance.created_at >= datetime.datetime.now() - delta
+        )
+        return list(session.exec(stmt).all())
+
+
 def update_music_poll_instance(
     instance_id: int, updates: dict, session: Optional[Session] = None
 ) -> MusicPollInstance | None:
@@ -502,6 +596,20 @@ def delete_music_poll_instance(
             session.commit()
             return True
         return False
+
+
+def insert_music_poll_responses(
+    responses: list[MusicPollResponseCreate], session: Optional[Session] = None
+):
+    with SessionManager(session) as session:
+        db_responses = [
+            MusicPollResponse.model_validate(response) for response in responses
+        ]
+        session.bulk_save_objects(db_responses)
+        session.commit()
+        # for response in db_responses:
+        #     session.refresh(response)
+        # return db_responses
 
 
 def insert_music_poll_response(
@@ -581,3 +689,32 @@ def get_slack_channel(
         elif slack_channel_slack_id is not None:
             stmt = stmt.where(SlackChannel.slack_id == slack_channel_slack_id)
         return session.exec(stmt).one_or_none()
+
+
+def find_poll_instance_messages(poll_instance: MusicPollInstance) -> list[SlackMessage]:
+    with SessionManager() as session:
+        # this will return the next poll, so if there is ever some graph fuckery this
+        # should hopefully prevent corruption by at least being deterministic
+        # although some messages will be dropped
+        # still a very edge case situation, that should be redesigned
+        next_instance_subquery = (
+            select(MusicPollInstance.created_at)
+            .where(MusicPollInstance.id == poll_instance.next_instance_id)
+            .order_by(MusicPollInstance.created_at)
+            .limit(1)
+            .scalar_subquery()
+        )
+        # TODO - should just join it in, but this will work I suppose
+        slack_channel_id_subquery = (
+            select(MusicPoll.slack_channel_id)
+            .where(MusicPoll.id == poll_instance.music_poll_id)
+            .scalar_subquery()
+        )
+        stmt = select(SlackMessage).where(
+            and_(
+                SlackMessage.slack_channel_id == slack_channel_id_subquery,
+                SlackMessage.ts >= poll_instance.created_at,
+                SlackMessage.ts < next_instance_subquery,
+            )
+        )
+        return list(session.exec(stmt).all())

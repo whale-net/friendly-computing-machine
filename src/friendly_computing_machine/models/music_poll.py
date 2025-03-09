@@ -75,6 +75,7 @@ class MusicPollResponseBase(Base):
     music_poll_instance_id: int = Field(foreign_key="musicpollinstance.id", index=True)
     slack_user_id: int = Field(foreign_key="slackuser.id", index=True)
     slack_message_id: int = Field(foreign_key="slackmessage.id", index=True)
+    # TODO - fix default, just use regular default factory in sqlmodel
     created_at: datetime.datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),

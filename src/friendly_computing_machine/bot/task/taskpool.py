@@ -10,7 +10,10 @@ from friendly_computing_machine.bot.task.genai import GenAISlackIDUpdateTask
 from friendly_computing_machine.bot.task.musicpoll import (
     MusicPollPostPoll,
     MusicPollInit,
+    MusicPollArchiveMessages,
+    MusicPollProcessPoll,
 )
+from friendly_computing_machine.bot.task.slack_qod import SlackMessageDuplicateCleanup
 from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
@@ -21,7 +24,9 @@ class TaskPool:
     def __init__(
         self, sleep_period=timedelta(seconds=5), log_skipped_tasks: bool = False
     ):
-        self._tasks: set[AbstractTask] = set()
+        # using list, manual dupe check
+        # self._tasks: set[AbstractTask] = set()
+        self._tasks: list[AbstractTask] = []
         self._sleep_period_seconds = sleep_period.total_seconds()
         self.__should_run = True
         self._is_finalized: bool = False
@@ -31,7 +36,11 @@ class TaskPool:
     def add_task(self, task: AbstractTask):
         if self._is_finalized:
             raise RuntimeError("task pool already finalized")
-        self._tasks.add(task)
+        # self._tasks.add(task)
+        if task in self._tasks:
+            logger.warning("task already in pool, skipping add")
+            return
+        self._tasks.append(task)
 
     def finalize(self):
         # get task config for the pool
@@ -84,6 +93,9 @@ class TaskPool:
 def create_default_taskpool() -> TaskPool:
     # unsure how to specify which tasks I actually want, so just going to make this register everything for now
     # with the option to comment out individual ones while I work on this
+
+    # TODO - dependency structure of some sort
+    # for now, just ordering corectly, and giving one off tasks priority
     tp = TaskPool()
     tp.add_task(FindTeams())
     tp.add_task(FindUsers())
@@ -91,5 +103,9 @@ def create_default_taskpool() -> TaskPool:
     tp.add_task(MusicPollInit())
     tp.add_task(ChannelUpdateTask())
     tp.add_task(GenAISlackIDUpdateTask())
+    tp.add_task(MusicPollArchiveMessages())
+    tp.add_task(SlackMessageDuplicateCleanup())
+    tp.add_task(MusicPollProcessPoll())
+
     logger.info("default task pol created")
     return tp

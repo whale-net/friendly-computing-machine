@@ -33,6 +33,7 @@ def slack_send_message(
         slack_user_slack_id=response["message"].get("user"),
         text=response["message"].get("text"),
         # unsure if message or response ts is more correct, or if it matters
+        # TODO - check if this is giving wrong timezone
         ts=ts_to_datetime(response["message"].get("ts")),
         thread_ts=ts_to_datetime(response_thread_ts) if response_thread_ts else None,
         parent_user_slack_id=response["message"].get("parent_user_id"),

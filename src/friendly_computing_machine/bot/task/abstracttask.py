@@ -68,11 +68,12 @@ class AbstractTask(ABC):
                     status = self._run(*args, **kwargs)
                     logger.info("task %s has completed", self.task_name)
                 except Exception as e:
-                    logger.warning("task %s failed due to exception")
+                    logger.warning("task %s failed due to exception", self.task_name)
                     logger.exception(e)
                     status = TaskInstanceStatus.EXCEPTION
                 # NOTE: this sets the last success, even if we had an exception
                 # TODO last_success vs last_attempt
+                #   this is kind of beneficial for debugging jobs locally
                 self._last_success = datetime.now()
             finally:
                 self._is_running = False

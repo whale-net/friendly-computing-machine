@@ -5,12 +5,12 @@ import threading
 from typing import Optional
 
 
+logger = logging.getLogger(__name__)
+
+
 def ts_to_datetime(ts: str):
     # yes ts is a str in the event payload
     return datetime.datetime.fromtimestamp(float(ts))
-
-
-logger = logging.getLogger(__name__)
 
 
 class NamedThreadPool(concurrent.futures.ThreadPoolExecutor):

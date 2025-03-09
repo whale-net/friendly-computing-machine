@@ -46,13 +46,7 @@ Index("ix_status_as_of", TaskInstance.status, TaskInstance.as_of.desc())
 
 
 class TaskInstanceCreate(TaskInstanceBase):
-    def to_task_instance(self) -> TaskInstance:
-        # there has to be a more intelligent way to do this
-        return TaskInstance(
-            task_id=self.task_id,
-            as_of=self.as_of,
-            status=self.status,
-        )
+    pass
 
 
 # TODO - taskpool instance
