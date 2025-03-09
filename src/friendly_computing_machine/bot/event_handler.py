@@ -49,7 +49,9 @@ def handle_message(event, say):
         config = get_bot_config()
 
         # demorgans the above
-        if message.slack_channel_slack_id not in config.MUSIC_POLL_CHANNEL_IDS:
+        if message.slack_channel_slack_id not in {
+            info.slack_channel.slack_id for info in config.music_poll_infos
+        }:
             logger.info(
                 "skipping message %s - not in music poll channel", message.slack_id
             )
