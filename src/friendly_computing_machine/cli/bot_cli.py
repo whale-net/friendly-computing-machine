@@ -7,6 +7,7 @@ from friendly_computing_machine.bot.util import slack_bot_who_am_i, slack_send_m
 from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.db import should_run_migration
 
+from friendly_computing_machine.cli.context.slack import setup_slack, T_slack_app_token
 from friendly_computing_machine.cli.context.gemini import setup_gemini, T_google_api_key
 
 logger = logging.getLogger(__name__)
@@ -19,11 +20,10 @@ app = typer.Typer(
 @app.command("run")
 def cli_run(
     ctx: typer.Context,
+    slack_app_token: T_slack_app_token,
     google_api_key: T_google_api_key,
     skip_migration_check: bool = False,
 ):
-    setup_gemini(ctx, google_api_key)
-
     context = CliContext.get_instance()
     if skip_migration_check:
         logger.info("skipping migration check")
@@ -35,7 +35,10 @@ def cli_run(
 
     logger.info("genai setup")
 
-    run_slack_bot(app_token=context.slack_app_token)
+    setup_gemini(ctx, google_api_key)
+    # TODO put setup slack in callback
+    setup_slack(ctx, slack_app_token)
+    run_slack_bot(app_token=ctx.obj["slack_app_token"])
 
 
 @app.command("send-test-command")

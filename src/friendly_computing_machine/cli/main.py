@@ -12,6 +12,7 @@ from friendly_computing_machine.db.db import init_engine
 
 from friendly_computing_machine.cli.context.log import setup_logging
 
+
 logger = logging.getLogger(__name__)
 
 app = typer.Typer()
@@ -24,7 +25,6 @@ app.add_typer(tool_app, name="tools")
 @migration_app.callback()
 def callback(
     ctx: typer.Context,
-    slack_app_token: Annotated[str, typer.Option(envvar="SLACK_APP_TOKEN")],
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     database_url: Annotated[str, typer.Option(envvar="DATABASE_URL")],
 ):
@@ -33,7 +33,7 @@ def callback(
     setup_logging(ctx)
 
     CliContext(
-        slack_app_token,
+        "",
         # TODO: this default may prove problematic with containerization
         # TODO - is this overwritten or ignored? I think it may be but idc enough to test
         alembic.config.Config("./alembic.ini"),

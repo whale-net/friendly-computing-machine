@@ -18,9 +18,6 @@ def setup_gemini(
     google_api_key: T_google_api_key,
 ):
     logger.debug("gemini setup starting")
-    if google_api_key is None:
-        logger.critical("google api key not set")
-        raise RuntimeError("google api key not set")
     genai.configure(api_key=google_api_key)
     logger.debug("gemini setup complete")
     # mark true just so it's not None
