@@ -18,6 +18,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
+    # Second phase: compile deps
+RUN python -m compileall -f -o2 /app/.venv
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
@@ -27,6 +29,9 @@ COPY /src /app/src
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
+
+# Fourth phase: compile app code
+RUN python -m compileall -f -o2 /app/src
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
@@ -42,7 +47,10 @@ ENV OTEL_METRICS_EXPORTER=none
 ## traffic is intended for within-pod. So hopefully this doesn't amtter
 ENV OTEL_EXPORTER_OTLP_INSECURE=true
 
+# Disable bytecode compilation at runtime since we've already done it
+ENV UV_COMPILE_BYTECODE=0
+
 RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 
-#ENTRYPOINT ["uv", "run", "fcm"]
-ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "fcm"]
+ENTRYPOINT ["uv", "run", "fcm"]
+#ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "fcm"]

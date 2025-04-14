@@ -5,7 +5,7 @@ import alembic
 import alembic.command
 import alembic.config
 from sqlalchemy import Engine
-from sqlmodel import Session, create_engine
+from sqlmodel import Session
 
 __GLOBALS = {"engine": None}
 
@@ -13,13 +13,11 @@ __GLOBALS = {"engine": None}
 logger = logging.getLogger(__name__)
 
 
-def init_engine(url: str, echo: bool = False):
+def init_engine(engine: Engine):
     if __GLOBALS["engine"] is not None:
-        raise RuntimeError("double engine init")
-    __GLOBALS["engine"] = create_engine(
-        url, echo=echo, pool_pre_ping=True, pool_recycle=60
-    )
-    logger.info("engine created")
+        raise RuntimeError("engine already initialized")
+    __GLOBALS["engine"] = engine
+    logger.info("engine singleton created")
 
 
 def get_engine() -> Engine:
@@ -52,14 +50,14 @@ class SessionManager:
             logger.debug("session is passthrough, not closing")
 
 
-def run_migration(config: alembic.config.Config):
-    with get_engine().begin() as connection:
+def run_migration(engine: Engine, config: alembic.config.Config):
+    with engine.begin() as connection:
         config.attributes["connection"] = connection
         alembic.command.upgrade(config, "head")
 
 
-def should_run_migration(config: alembic.config.Config) -> bool:
-    with get_engine().begin() as conn:
+def should_run_migration(engine: Engine, config: alembic.config.Config) -> bool:
+    with engine.begin() as conn:
         config.attributes["connection"] = conn
         try:
             alembic.command.check(config)
@@ -69,16 +67,18 @@ def should_run_migration(config: alembic.config.Config) -> bool:
         return False
 
 
-def create_migration(config: alembic.config.Config, message: Optional[str]):
-    if not should_run_migration(config):
+def create_migration(
+    engine: Engine, config: alembic.config.Config, message: Optional[str]
+):
+    if not should_run_migration(engine, config):
         logger.info("no migration required")
         raise RuntimeError("no migration required")
-    with get_engine().begin() as conn:
+    with engine.begin() as conn:
         config.attributes["connection"] = conn
         alembic.command.revision(config, message=message, autogenerate=True)
 
 
-def run_downgrade(config: alembic.config.Config, revision: str):
-    with get_engine().begin() as connection:
+def run_downgrade(engine: Engine, config: alembic.config.Config, revision: str):
+    with engine.begin() as connection:
         config.attributes["connection"] = connection
         alembic.command.downgrade(config, revision)

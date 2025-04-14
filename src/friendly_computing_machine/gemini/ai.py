@@ -3,15 +3,9 @@ from textwrap import dedent
 
 import google.generativeai as genai
 
-from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.dal import get_genai_texts_by_slack_channel
 
 logger = logging.getLogger(__name__)
-
-
-def init():
-    context = CliContext.get_instance()
-    genai.configure(api_key=context.google_api_key)
 
 
 def generate_text_with_slack_context(

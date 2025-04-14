@@ -45,4 +45,4 @@ def slack_send_message(
 
 
 def slack_bot_who_am_i():
-    print(app.client.auth_test())
+    return app.client.auth_test()
