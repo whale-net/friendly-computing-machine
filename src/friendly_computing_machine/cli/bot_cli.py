@@ -6,15 +6,24 @@ from friendly_computing_machine.bot.main import run_slack_bot
 from friendly_computing_machine.bot.util import slack_bot_who_am_i, slack_send_message
 from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.db import should_run_migration
-from friendly_computing_machine.gemini.ai import init
+
+from friendly_computing_machine.cli.context.gemini import setup_gemini, T_google_api_key
 
 logger = logging.getLogger(__name__)
 
-app = typer.Typer()
+app = typer.Typer(
+    context_settings={"obj": {}},
+)
 
 
 @app.command("run")
-def cli_run(skip_migration_check: bool = False):
+def cli_run(
+    ctx: typer.Context,
+    google_api_key: T_google_api_key,
+    skip_migration_check: bool = False,
+):
+    setup_gemini(ctx, google_api_key)
+
     context = CliContext.get_instance()
     if skip_migration_check:
         logger.info("skipping migration check")
@@ -24,7 +33,6 @@ def cli_run(skip_migration_check: bool = False):
     else:
         logger.info("migration check passed, starting normally")
 
-    init()
     logger.info("genai setup")
 
     run_slack_bot(app_token=context.slack_app_token)

@@ -1,8 +1,12 @@
 import typer
 
-app = typer.Typer()
+app = typer.Typer(
+    context_settings={"obj": {}},
+)
 
 
+# NO LONGER NEEDED
+# BUT SOMETIMES IT IS, SO LEAVING IT FOR FUTURE USE
 @app.command()
 def update_helm_chart_version(ref: str, commit_count: int):
     # crude but it'll do

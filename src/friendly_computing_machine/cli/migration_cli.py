@@ -12,7 +12,9 @@ from friendly_computing_machine.db.db import (
 
 logger = logging.getLogger(__name__)
 
-migration_app = typer.Typer()
+migration_app = typer.Typer(
+    context_settings={"obj": {}},
+)
 
 
 @migration_app.command("run")
