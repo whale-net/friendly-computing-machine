@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Annotated
 import typer
 
-from alembic.config import Config
+import alembic
 
 
 from sqlalchemy import Engine
@@ -23,7 +23,7 @@ T_database_url = Annotated[str, typer.Option(..., envvar="DATABASE_URL")]
 @dataclass
 class DBContext:
     engine: Engine
-    alembic_config: Config
+    alembic_config: alembic.config.Config
 
 
 def setup_db(
@@ -39,6 +39,6 @@ def setup_db(
     init_engine(engine=engine)
     ctx.obj[FILENAME] = DBContext(
         engine=engine,
-        alembic_config=Config("./alembic.ini"),
+        alembic_config=alembic.config.Config("./alembic.ini"),
     )
     logger.debug("db setup complete")
