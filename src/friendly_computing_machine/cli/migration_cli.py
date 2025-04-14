@@ -3,11 +3,16 @@ from typing import Optional
 
 import typer
 
-from friendly_computing_machine.cli.util import CliContext
 from friendly_computing_machine.db.db import (
     create_migration,
     run_migration,
     run_downgrade,
+)
+from friendly_computing_machine.cli.context.log import setup_logging
+from friendly_computing_machine.cli.context.db import (
+    T_database_url,
+    setup_db,
+    FILENAME as DB_FILENAME,
 )
 
 logger = logging.getLogger(__name__)
@@ -17,25 +22,39 @@ migration_app = typer.Typer(
 )
 
 
+@migration_app.callback()
+def callback(
+    ctx: typer.Context,
+    database_url: T_database_url,
+):
+    logger.debug("CLI callback starting")
+    setup_logging(ctx)
+    setup_db(ctx, database_url)
+    logger.debug("CLI callback complete")
+
+
 @migration_app.command("run")
-def cli_migration_run():
-    context = CliContext.get_instance()
+def cli_migration_run(
+    ctx: typer.Context,
+):
     logger.info("running migration")
-    run_migration(context.alembic_config)
+    run_migration(ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config)
     logger.info("migration complete")
 
 
 @migration_app.command("create")
-def cli_migration_create(message: Optional[str] = None):
-    context = CliContext.get_instance()
+def cli_migration_create(ctx: typer.Context, message: Optional[str] = None):
     logger.info("creating migration")
-    create_migration(context.alembic_config, message)
+    create_migration(
+        ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config, message
+    )
     logger.info("migration created")
 
 
 @migration_app.command("downgrade")
-def cli_migration_downgrade(revision: str):
-    context = CliContext.get_instance()
+def cli_migration_downgrade(ctx: typer.Context, revision: str):
     logger.info("downgrading migration")
-    run_downgrade(context.alembic_config, revision)
+    run_downgrade(
+        ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config, revision
+    )
     logger.info("migration downgraded")
