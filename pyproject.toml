@@ -20,7 +20,7 @@ dependencies = [
     "sqlalchemy>=2.0.36",
     "sqlmodel>=0.0.22",
     "temporalio>=1.10.0",
-    "typer>=0.13.0",
+    "typer-slim>=0.15.2",
 ]
 
 [project.scripts]

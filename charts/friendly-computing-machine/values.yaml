@@ -25,5 +25,7 @@ env:
       endpoint: <logs_endpoint>
     traces:
       endpoint: <traces_endpoint>
+  temporal:
+    host: <temporal_host>
 #    metrics:
 #      endpoint: <metrics_endpoint>
