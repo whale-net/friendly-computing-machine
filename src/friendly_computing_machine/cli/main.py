@@ -5,7 +5,7 @@ from temporalio import workflow
 
 # TODO - this is working, but should it? is this just the same as doing all?
 # anyway not doing anything super important so I'm sure it's fine.
-# I'm not sure this is the right way to do this but whatever goign to do it until it breaks
+# I'm not sure this is the right way to do this but whatever going to do it until it breaks
 with workflow.unsafe.imports_passed_through():
     from friendly_computing_machine.cli.bot_cli import app as bot_app
     from friendly_computing_machine.cli.tools_cli import app as tool_app
