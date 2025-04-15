@@ -45,7 +45,7 @@ def cli_run(
     # keeping these on run for now just since it seems right
     google_api_key: T_google_api_key,
     database_url: T_database_url,
-    # TOOD - follow the pattern
+    # TODO - follow the pattern
     temporal_host: Annotated[str, typer.Option(envvar="TEMPORAL_HOST")],
     skip_migration_check: bool = False,
 ):

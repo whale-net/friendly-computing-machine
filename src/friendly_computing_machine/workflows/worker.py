@@ -18,7 +18,7 @@ async def run_worker(host: str):
 
     # Run the worker
     with ThreadPoolExecutor(max_workers=100) as activity_executor:
-        # not useufl anymore
+        # not useful anymore
         # runner = SandboxedWorkflowRunner(
         #     restrictions=SandboxRestrictions.default.with_passthrough_modules("slack_sdk"),
         #     restrictions=SandboxRestrictions.default.with_passthrough_all_modules(),
