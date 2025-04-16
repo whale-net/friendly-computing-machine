@@ -11,6 +11,11 @@ from friendly_computing_machine.cli.context.slack import (
     T_slack_app_token,
     FILENAME as SLACK_FILENAME,
 )
+from friendly_computing_machine.cli.context.temporal import (
+    T_temporal_host,
+    setup_temporal,
+    FILENAME as TEMPORAL_FILENAME,
+)
 from friendly_computing_machine.cli.context.gemini import setup_gemini, T_google_api_key
 from friendly_computing_machine.cli.context.db import (
     setup_db,
@@ -31,10 +36,12 @@ def callback(
     ctx: typer.Context,
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     slack_app_token: T_slack_app_token,
+    temporal_host: T_temporal_host,
 ):
     logger.debug("CLI callback starting")
     setup_logging(ctx)
     setup_slack(ctx, slack_app_token)
+    setup_temporal(ctx, temporal_host)
     logger.debug("CLI callback complete")
 
 
@@ -60,7 +67,10 @@ def cli_run(
     setup_gemini(ctx, google_api_key)
 
     logger.info("starting bot")
-    run_slack_bot(app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"])
+    run_slack_bot(
+        app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
+        temporal_host=ctx.obj[TEMPORAL_FILENAME].host,
+    )
 
 
 @app.command("send-test-command")

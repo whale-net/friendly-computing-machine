@@ -2,15 +2,22 @@ import datetime
 import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
+from friendly_computing_machine.bot.workflow import (
+    SlackConextGeminiWorkflow,
+    SlackConextGeminiWorkflowParams,
+)
 from friendly_computing_machine.db.dal import upsert_message
-from friendly_computing_machine.gemini.ai import generate_text_with_slack_context
-from friendly_computing_machine.models.slack import SlackMessageCreate
-
+from friendly_computing_machine.models.slack import (
+    SlackMessageCreate,
+    SlackCommandCreate,
+)
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
     update_genai_text_response,
+    insert_slack_command,
 )
 from friendly_computing_machine.models.genai import GenAITextCreate
+from friendly_computing_machine.workflows.util import get_temporal_client
 
 
 logger = logging.getLogger(__name__)
@@ -64,6 +71,17 @@ def handle_whale_ai_command(ack, say, command):
         channel_id = command["channel_id"]
         text = command["text"]
 
+        command_create = SlackCommandCreate(
+            caller_slack_user_id=user_id,
+            command_base="/wai",
+            command_text=text,
+            slack_channel_slack_id=channel_id,
+            created_at=datetime.datetime.now(),
+        )
+        insert_slack_command(command_create)
+
+        temporal_client = get_temporal_client()
+
         # create and log request right away
         genai_text = insert_genai_text(
             GenAITextCreate(
@@ -74,10 +92,18 @@ def handle_whale_ai_command(ack, say, command):
                 created_at=datetime.datetime.now(),
             )
         )
+        # remove old method and replace with temporal
         # ai_response, ai_feedback, ai_safety = generate_text(username, text)
-        ai_response, _ = generate_text_with_slack_context(
-            user_name, text, genai_text.slack_channel_slack_id
+        # ai_response, _ = generate_text_with_slack_context(
+        #     user_name, text, genai_text.slack_channel_slack_id
+        # )
+        ai_response = temporal_client.execute_workflow(
+            SlackConextGeminiWorkflow.run,
+            SlackConextGeminiWorkflowParams(channel_id, text),
+            id="test_id",
+            task_queue="my-task-queue",
         )
+
         if ai_response is None:
             logger.info(
                 "%s (%s) just triggered a bad response. See genai_text=%s",

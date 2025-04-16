@@ -2,6 +2,7 @@ from datetime import timedelta
 from temporalio import activity, workflow
 
 # Import activity implementation safely
+# TODO - this is probably not needed
 with workflow.unsafe.imports_passed_through():
     from friendly_computing_machine.gemini.activity import generate_gemini_response
 

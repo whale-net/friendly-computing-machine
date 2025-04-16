@@ -1,15 +1,34 @@
 from concurrent.futures import ThreadPoolExecutor
 from temporalio.client import Client
 from temporalio.worker import Worker
-from friendly_computing_machine.gemini.activity import generate_gemini_response
+from temporalio.worker.workflow_sandbox import (
+    SandboxedWorkflowRunner,
+    SandboxRestrictions,
+)
+from friendly_computing_machine.gemini.activity import (
+    generate_gemini_response,
+    generate_summary,
+)
+from friendly_computing_machine.bot.activity import (
+    generate_context_prompt,
+    get_slack_channel_context,
+)
+from friendly_computing_machine.bot.workflow import SlackConextGeminiWorkflow
 from friendly_computing_machine.workflows.sample import (
     say_hello,
     SayHello,
     build_hello_prompt,
 )
 
-WORKFLOWS = [SayHello]
-ACTIVITIES = [say_hello, generate_gemini_response, build_hello_prompt]
+WORKFLOWS = [SayHello, SlackConextGeminiWorkflow]
+ACTIVITIES = [
+    generate_context_prompt,
+    get_slack_channel_context,
+    say_hello,
+    generate_gemini_response,
+    build_hello_prompt,
+    generate_summary,
+]
 
 
 async def run_worker(host: str):
@@ -18,17 +37,18 @@ async def run_worker(host: str):
 
     # Run the worker
     with ThreadPoolExecutor(max_workers=100) as activity_executor:
-        # not useufl anymore
-        # runner = SandboxedWorkflowRunner(
-        #     restrictions=SandboxRestrictions.default.with_passthrough_modules("slack_sdk"),
-        #     restrictions=SandboxRestrictions.default.with_passthrough_all_modules(),
-        # )
+        runner = SandboxedWorkflowRunner(
+            # restrictions=SandboxRestrictions.default.with_passthrough_modules("slack_sdk"),
+            # TODO - actually ifgure out what is not deterministic
+            # it is slack calls, but from where?
+            restrictions=SandboxRestrictions.default.with_passthrough_all_modules(),
+        )
         worker = Worker(
             client,
             task_queue="my-task-queue",
             workflows=WORKFLOWS,
             activities=ACTIVITIES,
             activity_executor=activity_executor,
-            # workflow_runner=runner,
+            workflow_runner=runner,
         )
         await worker.run()

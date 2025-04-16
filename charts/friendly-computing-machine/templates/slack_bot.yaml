@@ -101,3 +101,5 @@ spec:
             value: "deployment-name={{ .Values.deployment.name }}"
           - name: GOOGLE_API_KEY
             value: {{ .Values.env.google.api_key }}
+          - name: TEMPORAL_HOST
+            value: {{ .Values.env.temporal.host }}

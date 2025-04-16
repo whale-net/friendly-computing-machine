@@ -13,6 +13,8 @@ from friendly_computing_machine.models.slack import (
     SlackTeamCreate,
     SlackUser,
     SlackUserCreate,
+    SlackCommand,
+    SlackCommandCreate,
 )
 from friendly_computing_machine.models.genai import (
     GenAIText,
@@ -718,3 +720,41 @@ def find_poll_instance_messages(poll_instance: MusicPollInstance) -> list[SlackM
             )
         )
         return list(session.exec(stmt).all())
+
+
+def insert_slack_command(
+    slack_command: SlackCommandCreate, session: Optional[Session] = None
+) -> SlackCommand:
+    with SessionManager(session) as session:
+        db_slack_command = SlackCommand.from_slack_command_create(slack_command)
+        session.add(db_slack_command)
+        session.commit()
+        session.refresh(db_slack_command)
+        return db_slack_command
+
+
+def get_slack_command_by_id(
+    slack_command_id: int, session: Optional[Session] = None
+) -> SlackCommand | None:
+    with SessionManager(session) as session:
+        return session.get(SlackCommand, slack_command_id)
+
+
+def update_slack_command(
+    slack_command_id: int, updates: dict, session: Optional[Session] = None
+) -> SlackCommand | None:
+    with SessionManager(session) as session:
+        slack_command = db_update(session, SlackCommand, slack_command_id, updates)
+    return slack_command
+
+
+# def delete_slack_command(
+#     slack_command_id: int, session: Optional[Session] = None
+# ) -> bool:
+#     with SessionManager(session) as session:
+#         slack_command = session.get(SlackCommand, slack_command_id)
+#         if slack_command:
+#             session.delete(slack_command)
+#             session.commit()
+#             return True
+#         return False

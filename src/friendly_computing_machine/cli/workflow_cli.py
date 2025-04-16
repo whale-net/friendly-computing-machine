@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Annotated
 
 import typer
 
@@ -17,6 +16,11 @@ from friendly_computing_machine.cli.context.db import (
     T_database_url,
     FILENAME as DB_FILENAME,
 )
+from friendly_computing_machine.cli.context.temporal import (
+    T_temporal_host,
+    setup_temporal,
+    FILENAME as TEMPORAL_FILENAME,
+)
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.workflows.worker import run_worker
 
@@ -32,10 +36,12 @@ def callback(
     ctx: typer.Context,
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     # slack_app_token: T_slack_app_token,
+    temporal_host: T_temporal_host,
 ):
     logger.debug("CLI callback starting")
     setup_logging(ctx)
     # setup_slack(ctx, slack_app_token)
+    setup_temporal(ctx, temporal_host)
     logger.debug("CLI callback complete")
 
 
@@ -46,7 +52,6 @@ def cli_run(
     google_api_key: T_google_api_key,
     database_url: T_database_url,
     # TOOD - follow the pattern
-    temporal_host: Annotated[str, typer.Option(envvar="TEMPORAL_HOST")],
     skip_migration_check: bool = False,
 ):
     setup_db(ctx, database_url)
@@ -64,7 +69,7 @@ def cli_run(
 
     logger.info("starting temporal worker")
     # TODO - pass down context
-    asyncio.run(run_worker(temporal_host))
+    asyncio.run(run_worker(ctx.obj[TEMPORAL_FILENAME].host))
 
 
 @app.command("test")
