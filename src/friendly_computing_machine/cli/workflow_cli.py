@@ -19,7 +19,6 @@ from friendly_computing_machine.cli.context.db import (
 from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
-    FILENAME as TEMPORAL_FILENAME,
 )
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.workflows.worker import run_worker
@@ -68,7 +67,7 @@ def cli_run(
 
     logger.info("starting temporal worker")
     # TODO - pass down context
-    asyncio.run(run_worker(ctx.obj[TEMPORAL_FILENAME].host))
+    asyncio.run(run_worker())
 
 
 @app.command("test")

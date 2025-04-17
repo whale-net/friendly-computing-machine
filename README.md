@@ -18,6 +18,9 @@ run the bot (or whatever this currently is)
 ```
 uv run fcm
 ```
+```
+temporal server start-dev
+```
 
 ## logging / tracing / metrics
 

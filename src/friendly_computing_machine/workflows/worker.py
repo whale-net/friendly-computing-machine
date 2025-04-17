@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor
-from temporalio.client import Client
 from temporalio.worker import Worker
 from temporalio.worker.workflow_sandbox import (
     SandboxedWorkflowRunner,
@@ -19,6 +18,8 @@ from friendly_computing_machine.workflows.sample import (
     SayHello,
     build_hello_prompt,
 )
+from friendly_computing_machine.workflows.util import get_temporal_client_async
+
 
 WORKFLOWS = [SayHello, SlackConextGeminiWorkflow]
 ACTIVITIES = [
@@ -31,9 +32,10 @@ ACTIVITIES = [
 ]
 
 
-async def run_worker(host: str):
+async def run_worker():
     # Create client connected to server at the given address
-    client = await Client.connect(host)
+    # TODO - use common function
+    client = await get_temporal_client_async()
 
     # Run the worker
     with ThreadPoolExecutor(max_workers=100) as activity_executor:

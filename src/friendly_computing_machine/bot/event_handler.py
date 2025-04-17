@@ -17,7 +17,7 @@ from friendly_computing_machine.db.dal import (
     insert_slack_command,
 )
 from friendly_computing_machine.models.genai import GenAITextCreate
-from friendly_computing_machine.workflows.util import get_temporal_client
+from friendly_computing_machine.workflows.util import execute_workflow
 
 
 logger = logging.getLogger(__name__)
@@ -80,8 +80,6 @@ def handle_whale_ai_command(ack, say, command):
         )
         insert_slack_command(command_create)
 
-        temporal_client = get_temporal_client()
-
         # create and log request right away
         genai_text = insert_genai_text(
             GenAITextCreate(
@@ -97,10 +95,10 @@ def handle_whale_ai_command(ack, say, command):
         # ai_response, _ = generate_text_with_slack_context(
         #     user_name, text, genai_text.slack_channel_slack_id
         # )
-        ai_response = temporal_client.execute_workflow(
+        ai_response = execute_workflow(
             SlackConextGeminiWorkflow.run,
             SlackConextGeminiWorkflowParams(channel_id, text),
-            id="test_id",
+            id=f"test_id-command-wai-{channel_id}-{datetime.datetime.now()}",
             task_queue="my-task-queue",
         )
 

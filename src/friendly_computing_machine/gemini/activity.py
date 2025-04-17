@@ -33,7 +33,7 @@ async def generate_summary(messages: list[GenAIText]) -> str:
     summary_prompt = dedent("""
         Here is are the previous genAI requests:\n
     """)
-    for msg in sorted(messages, lambda x: x.created_at):
+    for msg in sorted(messages, key=lambda x: x.created_at):
         summary_prompt += dedent(f"""
             - message_{msg.id}:
                 - prompt: "{msg.prompt}"

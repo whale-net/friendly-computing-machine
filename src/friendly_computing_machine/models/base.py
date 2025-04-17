@@ -6,6 +6,30 @@ class Base(SQLModel):
     # but may as well specify to avoid ambiguity
     metadata = MetaData(schema="fcm")
 
+    # def to_dict(self) -> Dict[str, Any]:
+    #     """Convert model to a dictionary with JSON serializable values."""
+    #     data = self.model_dump()
+    #     # Convert all datetime objects to ISO format strings
+    #     for key, value in data.items():
+    #         if isinstance(value, datetime.datetime):
+    #             data[key] = value.isoformat()
+    #     return data
+
+    # @classmethod
+    # def from_dict(cls, data: Dict[str, Any]):
+    #     """Create a model instance from a dictionary."""
+    #     # Make a copy to avoid modifying the original
+    #     data_copy = data.copy()
+    #     # Parse ISO format strings back to datetime objects
+    #     for key, value in data_copy.items():
+    #         if isinstance(value, str) and key in cls.__annotations__:
+    #             if cls.__annotations__[key] == datetime.datetime:
+    #                 try:
+    #                     data_copy[key] = datetime.datetime.fromisoformat(value)
+    #                 except ValueError:
+    #                     pass  # Not a valid datetime string
+    #     return cls(**data_copy)
+
 
 """
 # Trying out a different way to build these models, copied from a tutorial that seems to have a better grasp on this
