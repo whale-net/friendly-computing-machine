@@ -4,10 +4,12 @@ from textwrap import dedent
 import google.generativeai as genai
 
 from friendly_computing_machine.db.dal import get_genai_texts_by_slack_channel
+from friendly_computing_machine.util import deprecated
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated
 def generate_text_with_slack_context(
     user_name: str, prompt_text: str, slack_channel_slack_id: str
 ):
@@ -53,6 +55,7 @@ def generate_text_with_slack_context(
     return generate_text(user_name, generated_prompt)
 
 
+@deprecated
 def generate_text(user_name: str, prompt_text: str) -> tuple:
     try:
         # TODO - model name - using default for now

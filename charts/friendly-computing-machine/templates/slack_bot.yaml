@@ -46,6 +46,8 @@ spec:
               value: "deployment-name={{ .Values.deployment.name }}"
             - name: GOOGLE_API_KEY
               value: {{ .Values.env.google.api_key }}
+            - name: APP_ENV
+              value: {{ .Values.env.app_env }}
       containers:
       - name: friendly-computing-machine
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
@@ -103,3 +105,5 @@ spec:
             value: {{ .Values.env.google.api_key }}
           - name: TEMPORAL_HOST
             value: {{ .Values.env.temporal.host }}
+          - name: APP_ENV
+            value: {{ .Values.env.app_env }}
