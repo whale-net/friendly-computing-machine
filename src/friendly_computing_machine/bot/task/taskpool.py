@@ -3,7 +3,6 @@ import time
 from datetime import timedelta
 
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask, OneOffTask
-from friendly_computing_machine.bot.task.genai import GenAISlackIDUpdateTask
 from friendly_computing_machine.bot.task.musicpoll import (
     MusicPollArchiveMessages,
     MusicPollInit,
@@ -94,10 +93,10 @@ def create_default_taskpool() -> TaskPool:
     # for now, just ordering corectly, and giving one off tasks priority
     tp = TaskPool()
 
+    # These are the remaining tasks that run in the task pool
+    # everything else is temporal
     tp.add_task(MusicPollPostPoll())
     tp.add_task(MusicPollInit())
-
-    tp.add_task(GenAISlackIDUpdateTask())
     tp.add_task(MusicPollArchiveMessages())
     tp.add_task(MusicPollProcessPoll())
 
@@ -106,6 +105,7 @@ def create_default_taskpool() -> TaskPool:
     # tp.add_task(FindTeams())
     # tp.add_task(FindUsers())
     # tp.add_task(ChannelUpdateTask())
+    # tp.add_task(GenAISlackIDUpdateTask())
 
-    logger.info("default task pol created")
+    logger.info("default task pool created")
     return tp

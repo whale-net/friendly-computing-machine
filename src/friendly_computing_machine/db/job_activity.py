@@ -8,6 +8,8 @@ from friendly_computing_machine.db.dal import (
     upsert_slack_users,
 )
 from friendly_computing_machine.db.jobsql import (
+    backfill_genai_text_slack_channel_id,
+    backfill_genai_text_slack_user_id,
     backfill_slack_messages_slack_channel_id,
     backfill_slack_messages_slack_team_id,
     backfill_slack_messages_slack_user_id,
@@ -73,4 +75,20 @@ async def upsert_slack_user_creates_activity(
     Upsert slack users.
     """
     upsert_slack_users(user_creates)
+    return "OK"
+
+
+@activity.defn
+def backfill_genai_text_slack_user_id_activity() -> str:
+    """Backfill GenAI text records with missing Slack user IDs."""
+    logger.info("starting genai text slack user id backfill")
+    backfill_genai_text_slack_user_id()
+    return "OK"
+
+
+@activity.defn
+def backfill_genai_text_slack_channel_id_activity() -> str:
+    """Backfill GenAI text records with missing Slack channel IDs."""
+    logger.info("starting genai text slack channel id backfill")
+    backfill_genai_text_slack_channel_id()
     return "OK"

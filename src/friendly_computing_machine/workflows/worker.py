@@ -19,6 +19,8 @@ from friendly_computing_machine.bot.workflow import (
     SlackUserInfoWorkflow,
 )
 from friendly_computing_machine.db.job_activity import (
+    backfill_genai_text_slack_channel_id_activity,
+    backfill_genai_text_slack_user_id_activity,
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,
     backfill_slack_messages_slack_user_id_activity,
@@ -64,6 +66,8 @@ ACTIVITIES = [
     backfill_teams_from_messages_activity,
     delete_slack_message_duplicates_activity,
     upsert_slack_user_creates_activity,
+    backfill_genai_text_slack_user_id_activity,
+    backfill_genai_text_slack_channel_id_activity,
 ]
 
 

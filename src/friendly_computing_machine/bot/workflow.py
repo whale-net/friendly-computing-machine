@@ -13,6 +13,8 @@ from friendly_computing_machine.bot.activity import (
     get_slack_channel_context,
 )
 from friendly_computing_machine.db.job_activity import (
+    backfill_genai_text_slack_channel_id_activity,
+    backfill_genai_text_slack_user_id_activity,
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,
     backfill_slack_messages_slack_user_id_activity,
@@ -141,7 +143,22 @@ class SlackMessageQODWorkflow(AbstractScheduleWorkflow):
         )
         logger.info("results %s", results)
 
-        return results
+        # execute genai tasks after slack tasks because they are dependent on the ids being updated
+        genai_user_id = workflow.execute_activity(
+            backfill_genai_text_slack_user_id_activity,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+        genai_channel_id = workflow.execute_activity(
+            backfill_genai_text_slack_channel_id_activity,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+        genai_results = await asyncio.gather(
+            genai_user_id,
+            genai_channel_id,
+        )
+        logger.info("genai results %s", genai_results)
+
+        return results, genai_results
 
 
 class SlackUserInfoWorkflowParams:
