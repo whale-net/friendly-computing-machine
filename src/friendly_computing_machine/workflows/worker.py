@@ -18,7 +18,10 @@ from friendly_computing_machine.workflows.sample import (
     SayHello,
     build_hello_prompt,
 )
-from friendly_computing_machine.workflows.util import get_temporal_client_async
+from friendly_computing_machine.workflows.util import (
+    get_temporal_client_async,
+    get_temporal_queue_name,
+)
 
 
 WORKFLOWS = [SayHello, SlackConextGeminiWorkflow]
@@ -32,7 +35,7 @@ ACTIVITIES = [
 ]
 
 
-async def run_worker():
+async def run_worker(app_env: str):
     # Create client connected to server at the given address
     # TODO - use common function
     client = await get_temporal_client_async()
@@ -47,7 +50,7 @@ async def run_worker():
         )
         worker = Worker(
             client,
-            task_queue="my-task-queue",
+            task_queue=get_temporal_queue_name("main"),
             workflows=WORKFLOWS,
             activities=ACTIVITIES,
             activity_executor=activity_executor,

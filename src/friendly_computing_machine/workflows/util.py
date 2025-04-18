@@ -3,21 +3,29 @@ from temporalio.client import Client
 from typing import Sequence, Any, Optional, Union
 from temporalio.contrib.pydantic import pydantic_data_converter
 
-__GLOBAL = {
-    "temporal_host": None,
-}
+
+class __GlobalConfig:
+    temporal_host: str = None
+    queue_prefix: str = None
 
 
-def init_temporal(host: str):
-    if __GLOBAL["temporal_host"] is not None:
+def init_temporal(host: str, app_env: str):
+    if __GlobalConfig.temporal_host is not None:
         raise RuntimeError("temporal host already set")
-    __GLOBAL["temporal_host"] = host
+    __GlobalConfig.temporal_host = host
+    __GlobalConfig.queue_prefix = f"fcm-{app_env}-"
+
+
+def get_temporal_queue_name(name: str) -> str:
+    if __GlobalConfig.queue_prefix is None:
+        raise RuntimeError("temporal queue prefix not set")
+    return f"{__GlobalConfig.queue_prefix}{name}"
 
 
 def get_temporal_host() -> str:
-    if __GLOBAL["temporal_host"] is None:
+    if __GlobalConfig.temporal_host is None:
         raise RuntimeError("temporal host not set")
-    return __GLOBAL["temporal_host"]
+    return __GlobalConfig.temporal_host
 
 
 async def get_temporal_client_async():

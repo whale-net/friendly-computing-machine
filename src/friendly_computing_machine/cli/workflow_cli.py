@@ -21,6 +21,11 @@ from friendly_computing_machine.cli.context.temporal import (
     setup_temporal,
 )
 from friendly_computing_machine.cli.context.log import setup_logging
+from friendly_computing_machine.cli.context.app_env import (
+    setup_app_env,
+    T_app_env,
+    FILENAME as APP_ENV_FILENAME,
+)
 from friendly_computing_machine.workflows.worker import run_worker
 
 logger = logging.getLogger(__name__)
@@ -36,11 +41,13 @@ def callback(
     # slack_bot_token: Annotated[str, typer.Option(envvar="SLACK_BOT_TOKEN")],
     # slack_app_token: T_slack_app_token,
     temporal_host: T_temporal_host,
+    app_env: T_app_env,
 ):
     logger.debug("CLI callback starting")
     setup_logging(ctx)
     # setup_slack(ctx, slack_app_token)
-    setup_temporal(ctx, temporal_host)
+    setup_app_env(ctx, app_env)
+    setup_temporal(ctx, temporal_host, app_env)
     logger.debug("CLI callback complete")
 
 
@@ -67,7 +74,7 @@ def cli_run(
 
     logger.info("starting temporal worker")
     # TODO - pass down context
-    asyncio.run(run_worker())
+    asyncio.run(run_worker(app_env=ctx.obj[APP_ENV_FILENAME]["app_env"]))
 
 
 @app.command("test")

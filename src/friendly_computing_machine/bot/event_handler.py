@@ -17,7 +17,10 @@ from friendly_computing_machine.db.dal import (
     insert_slack_command,
 )
 from friendly_computing_machine.models.genai import GenAITextCreate
-from friendly_computing_machine.workflows.util import execute_workflow
+from friendly_computing_machine.workflows.util import (
+    execute_workflow,
+    get_temporal_queue_name,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -99,7 +102,8 @@ def handle_whale_ai_command(ack, say, command):
             SlackConextGeminiWorkflow.run,
             SlackConextGeminiWorkflowParams(channel_id, text),
             id=f"test_id-command-wai-{channel_id}-{datetime.datetime.now()}",
-            task_queue="my-task-queue",
+            # TODO - proper task queue differentation at some point
+            task_queue=get_temporal_queue_name("main"),
         )
 
         if ai_response is None:
