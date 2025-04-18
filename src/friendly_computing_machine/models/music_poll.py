@@ -1,7 +1,7 @@
 import datetime
 
+from sqlalchemy import Column, DateTime, func
 from sqlmodel import Field
-from sqlalchemy import func, Column, DateTime
 
 from friendly_computing_machine.models.base import Base
 

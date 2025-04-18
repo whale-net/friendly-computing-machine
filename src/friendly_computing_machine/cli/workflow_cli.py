@@ -3,29 +3,23 @@ import logging
 
 import typer
 
-from friendly_computing_machine.db.db import should_run_migration
+from friendly_computing_machine.cli.context.app_env import FILENAME as APP_ENV_FILENAME
+from friendly_computing_machine.cli.context.app_env import T_app_env, setup_app_env
+from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
+from friendly_computing_machine.cli.context.db import T_database_url, setup_db
 
 # from friendly_computing_machine.cli.context.slack import (
 #     setup_slack,
 #     T_slack_app_token,
 #     FILENAME as SLACK_FILENAME,
 # )
-from friendly_computing_machine.cli.context.gemini import setup_gemini, T_google_api_key
-from friendly_computing_machine.cli.context.db import (
-    setup_db,
-    T_database_url,
-    FILENAME as DB_FILENAME,
-)
+from friendly_computing_machine.cli.context.gemini import T_google_api_key, setup_gemini
+from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
 )
-from friendly_computing_machine.cli.context.log import setup_logging
-from friendly_computing_machine.cli.context.app_env import (
-    setup_app_env,
-    T_app_env,
-    FILENAME as APP_ENV_FILENAME,
-)
+from friendly_computing_machine.db.db import should_run_migration
 from friendly_computing_machine.workflows.worker import run_worker
 
 logger = logging.getLogger(__name__)

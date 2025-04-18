@@ -6,22 +6,21 @@ from friendly_computing_machine.bot.workflow import (
     SlackConextGeminiWorkflow,
     SlackConextGeminiWorkflowParams,
 )
-from friendly_computing_machine.db.dal import upsert_message
-from friendly_computing_machine.models.slack import (
-    SlackMessageCreate,
-    SlackCommandCreate,
-)
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
-    update_genai_text_response,
     insert_slack_command,
+    update_genai_text_response,
+    upsert_message,
 )
 from friendly_computing_machine.models.genai import GenAITextCreate
+from friendly_computing_machine.models.slack import (
+    SlackCommandCreate,
+    SlackMessageCreate,
+)
 from friendly_computing_machine.workflows.util import (
     execute_workflow,
     get_temporal_queue_name,
 )
-
 
 logger = logging.getLogger(__name__)
 

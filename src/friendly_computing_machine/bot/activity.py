@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+
 from temporalio import activity
 
 from friendly_computing_machine.db.dal import get_genai_texts_by_slack_channel
 from friendly_computing_machine.models.genai import GenAIText
 
 
+# TODO - put this in db.dal_activity (or just activity? or activity.dal and)
 @activity.defn
 async def get_slack_channel_context(slack_channel_slack_id: str) -> list[GenAIText]:
     texts = get_genai_texts_by_slack_channel(slack_channel_slack_id)

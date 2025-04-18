@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
-from friendly_computing_machine.db.dal import (
+from friendly_computing_machine.db.jobsql import (
     backfill_genai_text_slack_channel_id,
     backfill_genai_text_slack_user_id,
 )

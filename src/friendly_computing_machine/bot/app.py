@@ -13,8 +13,8 @@ from friendly_computing_machine.db.dal import (
     get_music_polls,
     get_slack_channel,
 )
-from friendly_computing_machine.models.slack import SlackChannel
 from friendly_computing_machine.models.music_poll import MusicPoll
+from friendly_computing_machine.models.slack import SlackChannel
 
 __GLOBALS = {}
 

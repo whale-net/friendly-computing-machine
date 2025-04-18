@@ -1,8 +1,16 @@
 import logging
 from typing import Optional
 
-from sqlmodel import text, Session
+from sqlmodel import Session, column, null, select, text, update
+
 from friendly_computing_machine.db.db import SessionManager
+from friendly_computing_machine.models.genai import GenAIText
+from friendly_computing_machine.models.slack import (
+    SlackChannel,
+    SlackMessage,
+    SlackTeam,
+    SlackUser,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -117,3 +125,99 @@ def delete_slack_message_duplicates():
             slack_ts_dupe_count,
             slack_id_dupe_count + slack_ts_dupe_count,
         )
+
+
+def backfill_slack_messages_slack_user_id():
+    with SessionManager() as session:
+        stmt = (
+            update(SlackMessage)
+            .where(column("slack_user_id").is_(null()))
+            .values(
+                slack_user_id=(
+                    select(SlackUser.id)
+                    .where(SlackUser.slack_id == SlackMessage.slack_user_slack_id)
+                    .limit(1)
+                    .scalar_subquery()
+                )
+            )
+        )
+        session.exec(stmt)
+        session.commit()
+        # not done - slack_parent_user_id
+        logger.info("backfill_slack_messages_slack_user_id complete")
+
+
+def backfill_slack_messages_slack_channel_id():
+    with SessionManager() as session:
+        stmt = (
+            update(SlackMessage)
+            .where(column("slack_channel_id").is_(null()))
+            .values(
+                slack_channel_id=(
+                    select(SlackChannel.id)
+                    .where(SlackChannel.slack_id == SlackMessage.slack_channel_slack_id)
+                    .limit(1)
+                    .scalar_subquery()
+                )
+            )
+        )
+        session.exec(stmt)
+        session.commit()
+        logger.info("backfill_slack_messages_slack_channel_id complete")
+
+
+def backfill_slack_messages_slack_team_id():
+    with SessionManager() as session:
+        stmt = (
+            update(SlackMessage)
+            .where(column("slack_team_id").is_(null()))
+            .values(
+                slack_team_id=(
+                    select(SlackTeam.id)
+                    .where(SlackTeam.slack_id == SlackMessage.slack_team_slack_id)
+                    .limit(1)
+                    .scalar_subquery()
+                )
+            )
+        )
+        session.exec(stmt)
+        session.commit()
+        logger.info("backfill_slack_messages_slack_team_id complete")
+
+
+def backfill_genai_text_slack_channel_id(session: Optional[Session] = None):
+    with SessionManager(session) as session:
+        stmt = (
+            update(GenAIText)
+            .where(column("slack_channel_id").is_(null()))
+            .values(
+                slack_channel_id=(
+                    select(SlackChannel.id)
+                    .where(SlackChannel.slack_id == GenAIText.slack_channel_slack_id)
+                    .limit(1)
+                    .scalar_subquery()
+                )
+            )
+        )
+        session.exec(stmt)
+        session.commit()
+        logger.info("backfill_genai_text_slack_channel_id complete")
+
+
+def backfill_genai_text_slack_user_id(session: Optional[Session] = None):
+    with SessionManager(session) as session:
+        stmt = (
+            update(GenAIText)
+            .where(column("slack_user_id").is_(null()))
+            .values(
+                slack_user_id=(
+                    select(SlackUser.id)
+                    .where(SlackUser.slack_id == GenAIText.slack_user_slack_id)
+                    .limit(1)
+                    .scalar_subquery()
+                )
+            )
+        )
+        session.exec(stmt)
+        session.commit()
+        logger.info("backfill_genai_text_slack_user_id complete")

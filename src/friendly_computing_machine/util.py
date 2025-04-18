@@ -1,11 +1,10 @@
 import concurrent.futures
 import datetime
+import functools
 import logging
 import threading
-from typing import Optional
-
-import functools
 import warnings
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

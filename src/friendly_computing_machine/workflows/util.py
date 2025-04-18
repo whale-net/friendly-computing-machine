@@ -1,6 +1,7 @@
 import asyncio
+from typing import Any, Optional, Sequence, Union
+
 from temporalio.client import Client
-from typing import Sequence, Any, Optional, Union
 from temporalio.contrib.pydantic import pydantic_data_converter
 
 

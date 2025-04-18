@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from temporalio import activity, workflow
 
 # Import activity implementation safely

@@ -1,7 +1,7 @@
 from textwrap import dedent
 
-from temporalio import activity
 import google.generativeai as genai
+from temporalio import activity
 
 from friendly_computing_machine.models.genai import GenAIText
 

@@ -1,11 +1,9 @@
 import logging
 import os
-
-
 from typing import Annotated
 
-import typer
 import google.generativeai as genai
+import typer
 
 logger = logging.getLogger(__name__)
 FILENAME = os.path.basename(__file__)

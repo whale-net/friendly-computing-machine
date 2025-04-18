@@ -4,10 +4,10 @@ from datetime import timedelta
 from friendly_computing_machine.bot.app import get_slack_web_client
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask
 from friendly_computing_machine.db.dal import (
-    backfill_slack_messages_slack_user_id,
     get_user_teams_from_messages,
     upsert_slack_users,
 )
+from friendly_computing_machine.db.jobsql import backfill_slack_messages_slack_user_id
 from friendly_computing_machine.models.slack import SlackUserCreate
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
