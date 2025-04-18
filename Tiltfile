@@ -40,7 +40,8 @@ k8s_yaml(
             'env.otelCollector.traces.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
             'namespace={}'.format(namespace),
             'deployment.skip_migration_check=false',
-            'deployment.health.enabled=false'
+            'deployment.health.enabled=false',
+            'env.temporal.host=http://host.docker.internal:7233'
         ]
     )
 )

@@ -1,6 +1,6 @@
+import logging
 import socketserver
 import threading
-import logging
 
 logger = logging.getLogger(__name__)
 

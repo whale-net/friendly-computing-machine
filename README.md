@@ -18,6 +18,9 @@ run the bot (or whatever this currently is)
 ```
 uv run fcm
 ```
+```
+temporal server start-dev
+```
 
 ## logging / tracing / metrics
 
@@ -44,3 +47,5 @@ if you want to run opentelemetry auto instrumentation outside the tilt environme
 ```
 uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 ```
+
+See `https://github.com/whale-net/friendly-computing-machine/releases/tag/taskpool-last-stop` for the last commit that used the taskpool for most things. May be useful in the future.

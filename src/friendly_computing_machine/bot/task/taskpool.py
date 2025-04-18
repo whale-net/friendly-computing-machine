@@ -3,17 +3,12 @@ import time
 from datetime import timedelta
 
 from friendly_computing_machine.bot.task.abstracttask import AbstractTask, OneOffTask
-from friendly_computing_machine.bot.task.findchannels import ChannelUpdateTask
-from friendly_computing_machine.bot.task.findteams import FindTeams
-from friendly_computing_machine.bot.task.findusers import FindUsers
-from friendly_computing_machine.bot.task.genai import GenAISlackIDUpdateTask
 from friendly_computing_machine.bot.task.musicpoll import (
-    MusicPollPostPoll,
-    MusicPollInit,
     MusicPollArchiveMessages,
+    MusicPollInit,
+    MusicPollPostPoll,
     MusicPollProcessPoll,
 )
-from friendly_computing_machine.bot.task.slack_qod import SlackMessageDuplicateCleanup
 from friendly_computing_machine.db.dal import insert_task_instances
 from friendly_computing_machine.models.task import TaskInstanceStatus
 
@@ -97,15 +92,20 @@ def create_default_taskpool() -> TaskPool:
     # TODO - dependency structure of some sort
     # for now, just ordering corectly, and giving one off tasks priority
     tp = TaskPool()
-    tp.add_task(FindTeams())
-    tp.add_task(FindUsers())
+
+    # These are the remaining tasks that run in the task pool
+    # everything else is temporal
     tp.add_task(MusicPollPostPoll())
     tp.add_task(MusicPollInit())
-    tp.add_task(ChannelUpdateTask())
-    tp.add_task(GenAISlackIDUpdateTask())
     tp.add_task(MusicPollArchiveMessages())
-    tp.add_task(SlackMessageDuplicateCleanup())
     tp.add_task(MusicPollProcessPoll())
 
-    logger.info("default task pol created")
+    # migrated to temporal
+    # tp.add_task(SlackMessageDuplicateCleanup())
+    # tp.add_task(FindTeams())
+    # tp.add_task(FindUsers())
+    # tp.add_task(ChannelUpdateTask())
+    # tp.add_task(GenAISlackIDUpdateTask())
+
+    logger.info("default task pool created")
     return tp

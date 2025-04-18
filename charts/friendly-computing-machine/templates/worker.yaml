@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-worker-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: temporal-worker
+spec:
+  replicas: {{ .Values.deployment.temporal.replicas }} # Consider if worker replicas should be configured separately
+  selector:
+    matchLabels:
+      app: temporal-worker
+  template:
+    metadata:
+      namespace: {{ .Values.namespace }} # Assuming same namespace, adjust if needed
+      labels:
+        app: temporal-worker
+    spec:
+      containers:
+      - name: temporal-worker
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        resources: # Adjust resources based on worker needs
+          requests:
+            cpu: {{ .Values.deployment.temporal.resources.requests.cpu }}
+            memory: {{ .Values.deployment.temporal.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.deployment.temporal.resources.limits.cpu }}
+            memory: {{ .Values.deployment.temporal.resources.limits.memory }}
+        # No ports needed for the worker
+        # No health checks needed for the worker
+        args:
+          - workflow
+          - run
+        env:
+          - name: SLACK_BOT_TOKEN
+            value: {{ .Values.env.slack.botToken }}
+          - name: SLACK_APP_TOKEN
+            value: {{ .Values.env.slack.appToken }}
+          - name: DATABASE_URL
+            value: {{ .Values.env.db.url }}
+          - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+            value: {{ .Values.env.otelCollector.logs.endpoint }}
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: {{ .Values.env.otelCollector.traces.endpoint }}
+  {{/*          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT*/}}
+  {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
+          - name: OTEL_RESOURCE_ATTRIBUTES
+            value: "deployment-name=temporal-worker{{- if .Values.deployment.name }}-{{ .Values.deployment.name }}{{- end }}" # Adjusted attribute
+          - name: GOOGLE_API_KEY
+            value: {{ .Values.env.google.api_key }}
+          - name: TEMPORAL_HOST
+            value: {{ .Values.env.temporal.host }}
+          - name: APP_ENV
+            value: {{ .Values.env.app_env }}
+          # Add any Temporal-specific environment variables here
+          # e.g., TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE

@@ -1,9 +1,8 @@
 import logging
 import os
-
 from typing import Annotated
-import typer
 
+import typer
 
 # TODO what is ... doing? can I name it?
 T_slack_app_token = Annotated[str, typer.Option(..., envvar="SLACK_APP_TOKEN")]

@@ -12,7 +12,18 @@ deployment:
   health:
     enabled: true
 
+  temporal:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
 env:
+  app_env: dev
   db:
     url: <postgresql+psycopg2://user:password@host:port/database>
   slack:
@@ -25,5 +36,7 @@ env:
       endpoint: <logs_endpoint>
     traces:
       endpoint: <traces_endpoint>
+  temporal:
+    host: <temporal_host>
 #    metrics:
 #      endpoint: <metrics_endpoint>

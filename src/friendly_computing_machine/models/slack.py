@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
 from sqlmodel import Field
 
@@ -127,4 +127,39 @@ class SlackChannel(SlackChannelBase, table=True):
 
 
 class SlackChannelCreate(SlackChannelBase):
+    pass
+
+
+# ------
+# commands
+class SlackCommandBase(Base):
+    caller_slack_user_id: str = Field(index=True)
+    command_base: str
+    command_text: str
+    slack_channel_slack_id: Optional[str]
+    created_at: datetime.datetime
+
+
+class SlackCommand(SlackCommandBase, table=True):
+    id: int = Field(default=None, nullable=False, primary_key=True)
+    # TODO - add slack_channel_id
+    slack_channel_id: Optional[int] = Field(
+        nullable=True, foreign_key="slackchannel.id", index=True
+    )
+    slack_user_id: Optional[int] = Field(
+        nullable=True, foreign_key="slackuser.id", index=True
+    )
+
+    @classmethod
+    def from_slack_command_create(cls, create: "SlackCommandCreate") -> "SlackCommand":
+        return cls(
+            caller_slack_user_id=create.caller_slack_user_id,
+            command_base=create.command_base,
+            command_text=create.command_text,
+            slack_channel_slack_id=create.slack_channel_slack_id,
+            created_at=create.created_at,
+        )
+
+
+class SlackCommandCreate(SlackCommandBase):
     pass

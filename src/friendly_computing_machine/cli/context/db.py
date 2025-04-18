@@ -1,19 +1,14 @@
 import logging
 import os
-
 from dataclasses import dataclass
-
 from typing import Annotated
-import typer
 
 import alembic
-
-
+import typer
 from sqlalchemy import Engine
 from sqlmodel import create_engine
 
 from friendly_computing_machine.db.db import init_engine
-
 
 logger = logging.getLogger(__name__)
 FILENAME = os.path.basename(__file__)

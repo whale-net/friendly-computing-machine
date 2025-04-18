@@ -1,9 +1,10 @@
 import concurrent.futures
 import datetime
+import functools
 import logging
 import threading
+import warnings
 from typing import Optional
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,3 +27,16 @@ class NamedThreadPool(concurrent.futures.ThreadPoolExecutor):
             fn(*args, **kwargs)
 
         return super().submit(exec_and_rename_thread)
+
+
+def deprecated(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            f"{func.__name__} is deprecated and will be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper

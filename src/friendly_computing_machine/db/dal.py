@@ -1,30 +1,12 @@
-import logging
 import datetime
+import logging
 from typing import Optional
 
-from sqlmodel import Session, and_, column, null, select, update, or_, exists, not_
+from sqlmodel import Session, and_, exists, not_, null, or_, select
 
 from friendly_computing_machine.db.db import SessionManager
-from friendly_computing_machine.models.slack import (
-    SlackChannel,
-    SlackMessage,
-    SlackMessageCreate,
-    SlackTeam,
-    SlackTeamCreate,
-    SlackUser,
-    SlackUserCreate,
-)
-from friendly_computing_machine.models.genai import (
-    GenAIText,
-    GenAITextCreate,
-)
-from friendly_computing_machine.models.task import (
-    Task,
-    TaskCreate,
-    TaskInstance,
-    TaskInstanceCreate,
-    TaskInstanceStatus,
-)
+from friendly_computing_machine.db.util import db_update
+from friendly_computing_machine.models.genai import GenAIText, GenAITextCreate
 from friendly_computing_machine.models.music_poll import (
     MusicPoll,
     MusicPollCreate,
@@ -33,7 +15,24 @@ from friendly_computing_machine.models.music_poll import (
     MusicPollResponse,
     MusicPollResponseCreate,
 )
-from friendly_computing_machine.db.util import db_update
+from friendly_computing_machine.models.slack import (
+    SlackChannel,
+    SlackCommand,
+    SlackCommandCreate,
+    SlackMessage,
+    SlackMessageCreate,
+    SlackTeam,
+    SlackTeamCreate,
+    SlackUser,
+    SlackUserCreate,
+)
+from friendly_computing_machine.models.task import (
+    Task,
+    TaskCreate,
+    TaskInstance,
+    TaskInstanceCreate,
+    TaskInstanceStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -239,14 +238,14 @@ def upsert_slack_users(slack_users: list[SlackUserCreate]) -> list[SlackUser]:
         slack_team_id_map = get_slack_team_id_map(session)
         for slack_user in slack_users:
             out_users.append(
-                upsert_slack_user(
+                upsert_slack_users_activity(
                     slack_user, session=session, slack_team_id_map=slack_team_id_map
                 )
             )
     return out_users
 
 
-def upsert_slack_user(
+def upsert_slack_users_activity(
     slack_user: SlackUserCreate,
     session: Optional[Session] = None,
     slack_team_id_map: Optional[dict[str, int]] = None,
@@ -299,73 +298,6 @@ def get_last_successful_task_instance(task: Task) -> TaskInstance | None:
             .limit(1)
         )
         return session.exec(stmt).one_or_none()
-
-
-def backfill_slack_messages_slack_user_id():
-    with SessionManager() as session:
-        stmt = (
-            update(SlackMessage)
-            .where(column("slack_user_id").is_(null()))
-            .values(
-                slack_user_id=(
-                    select(SlackUser.id)
-                    # no index, but should be fine due to low table size
-                    .where(SlackUser.slack_id == SlackMessage.slack_user_slack_id)
-                    .limit(1)
-                    .scalar_subquery()
-                )
-            )
-        )
-        session.exec(stmt)
-        session.commit()
-        # not done - slack_parent_user_id
-
-        # just want some logs for now. not going to retrofit everything in this file for logging
-        logger.info("backfill_slack_messages_slack_user_id complete")
-
-
-def backfill_slack_messages_slack_channel_id():
-    with SessionManager() as session:
-        stmt = (
-            update(SlackMessage)
-            .where(column("slack_channel_id").is_(null()))
-            .values(
-                slack_channel_id=(
-                    select(SlackChannel.id)
-                    # no index, but should be fine due to low table size
-                    .where(SlackChannel.slack_id == SlackMessage.slack_channel_slack_id)
-                    .limit(1)
-                    .scalar_subquery()
-                )
-            )
-        )
-        session.exec(stmt)
-        session.commit()
-
-        # just want some logs for now. not going to retrofit everything in this file for logging
-        logger.info("backfill_slack_messages_slack_channel_id complete")
-
-
-def backfill_slack_messages_slack_team_id():
-    with SessionManager() as session:
-        stmt = (
-            update(SlackMessage)
-            .where(column("slack_team_id").is_(null()))
-            .values(
-                slack_team_id=(
-                    select(SlackTeam.id)
-                    # no index, but should be fine due to low table size
-                    .where(SlackTeam.slack_id == SlackMessage.slack_team_slack_id)
-                    .limit(1)
-                    .scalar_subquery()
-                )
-            )
-        )
-        session.exec(stmt)
-        session.commit()
-
-        # just want some logs for now. not going to retrofit everything in this file for logging
-        logger.info("backfill_slack_messages_slack_team_id complete")
 
 
 def insert_genai_text(
@@ -426,56 +358,6 @@ def update_genai_text_response(
             session.commit()
             session.refresh(genai_text)
         return genai_text
-
-
-def backfill_genai_text_slack_channel_id(session: Optional[Session] = None):
-    """
-    Backfills the `slack_channel_id` for existing GenAIText entries based on
-    the `slack_channel_slack_id` and the SlackChannel table.
-    """
-    with SessionManager(session) as session:
-        stmt = (
-            update(GenAIText)
-            .where(
-                column("slack_channel_id").is_(null())
-            )  # Correctly references the column
-            .values(
-                slack_channel_id=(
-                    select(SlackChannel.id)
-                    .where(SlackChannel.slack_id == GenAIText.slack_channel_slack_id)
-                    .limit(1)
-                    .scalar_subquery()
-                )
-            )
-        )
-        session.exec(stmt)
-        session.commit()
-        logger.info("backfill_genai_text_slack_channel_id complete")
-
-
-def backfill_genai_text_slack_user_id(session: Optional[Session] = None):
-    """
-    Backfills the `slack_user_id` for existing GenAIText entries based on
-    the `slack_user_slack_id` and the SlackUser table.
-    """
-    with SessionManager(session) as session:
-        stmt = (
-            update(GenAIText)
-            .where(
-                column("slack_user_id").is_(null())
-            )  # Correctly references the column
-            .values(
-                slack_user_id=(
-                    select(SlackUser.id)
-                    .where(SlackUser.slack_id == GenAIText.slack_user_slack_id)
-                    .limit(1)
-                    .scalar_subquery()
-                )
-            )
-        )
-        session.exec(stmt)
-        session.commit()
-        logger.info("backfill_genai_text_slack_user_id complete")
 
 
 def insert_music_poll(
@@ -718,3 +600,41 @@ def find_poll_instance_messages(poll_instance: MusicPollInstance) -> list[SlackM
             )
         )
         return list(session.exec(stmt).all())
+
+
+def insert_slack_command(
+    slack_command: SlackCommandCreate, session: Optional[Session] = None
+) -> SlackCommand:
+    with SessionManager(session) as session:
+        db_slack_command = SlackCommand.from_slack_command_create(slack_command)
+        session.add(db_slack_command)
+        session.commit()
+        session.refresh(db_slack_command)
+        return db_slack_command
+
+
+def get_slack_command_by_id(
+    slack_command_id: int, session: Optional[Session] = None
+) -> SlackCommand | None:
+    with SessionManager(session) as session:
+        return session.get(SlackCommand, slack_command_id)
+
+
+def update_slack_command(
+    slack_command_id: int, updates: dict, session: Optional[Session] = None
+) -> SlackCommand | None:
+    with SessionManager(session) as session:
+        slack_command = db_update(session, SlackCommand, slack_command_id, updates)
+    return slack_command
+
+
+# def delete_slack_command(
+#     slack_command_id: int, session: Optional[Session] = None
+# ) -> bool:
+#     with SessionManager(session) as session:
+#         slack_command = session.get(SlackCommand, slack_command_id)
+#         if slack_command:
+#             session.delete(slack_command)
+#             session.commit()
+#             return True
+#         return False
