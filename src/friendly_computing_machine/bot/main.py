@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 # NOTE: keep this here to avoid circular import
-def run_slack_bot(
-    app_token: str, temporal_host: str, app_env: str
-):  # ), bot_token: str):
+def run_slack_bot(app_token: str):  # ), bot_token: str):
     # for now, config is one time, requiring restart to reconfigure
     # also uses global, unsure hwo to pass additional context into slack event handler without it
     logger.info("starting slack bot")

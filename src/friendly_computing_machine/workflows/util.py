@@ -6,8 +6,8 @@ from temporalio.contrib.pydantic import pydantic_data_converter
 
 
 class __GlobalConfig:
-    temporal_host: str = None
-    queue_prefix: str = None
+    temporal_host: Optional[str] = None
+    queue_prefix: Optional[str] = None
 
 
 def init_temporal(host: str, app_env: str):

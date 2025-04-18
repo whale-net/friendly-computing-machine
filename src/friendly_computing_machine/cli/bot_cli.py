@@ -4,7 +4,6 @@ import typer
 
 from friendly_computing_machine.bot.main import run_slack_bot
 from friendly_computing_machine.bot.util import slack_bot_who_am_i, slack_send_message
-from friendly_computing_machine.cli.context.app_env import FILENAME as APP_ENV_FILENAME
 from friendly_computing_machine.cli.context.app_env import T_app_env
 from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
@@ -12,9 +11,6 @@ from friendly_computing_machine.cli.context.gemini import T_google_api_key, setu
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
 from friendly_computing_machine.cli.context.slack import T_slack_app_token, setup_slack
-from friendly_computing_machine.cli.context.temporal import (
-    FILENAME as TEMPORAL_FILENAME,
-)
 from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
@@ -65,8 +61,6 @@ def cli_run(
     logger.info("starting bot")
     run_slack_bot(
         app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
-        temporal_host=ctx.obj[TEMPORAL_FILENAME].host,
-        app_env=ctx.obj[APP_ENV_FILENAME]["app_env"],
     )
 
 

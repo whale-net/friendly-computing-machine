@@ -124,8 +124,7 @@ class AbstractScheduleWorkflow(ABC):
             await handle.update(
                 self.get_schedule_update,
             )
-        except:
-            raise
+
         logger.info(
             "schedule upserted: %s",
             schedule_id,
