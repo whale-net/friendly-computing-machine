@@ -8,6 +8,7 @@ from temporalio.client import ScheduleIntervalSpec, ScheduleSpec
 
 from friendly_computing_machine.bot.activity import (
     GenerateContextPromptParams,
+    backfill_slack_user_info_activity,
     generate_context_prompt,
     get_slack_channel_context,
 )
@@ -15,6 +16,9 @@ from friendly_computing_machine.db.job_activity import (
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,
     backfill_slack_messages_slack_user_id_activity,
+    backfill_teams_from_messages_activity,
+    delete_slack_message_duplicates_activity,
+    upsert_slack_user_creates_activity,
 )
 from friendly_computing_machine.gemini.activity import (
     generate_gemini_response,
@@ -26,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SlackConextGeminiWorkflowParams:
+class SlackContextGeminiWorkflowParams:
     """
     Parameters for the SlackConextGeminiWorkflow.
     """
@@ -45,7 +49,7 @@ class SlackConextGeminiWorkflow:
     """
 
     @workflow.run
-    async def run(self, params: SlackConextGeminiWorkflowParams):
+    async def run(self, params: SlackContextGeminiWorkflowParams):
         slack_prompts = await workflow.execute_activity(
             get_slack_channel_context,
             params.slack_channel_slack_id,
@@ -102,9 +106,14 @@ class SlackMessageQODWorkflow(AbstractScheduleWorkflow):
 
     @workflow.run
     async def run(
-        self, params: SlackConextGeminiWorkflowParams = SlackMessageQODWorkflowParams()
+        self, params: SlackContextGeminiWorkflowParams = SlackMessageQODWorkflowParams()
     ):
         logger.info("params %s", params)
+
+        await workflow.start_activity(
+            backfill_teams_from_messages_activity,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
 
         channel_activity = workflow.start_activity(
             backfill_slack_messages_slack_channel_id_activity,
@@ -118,7 +127,59 @@ class SlackMessageQODWorkflow(AbstractScheduleWorkflow):
             backfill_slack_messages_slack_team_id_activity,
             start_to_close_timeout=timedelta(seconds=10),
         )
-        results = await asyncio.gather(channel_activity, user_activity, team_activity)
+        delete_activity = workflow.start_activity(
+            delete_slack_message_duplicates_activity,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
+        logger.info("waiting for activities to finish")
+        results = await asyncio.gather(
+            channel_activity,
+            user_activity,
+            team_activity,
+            delete_activity,
+        )
         logger.info("results %s", results)
 
         return results
+
+
+class SlackUserInfoWorkflowParams:
+    """
+    Parameters for the SlackUserInfoWorkflow.
+    """
+
+    pass
+
+
+@workflow.defn
+class SlackUserInfoWorkflow(AbstractScheduleWorkflow):
+    def get_schedule_spec(self) -> ScheduleSpec:
+        # 30 minutes should be enough time for this job
+        # don't want to spam slack API, but also don't want to wait too long on updates
+        return ScheduleSpec(
+            intervals=[ScheduleIntervalSpec(every=timedelta(minutes=30))],
+        )
+
+    @workflow.run
+    async def run(
+        self, params: SlackUserInfoWorkflowParams = SlackUserInfoWorkflowParams()
+    ):
+        logger.debug("params %s", params)
+        # TODO - storing creates here is less than ideal as it will store them in temporal
+        # these should be stored elsewhere and retrieved as needed
+        creates = await workflow.execute_activity(
+            backfill_slack_user_info_activity,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        await workflow.execute_activity(
+            upsert_slack_user_creates_activity,
+            creates,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        await workflow.execute_activity(
+            backfill_slack_messages_slack_user_id_activity,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
+        return "OK"

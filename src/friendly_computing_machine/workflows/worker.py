@@ -1,7 +1,7 @@
+import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from temporalio.client import ScheduleAlreadyRunningError
 from temporalio.worker import Worker
 from temporalio.worker.workflow_sandbox import (
     SandboxedWorkflowRunner,
@@ -9,22 +9,28 @@ from temporalio.worker.workflow_sandbox import (
 )
 
 from friendly_computing_machine.bot.activity import (
+    backfill_slack_user_info_activity,
     generate_context_prompt,
     get_slack_channel_context,
 )
 from friendly_computing_machine.bot.workflow import (
     SlackConextGeminiWorkflow,
     SlackMessageQODWorkflow,
+    SlackUserInfoWorkflow,
 )
 from friendly_computing_machine.db.job_activity import (
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,
     backfill_slack_messages_slack_user_id_activity,
+    backfill_teams_from_messages_activity,
+    delete_slack_message_duplicates_activity,
+    upsert_slack_user_creates_activity,
 )
 from friendly_computing_machine.gemini.activity import (
     generate_gemini_response,
     generate_summary,
 )
+from friendly_computing_machine.workflows.base import AbstractScheduleWorkflow
 from friendly_computing_machine.workflows.sample import (
     SayHello,
     build_hello_prompt,
@@ -38,7 +44,12 @@ from friendly_computing_machine.workflows.util import (
 logger = logging.getLogger(__name__)
 
 
-WORKFLOWS = [SayHello, SlackConextGeminiWorkflow, SlackMessageQODWorkflow]
+WORKFLOWS = [
+    SayHello,
+    SlackConextGeminiWorkflow,
+    SlackMessageQODWorkflow,
+    SlackUserInfoWorkflow,
+]
 ACTIVITIES = [
     generate_context_prompt,
     get_slack_channel_context,
@@ -49,6 +60,10 @@ ACTIVITIES = [
     backfill_slack_messages_slack_user_id_activity,
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,
+    backfill_slack_user_info_activity,
+    backfill_teams_from_messages_activity,
+    delete_slack_message_duplicates_activity,
+    upsert_slack_user_creates_activity,
 ]
 
 
@@ -56,20 +71,14 @@ async def run_worker(app_env: str):
     # Create client connected to server at the given address
     client = await get_temporal_client_async()
 
-    # create schedules
-    test_wf = SlackMessageQODWorkflow()
-    try:
-        await client.create_schedule(
-            # Hardcoded for now, but should be dynamic from workflow list
-            # additionally, it is weird to instantiate the workflow here
-            # but it is the only way to get the schedule
-            # still not familiar with the lifecycle of the workflow member vars
-            # in this temporal land
-            test_wf.get_schedule_id(app_env),
-            test_wf.get_schedule(app_env),
-        )
-    except ScheduleAlreadyRunningError as e:
-        logger.info("%s - schedule already running", e)
+    # create schedules for schedule workflows
+    futures = []
+    for wf in WORKFLOWS:
+        if not issubclass(wf, AbstractScheduleWorkflow):
+            continue
+        futures.append(wf().async_upsert_schedule(client, app_env))
+    asyncio.gather(*futures)
+    logger.info("all schedules created")
 
     # Run the worker
     with ThreadPoolExecutor(max_workers=100) as activity_executor:

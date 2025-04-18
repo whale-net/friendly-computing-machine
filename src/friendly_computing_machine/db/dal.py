@@ -238,14 +238,14 @@ def upsert_slack_users(slack_users: list[SlackUserCreate]) -> list[SlackUser]:
         slack_team_id_map = get_slack_team_id_map(session)
         for slack_user in slack_users:
             out_users.append(
-                upsert_slack_user(
+                upsert_slack_users_activity(
                     slack_user, session=session, slack_team_id_map=slack_team_id_map
                 )
             )
     return out_users
 
 
-def upsert_slack_user(
+def upsert_slack_users_activity(
     slack_user: SlackUserCreate,
     session: Optional[Session] = None,
     slack_team_id_map: Optional[dict[str, int]] = None,

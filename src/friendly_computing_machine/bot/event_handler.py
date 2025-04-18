@@ -4,7 +4,7 @@ import logging
 from friendly_computing_machine.bot.app import app, get_bot_config
 from friendly_computing_machine.bot.workflow import (
     SlackConextGeminiWorkflow,
-    SlackConextGeminiWorkflowParams,
+    SlackContextGeminiWorkflowParams,
 )
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
@@ -99,7 +99,7 @@ def handle_whale_ai_command(ack, say, command):
         # )
         ai_response = execute_workflow(
             SlackConextGeminiWorkflow.run,
-            SlackConextGeminiWorkflowParams(channel_id, text),
+            SlackContextGeminiWorkflowParams(channel_id, text),
             id=f"test_id-command-wai-{channel_id}-{datetime.datetime.now()}",
             # TODO - proper task queue differentation at some point
             task_queue=get_temporal_queue_name("main"),
