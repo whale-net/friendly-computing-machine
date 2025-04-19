@@ -7,7 +7,7 @@ import typer
 
 from friendly_computing_machine.cli.context.app_env import FILENAME as APP_ENV_FILENAME
 from friendly_computing_machine.cli.context.app_env import T_app_env, setup_app_env
-from friendly_computing_machine.workflows.util import init_temporal
+from friendly_computing_machine.temporal.util import init_temporal
 
 logger = logging.getLogger(__name__)
 FILENAME = os.path.basename(__file__)

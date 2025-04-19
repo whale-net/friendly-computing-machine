@@ -6,13 +6,12 @@ from datetime import timedelta
 from temporalio import workflow
 from temporalio.client import ScheduleIntervalSpec, ScheduleSpec
 
-from friendly_computing_machine.bot.activity import (
-    GenerateContextPromptParams,
-    backfill_slack_user_info_activity,
-    generate_context_prompt,
-    get_slack_channel_context,
+from friendly_computing_machine.temporal.ai.activity import (
+    generate_gemini_response,
+    generate_summary,
 )
-from friendly_computing_machine.db.job_activity import (
+from friendly_computing_machine.temporal.base import AbstractScheduleWorkflow
+from friendly_computing_machine.temporal.db.job_activity import (
     backfill_genai_text_slack_channel_id_activity,
     backfill_genai_text_slack_user_id_activity,
     backfill_slack_messages_slack_channel_id_activity,
@@ -22,11 +21,12 @@ from friendly_computing_machine.db.job_activity import (
     delete_slack_message_duplicates_activity,
     upsert_slack_user_creates_activity,
 )
-from friendly_computing_machine.gemini.activity import (
-    generate_gemini_response,
-    generate_summary,
+from friendly_computing_machine.temporal.slack.activity import (
+    GenerateContextPromptParams,
+    backfill_slack_user_info_activity,
+    generate_context_prompt,
+    get_slack_channel_context,
 )
-from friendly_computing_machine.workflows.base import AbstractScheduleWorkflow
 
 logger = logging.getLogger(__name__)
 

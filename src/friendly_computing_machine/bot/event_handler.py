@@ -2,10 +2,6 @@ import datetime
 import logging
 
 from friendly_computing_machine.bot.app import app, get_bot_config
-from friendly_computing_machine.bot.workflow import (
-    SlackConextGeminiWorkflow,
-    SlackContextGeminiWorkflowParams,
-)
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
     insert_slack_command,
@@ -17,7 +13,11 @@ from friendly_computing_machine.models.slack import (
     SlackCommandCreate,
     SlackMessageCreate,
 )
-from friendly_computing_machine.workflows.util import (
+from friendly_computing_machine.temporal.slack.workflow import (
+    SlackConextGeminiWorkflow,
+    SlackContextGeminiWorkflowParams,
+)
+from friendly_computing_machine.temporal.util import (
     execute_workflow,
     get_temporal_queue_name,
 )
