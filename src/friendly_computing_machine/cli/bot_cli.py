@@ -15,7 +15,7 @@ from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
 )
-from friendly_computing_machine.db.db import should_run_migration
+from friendly_computing_machine.db.util import should_run_migration
 
 logger = logging.getLogger(__name__)
 

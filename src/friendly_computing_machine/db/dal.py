@@ -4,8 +4,7 @@ from typing import Optional
 
 from sqlmodel import Session, and_, exists, not_, null, or_, select
 
-from friendly_computing_machine.db.db import SessionManager
-from friendly_computing_machine.db.util import db_update
+from friendly_computing_machine.db.util import SessionManager, db_update
 from friendly_computing_machine.models.genai import GenAIText, GenAITextCreate
 from friendly_computing_machine.models.music_poll import (
     MusicPoll,

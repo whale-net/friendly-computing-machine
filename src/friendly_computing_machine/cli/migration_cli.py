@@ -6,7 +6,7 @@ import typer
 from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
 from friendly_computing_machine.cli.context.log import setup_logging
-from friendly_computing_machine.db.db import (
+from friendly_computing_machine.db.util import (
     create_migration,
     run_downgrade,
     run_migration,
