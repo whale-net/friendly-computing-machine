@@ -26,7 +26,7 @@ from friendly_computing_machine.gemini.activity import (
     generate_gemini_response,
     generate_summary,
 )
-from friendly_computing_machine.workflows.base import AbstractScheduleWorkflow
+from friendly_computing_machine.temporal.base import AbstractScheduleWorkflow
 
 logger = logging.getLogger(__name__)
 

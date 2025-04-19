@@ -17,7 +17,7 @@ from friendly_computing_machine.models.slack import (
     SlackCommandCreate,
     SlackMessageCreate,
 )
-from friendly_computing_machine.workflows.util import (
+from friendly_computing_machine.temporal.util import (
     execute_workflow,
     get_temporal_queue_name,
 )

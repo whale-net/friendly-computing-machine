@@ -32,13 +32,13 @@ from friendly_computing_machine.gemini.activity import (
     generate_gemini_response,
     generate_summary,
 )
-from friendly_computing_machine.workflows.base import AbstractScheduleWorkflow
-from friendly_computing_machine.workflows.sample import (
+from friendly_computing_machine.temporal.base import AbstractScheduleWorkflow
+from friendly_computing_machine.temporal.sample import (
     SayHello,
     build_hello_prompt,
     say_hello,
 )
-from friendly_computing_machine.workflows.util import (
+from friendly_computing_machine.temporal.util import (
     get_temporal_client_async,
     get_temporal_queue_name,
 )
