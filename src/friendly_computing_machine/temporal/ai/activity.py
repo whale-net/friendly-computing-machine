@@ -59,9 +59,7 @@ async def get_vibe(prompt: str) -> str:
     Generate a vibe using the Gemini AI model.
     """
     prompt = dedent(f"""
-        Plesae figure out the vibe of this prompt:
-        {prompt}
-
+        Please figure out the vibe of this prompt:
 
         Please return a one sentence summary of the vibe. Please be as concise as possible.
         Please do not include any other text or formatting. Just the vibe.
