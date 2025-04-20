@@ -1,4 +1,5 @@
 import logging
+import random
 from dataclasses import dataclass
 
 from temporalio import activity
@@ -38,6 +39,9 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     Generate a context prompt based on previous messages and the current prompt.
     """
 
+    respond_poorly = random.random() < 0.1
+    logger.info(f"respond poorly: {respond_poorly}")
+
     context_prompt = (
         "Three things to consider when generating a response:\n"
         "\n"
@@ -47,6 +51,8 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
         "2. Here is the the vibe of the prompt you are about to receive: "
         f"{params.vibe}\n"
         "Respond opposite to this vibe in your final response\n"
+        if respond_poorly
+        else ""
         "\n"
         "3. Here is the new prompt you will need to respond to. \n"
         "Consider the previous topics when responding, but don't make mention of them. "
