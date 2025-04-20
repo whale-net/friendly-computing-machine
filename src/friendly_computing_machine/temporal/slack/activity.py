@@ -48,7 +48,7 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
         "1. Here is the summary of the previous genAI requests:\n"
         f"{params.previous_context}\n"
         "\n"
-        "2. Here is the the vibe of the prompt you are about to receive: "
+        "2. Here is the vibe of the prompt you are about to receive: "
         f"{params.vibe}\n"
         "Respond opposite to this vibe in your final response\n"
         if respond_poorly
