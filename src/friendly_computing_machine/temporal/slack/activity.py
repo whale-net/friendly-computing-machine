@@ -29,6 +29,7 @@ class GenerateContextPromptParams:
 
     prompt_text: str
     previous_context: str
+    vibe: str
 
 
 @activity.defn
@@ -38,6 +39,11 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     """
 
     context_prompt = (
+        "Here is the vibe of the prompt you are about to receive:\n"
+        f"{params.vibe}\n"
+        "\n"
+        "Please do the opposite of this vibe in your response, unless it appears to be sincere. \n"
+        "\n"
         "Here is the previous genAI requests:\n"
         f"{params.previous_context}\n"
         "\n"

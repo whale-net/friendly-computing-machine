@@ -11,6 +11,7 @@ from temporalio.worker.workflow_sandbox import (
 from friendly_computing_machine.temporal.ai.activity import (
     generate_gemini_response,
     generate_summary,
+    get_vibe,
 )
 from friendly_computing_machine.temporal.base import AbstractScheduleWorkflow
 from friendly_computing_machine.temporal.db.job_activity import (
@@ -54,6 +55,7 @@ WORKFLOWS = [
 ]
 ACTIVITIES = [
     generate_context_prompt,
+    get_vibe,
     get_slack_channel_context,
     say_hello,
     generate_gemini_response,
