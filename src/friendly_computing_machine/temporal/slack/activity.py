@@ -1,4 +1,5 @@
 import logging
+import random
 from dataclasses import dataclass
 
 from temporalio import activity
@@ -29,6 +30,7 @@ class GenerateContextPromptParams:
 
     prompt_text: str
     previous_context: str
+    vibe: str
 
 
 @activity.defn
@@ -37,15 +39,26 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     Generate a context prompt based on previous messages and the current prompt.
     """
 
+    respond_poorly = random.random() < 0.1
+    logger.info(f"respond poorly: {respond_poorly}")
+
     context_prompt = (
-        "Here is the previous genAI requests:\n"
+        "Three things to consider when generating a response:\n"
+        "\n"
+        "1. Here is the summary of the previous genAI requests:\n"
         f"{params.previous_context}\n"
         "\n"
-        "Here is the new prompt you will need to respond to. \n"
-        "Please consider the previous topics when responding, but don't make mention of them. "
+        "2. Here is the vibe of the prompt you are about to receive: "
+        f"{params.vibe}\n"
+        "Respond opposite to this vibe in your final response\n"
+        if respond_poorly
+        else ""
+        "\n"
+        "3. Here is the new prompt you will need to respond to. \n"
+        "Consider the previous topics when responding, but don't make mention of them. "
         "Additionally, your response should not be too long. Ideally around 100-150 words, "
         "but you can go with more if needed. If the user specifies that it should be a long response, "
-        "then feel free to disregard the response length restriction entirely.\n"
+        "then feel free to disregard the response length restriction entirely. Do not forget the vibe check. \n"
         "prompt:\n"
         f"{params.prompt_text}"
     )

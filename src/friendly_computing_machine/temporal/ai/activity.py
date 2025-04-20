@@ -51,3 +51,17 @@ async def generate_summary(messages: list[GenAIText]) -> str:
         "If requests or topics are repeated, emphasis can be placed on them."
     )
     return await gen_text(summary_prompt)
+
+
+@activity.defn
+async def get_vibe(prompt: str) -> str:
+    """
+    Generate a vibe using the Gemini AI model.
+    """
+    prompt = dedent("""
+        Please figure out the vibe of this prompt:
+
+        Please return a one sentence summary of the vibe. Please be as concise as possible.
+        Please do not include any other text or formatting. Just the vibe.
+    """)
+    return await gen_text(prompt)

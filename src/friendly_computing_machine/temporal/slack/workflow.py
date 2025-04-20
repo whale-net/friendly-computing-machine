@@ -9,6 +9,7 @@ from temporalio.client import ScheduleIntervalSpec, ScheduleSpec
 from friendly_computing_machine.temporal.ai.activity import (
     generate_gemini_response,
     generate_summary,
+    get_vibe,
 )
 from friendly_computing_machine.temporal.base import AbstractScheduleWorkflow
 from friendly_computing_machine.temporal.db.job_activity import (
@@ -58,19 +59,26 @@ class SlackConextGeminiWorkflow:
             schedule_to_close_timeout=timedelta(seconds=60),
             start_to_close_timeout=timedelta(seconds=60),
         )
-        summary = await workflow.execute_activity(
+        summary_future = workflow.execute_activity(
             generate_summary,
             slack_prompts,
             schedule_to_close_timeout=timedelta(seconds=60),
             start_to_close_timeout=timedelta(seconds=60),
         )
+        vibe_future = workflow.execute_activity(
+            get_vibe,
+            params.prompt,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
+        vibe, summary = await asyncio.gather(vibe_future, summary_future)
 
         # this is a hack to do something I don't know how to do
         # and doesn't really work, but it's at least a start
         # TODO - understand context
         context_prompt = await workflow.execute_activity(
             generate_context_prompt,
-            GenerateContextPromptParams(params.prompt, summary),
+            GenerateContextPromptParams(params.prompt, summary, vibe),
             schedule_to_close_timeout=timedelta(seconds=60),
             start_to_close_timeout=timedelta(seconds=60),
         )
