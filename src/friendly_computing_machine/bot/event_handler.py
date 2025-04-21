@@ -99,6 +99,12 @@ def handle_whale_ai_command(ack, say, command):
             span.set_attribute("slack.channel.id", channel_id)
             span.set_attribute("slack.command.text", text)
 
+            # TODO - move this entirely to the workflow
+            # it is dangerous to do this here, because we are not in a transaction
+            # and we don't want to pollute the database with a command that is not processed.
+            # Addiionally, temporal will not be able to retry this if it fails.
+            # use child workflow if we don't want to pollute existing workflow (probably a good idea, although not needed now)
+            # be aggressive on concurrency
             command_create = SlackCommandCreate(
                 caller_slack_user_id=user_id,
                 command_base="/wai",
@@ -106,9 +112,9 @@ def handle_whale_ai_command(ack, say, command):
                 slack_channel_slack_id=channel_id,
                 created_at=datetime.datetime.now(),
             )
-            # TODO: add command id to span attribute
-            insert_slack_command(command_create)
+            db_command = insert_slack_command(command_create)
             span.set_attribute("db.command.inserted", True)
+            span.set_attribute("db.command.id", db_command.id)
 
             # create and log request right away
             genai_text = insert_genai_text(
