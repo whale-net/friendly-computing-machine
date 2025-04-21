@@ -36,6 +36,12 @@ spec:
               value: {{ .Values.env.slack.appToken }}
             - name: DATABASE_URL
               value: {{ .Values.env.db.url }}
+            - name: GOOGLE_API_KEY
+              value: {{ .Values.env.google.api_key }}
+            - name: APP_ENV
+              value: {{ .Values.env.app_env }}
+            - name: OTEL_SERVICE_NAME
+              value: fcm-migrations
             - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
               value: {{ .Values.env.otelCollector.logs.endpoint }}
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -44,10 +50,6 @@ spec:
   {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: "deployment-name={{ .Values.deployment.name }}"
-            - name: GOOGLE_API_KEY
-              value: {{ .Values.env.google.api_key }}
-            - name: APP_ENV
-              value: {{ .Values.env.app_env }}
       containers:
       - name: friendly-computing-machine
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
@@ -93,6 +95,14 @@ spec:
             value: {{ .Values.env.slack.appToken }}
           - name: DATABASE_URL
             value: {{ .Values.env.db.url }}
+          - name: GOOGLE_API_KEY
+            value: {{ .Values.env.google.api_key }}
+          - name: TEMPORAL_HOST
+            value: {{ .Values.env.temporal.host }}
+          - name: APP_ENV
+            value: {{ .Values.env.app_env }}
+          - name: OTEL_SERVICE_NAME
+            value: fcm-bot
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: {{ .Values.env.otelCollector.logs.endpoint }}
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -101,9 +111,3 @@ spec:
 {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: "deployment-name={{ .Values.deployment.name }}"
-          - name: GOOGLE_API_KEY
-            value: {{ .Values.env.google.api_key }}
-          - name: TEMPORAL_HOST
-            value: {{ .Values.env.temporal.host }}
-          - name: APP_ENV
-            value: {{ .Values.env.app_env }}
