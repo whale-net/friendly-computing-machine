@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SlackContextGeminiWorkflowParams:
     """
-    Parameters for the SlackConextGeminiWorkflow.
+    Parameters for the SlackContextGeminiWorkflow.
     """
 
     slack_channel_slack_id: str
