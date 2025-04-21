@@ -32,12 +32,20 @@ spec:
           - workflow
           - run
         env:
+          - name: APP_ENV
+            value: {{ .Values.env.app_env }}
+          - name: TEMPORAL_HOST
+            value: {{ .Values.env.temporal.host }}
           - name: SLACK_BOT_TOKEN
             value: {{ .Values.env.slack.botToken }}
           - name: SLACK_APP_TOKEN
             value: {{ .Values.env.slack.appToken }}
+          - name: GOOGLE_API_KEY
+            value: {{ .Values.env.google.api_key }}
           - name: DATABASE_URL
             value: {{ .Values.env.db.url }}
+          - name: OTEL_SERVICE_NAME
+            value: fcm-temporal-worker
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: {{ .Values.env.otelCollector.logs.endpoint }}
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -46,11 +54,3 @@ spec:
   {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: "deployment-name=temporal-worker{{- if .Values.deployment.name }}-{{ .Values.deployment.name }}{{- end }}" # Adjusted attribute
-          - name: GOOGLE_API_KEY
-            value: {{ .Values.env.google.api_key }}
-          - name: TEMPORAL_HOST
-            value: {{ .Values.env.temporal.host }}
-          - name: APP_ENV
-            value: {{ .Values.env.app_env }}
-          # Add any Temporal-specific environment variables here
-          # e.g., TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE

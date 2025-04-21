@@ -37,6 +37,8 @@ RUN python -m compileall -f -o2 /app/src
 ENV PATH="/app/.venv/bin:$PATH"
 
 # note: This service name is defined both here and in-code (cli callback).
+# this will be overridden by the helm chart,
+# but is set to a reasonable default here as well because it seems right
 ENV OTEL_SERVICE_NAME='friendly-computing-machine'
 # auto logging is not desired, see readme
 ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=false
