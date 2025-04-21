@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, Optional, Sequence, Union
 
 from temporalio.client import Client
+from temporalio.contrib.opentelemetry import TracingInterceptor
 from temporalio.contrib.pydantic import pydantic_data_converter
 
 
@@ -31,7 +32,11 @@ def get_temporal_host() -> str:
 
 async def get_temporal_client_async():
     host = get_temporal_host()
-    return await Client.connect(host, data_converter=pydantic_data_converter)
+    return await Client.connect(
+        host,
+        data_converter=pydantic_data_converter,
+        interceptors=[TracingInterceptor()],
+    )
 
 
 def execute_workflow(

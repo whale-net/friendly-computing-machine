@@ -212,7 +212,7 @@ dependencies = [
     { name = "slack-bolt" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "temporalio" },
+    { name = "temporalio", extra = ["opentelemetry"] },
     { name = "typer-slim" },
 ]
 
@@ -236,7 +236,7 @@ requires-dist = [
     { name = "slack-bolt", specifier = ">=1.21.2" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
     { name = "sqlmodel", specifier = ">=0.0.22" },
-    { name = "temporalio", specifier = ">=1.10.0" },
+    { name = "temporalio", extras = ["opentelemetry"], specifier = ">=1.10.0" },
     { name = "typer-slim", specifier = ">=0.15.2" },
 ]
 
@@ -1025,6 +1025,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/f4/a06053515ecd67e797b7dd0516bdd11c28f952a54449b4c771dcb097de00/temporalio-1.10.0-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:c3ee8416d1cab04036e03e39a4db4cf4a9a799750b8da20022e0d719da9c9371", size = 11146377 },
     { url = "https://files.pythonhosted.org/packages/f7/b4/875f10f1da52879d44fb126cd1b68186ba7f4d35589dc9f3c9ae743f65c5/temporalio-1.10.0-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:4f5805e0d33ba525ccea01e3cd9d3eca313e0c66c6b86e6cb0f15ef004c0acc0", size = 11303069 },
     { url = "https://files.pythonhosted.org/packages/21/55/a2248f3798498584133be848c0f6072b37995e201a3f93aff413f77f00cc/temporalio-1.10.0-cp39-abi3-win_amd64.whl", hash = "sha256:81cb8bef8aef6d3cc130c7cecf008cf529177a2f9cb206cfba2897db7df9d093", size = 11338952 },
+]
+
+[package.optional-dependencies]
+opentelemetry = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
 ]
 
 [[package]]

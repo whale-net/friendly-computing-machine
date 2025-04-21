@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SlackContextGeminiWorkflowParams:
     """
-    Parameters for the SlackConextGeminiWorkflow.
+    Parameters for the SlackContextGeminiWorkflow.
     """
 
     slack_channel_slack_id: str
@@ -43,7 +43,7 @@ class SlackContextGeminiWorkflowParams:
 
 
 @workflow.defn
-class SlackConextGeminiWorkflow:
+class SlackContextGeminiWorkflow:
     """
     Workflow to generate a response using the Gemini AI model.
     This workflow is specifically designed to work with the Slack context.
