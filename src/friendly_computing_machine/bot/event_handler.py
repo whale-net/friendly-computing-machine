@@ -16,7 +16,7 @@ from friendly_computing_machine.models.slack import (
     SlackMessageCreate,
 )
 from friendly_computing_machine.temporal.slack.workflow import (
-    SlackConextGeminiWorkflow,
+    SlackContextGeminiWorkflow,
     SlackContextGeminiWorkflowParams,
 )
 from friendly_computing_machine.temporal.util import (
@@ -129,7 +129,7 @@ def handle_whale_ai_command(ack, say, command):
             workflow_id = f"test_id-command-wai-{channel_id}-{datetime.datetime.now()}"
             span.set_attribute("temporal.workflow.id", workflow_id)
             ai_response = execute_workflow(
-                SlackConextGeminiWorkflow.run,
+                SlackContextGeminiWorkflow.run,
                 SlackContextGeminiWorkflowParams(channel_id, text),
                 id=workflow_id,
                 # TODO - proper task queue differentation at some point

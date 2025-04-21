@@ -43,7 +43,7 @@ class SlackContextGeminiWorkflowParams:
 
 
 @workflow.defn
-class SlackConextGeminiWorkflow:
+class SlackContextGeminiWorkflow:
     """
     Workflow to generate a response using the Gemini AI model.
     This workflow is specifically designed to work with the Slack context.

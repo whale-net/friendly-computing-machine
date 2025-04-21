@@ -35,7 +35,7 @@ from friendly_computing_machine.temporal.slack.activity import (
     get_slack_channel_context,
 )
 from friendly_computing_machine.temporal.slack.workflow import (
-    SlackConextGeminiWorkflow,
+    SlackContextGeminiWorkflow,
     SlackMessageQODWorkflow,
     SlackUserInfoWorkflow,
 )
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 WORKFLOWS = [
     SayHello,
-    SlackConextGeminiWorkflow,
+    SlackContextGeminiWorkflow,
     SlackMessageQODWorkflow,
     SlackUserInfoWorkflow,
 ]
