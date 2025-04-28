@@ -13,14 +13,30 @@ your environment is now setup
 
 (optional) update your IDE to use `./.venv/bin/python`
 
+Additionally, you will need to install temporal. https://docs.temporal.io/cli
+Once
+
 ## run
-run the bot (or whatever this currently is)
+export env variables into terminal
 ```
-uv run fcm
+export $(cat .env | xargs)
 ```
+
+start temporal server dev instance
 ```
 temporal server start-dev
 ```
+
+run the bot (or whatever this currently is)
+```
+uv run fcm bot run
+```
+
+run the temporal worker
+```
+uv run workflow run
+```
+
 
 ## logging / tracing / metrics
 
