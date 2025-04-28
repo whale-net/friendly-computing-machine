@@ -33,6 +33,7 @@ from friendly_computing_machine.temporal.slack.activity import (
     backfill_slack_user_info_activity,
     generate_context_prompt,
     get_slack_channel_context,
+    prepare_prompt_for_slack_activity,
 )
 from friendly_computing_machine.temporal.slack.workflow import (
     SlackContextGeminiWorkflow,
@@ -70,6 +71,7 @@ ACTIVITIES = [
     upsert_slack_user_creates_activity,
     backfill_genai_text_slack_user_id_activity,
     backfill_genai_text_slack_channel_id_activity,
+    prepare_prompt_for_slack_activity,
 ]
 
 
@@ -83,7 +85,7 @@ async def run_worker(app_env: str):
         if not issubclass(wf, AbstractScheduleWorkflow):
             continue
         futures.append(wf().async_upsert_schedule(client, app_env))
-    asyncio.gather(*futures)
+    await asyncio.gather(*futures)
     logger.info("all schedules created")
 
     # Run the worker

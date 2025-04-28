@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 from dataclasses import dataclass
 
 from temporalio import activity
@@ -99,3 +100,19 @@ async def backfill_slack_user_info_activity() -> list[SlackUserCreate]:
     # TODO - persist these some other way to avoid passing back via temporal?
     # maybe not so bad for my purposes, but definitely not scalable
     return slack_user_creates
+
+
+@activity.defn
+async def prepare_prompt_for_slack_activity(prompt: str) -> str:
+    """
+    Prepare the prompt for the Gemini AI model.
+    This function can be used to modify or format the prompt before sending it to the model.
+    """
+
+    # TODO - person name replacement
+
+    # Replace @here and @channel with their escaped versions only if not already escaped
+    prompt = re.sub(r"(?<!<)@here", "<@here>", prompt)
+    prompt = re.sub(r"(?<!<)@channel", "<@channel>", prompt)
+
+    return prompt

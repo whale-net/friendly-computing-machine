@@ -27,6 +27,7 @@ from friendly_computing_machine.temporal.slack.activity import (
     backfill_slack_user_info_activity,
     generate_context_prompt,
     get_slack_channel_context,
+    prepare_prompt_for_slack_activity,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,15 +71,22 @@ class SlackContextGeminiWorkflow:
             params.prompt,
             start_to_close_timeout=timedelta(seconds=10),
         )
+        prompt_future = workflow.execute_activity(
+            prepare_prompt_for_slack_activity,
+            params.prompt,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
 
-        vibe, summary = await asyncio.gather(vibe_future, summary_future)
+        vibe, summary, prepared_prompt = await asyncio.gather(
+            vibe_future, summary_future, prompt_future
+        )
 
         # this is a hack to do something I don't know how to do
         # and doesn't really work, but it's at least a start
         # TODO - understand context
         context_prompt = await workflow.execute_activity(
             generate_context_prompt,
-            GenerateContextPromptParams(params.prompt, summary, vibe),
+            GenerateContextPromptParams(prepared_prompt, summary, vibe),
             schedule_to_close_timeout=timedelta(seconds=60),
             start_to_close_timeout=timedelta(seconds=60),
         )
