@@ -14,7 +14,7 @@ your environment is now setup
 (optional) update your IDE to use `./.venv/bin/python`
 
 Additionally, you will need to install temporal. https://docs.temporal.io/cli
-Once 
+Once
 
 ## run
 export env variables into terminal
