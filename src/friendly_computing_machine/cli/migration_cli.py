@@ -23,9 +23,10 @@ migration_app = typer.Typer(
 def callback(
     ctx: typer.Context,
     database_url: T_database_url,
+    log_otlp: bool = False,
 ):
     logger.debug("CLI callback starting")
-    setup_logging(ctx)
+    setup_logging(ctx, log_otlp=log_otlp)
     setup_db(ctx, database_url)
     logger.debug("CLI callback complete")
 

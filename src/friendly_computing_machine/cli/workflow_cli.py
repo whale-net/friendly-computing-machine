@@ -36,9 +36,10 @@ def callback(
     # slack_app_token: T_slack_app_token,
     temporal_host: T_temporal_host,
     app_env: T_app_env,
+    log_otlp: bool = False,
 ):
     logger.debug("CLI callback starting")
-    setup_logging(ctx)
+    setup_logging(ctx, log_otlp=log_otlp)
     # setup_slack(ctx, slack_app_token)
     setup_app_env(ctx, app_env)
     setup_temporal(ctx, temporal_host, app_env)

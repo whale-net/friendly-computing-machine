@@ -28,6 +28,7 @@ spec:
               memory: 128Mi
           args:
             - migration
+            - --log-otlp
             - run
           env:
             - name: SLACK_BOT_TOKEN
@@ -81,6 +82,7 @@ spec:
         {{- end }}
         args:
           - bot
+          - --log-otlp
           - run
           # migrations run as init-container using (almost certainly) the same image
           # so no need to check

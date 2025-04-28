@@ -30,6 +30,7 @@ spec:
         # No health checks needed for the worker
         args:
           - workflow
+          - --log-otlp
           - run
         env:
           - name: APP_ENV
