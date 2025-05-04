@@ -1,20 +1,19 @@
 import logging
 
 from slack_bolt import Ack
+from slack_sdk.models.blocks import Option
 
 from friendly_computing_machine.bot.app import app
-from friendly_computing_machine.bot.modal_schemas import ServerOption, ServerSelectModal
+from friendly_computing_machine.bot.modal_schemas import ServerSelectModal
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ShortcutPayload
 
 logger = logging.getLogger(__name__)
 
-# --- Server Control Modal Handlers ---
-
 DUMMY_SERVERS = [
-    ServerOption(label="Server Alpha", value="server_alpha"),
-    ServerOption(label="Server Beta", value="server_beta"),
-    ServerOption(label="Server Gamma", value="server_gamma"),
+    Option(label="Server Alpha", value="server_alpha"),
+    Option(label="Server Beta", value="server_beta"),
+    Option(label="Server Gamma", value="server_gamma"),
 ]
 
 
