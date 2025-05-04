@@ -51,12 +51,14 @@ class ServerActionModal:
     server_name: str
     callback_id: str = "server_action_modal"
     title: str = "Server Actions"
+    # submit_text: str = "Submit"  # Added submit text
     actions: List[str] = field(default_factory=lambda: ["Start", "Stop", "Restart"])
     custom_button_text: str = "Send Custom"
 
     def build(self) -> Dict[str, Any]:
         return {
             "type": "modal",
+            # "submit": {"type": "plain_text", "text": self.submit_text}, # Added submit button definition
             "callback_id": self.callback_id,
             "title": {"type": "plain_text", "text": self.title},
             "blocks": [
@@ -76,16 +78,17 @@ class ServerActionModal:
                         for action in self.actions
                     ],
                 },
-                {
-                    "type": "input",
-                    "block_id": "custom_input_block",
-                    "label": {"type": "plain_text", "text": "Custom Command"},
-                    "element": {
-                        "type": "plain_text_input",
-                        "action_id": "custom_command_input",
-                    },
-                    "optional": True,
-                },
+                # remove for now
+                # {
+                #     "type": "input",
+                #     "block_id": "custom_input_block",
+                #     "label": {"type": "plain_text", "text": "Custom Command"},
+                #     "element": {
+                #         "type": "plain_text_input",
+                #         "action_id": "custom_command_input",
+                #     },
+                #     "optional": True,
+                # },
                 {
                     "type": "actions",
                     "block_id": "custom_action_block",

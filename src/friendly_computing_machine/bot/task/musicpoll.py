@@ -4,10 +4,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 from friendly_computing_machine.bot.app import (
-    SlackWebClientFCM,
     get_bot_config,
     get_slack_web_client,
 )
+from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.task.abstracttask import (
     AbstractTask,
     OneOffTask,

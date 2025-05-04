@@ -2,8 +2,9 @@ import logging
 
 from slack_bolt import Ack
 
-from friendly_computing_machine.bot.app import SlackWebClientFCM, app
+from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.modal_schemas import ServerOption, ServerSelectModal
+from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ShortcutPayload
 
 logger = logging.getLogger(__name__)
