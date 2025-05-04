@@ -21,11 +21,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     # Second phase: compile deps
 RUN python -m compileall -f -o2 /app/.venv
 
+# Third phase: generate client code from external spec
+COPY external/manman-api.json /app/external/manman-api.json
+# may not be best practice to copy the script in here, but it works
+COPY bin/generate_client.sh /app/bin/generate_client.sh
+RUN /app/bin/generate_client.sh
+
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 #COPY . /app
 COPY uv.lock pyproject.toml alembic.ini README.md /app/
-COPY /src /app/src
+COPY /src/friendly_computing_machine /app/src/friendly_computing_machine
+COPY /src/migrations /app/src/migrations
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev

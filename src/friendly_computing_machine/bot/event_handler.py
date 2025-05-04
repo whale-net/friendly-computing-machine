@@ -4,13 +4,24 @@ import logging
 from opentelemetry import trace
 from slack_bolt import Ack
 
-from friendly_computing_machine.bot.app import app, get_bot_config
+from friendly_computing_machine.bot.app import SlackWebClientFCM, app, get_bot_config
+from friendly_computing_machine.bot.modal_schemas import (
+    ServerActionModal,
+    ServerOption,
+    ServerSelectModal,
+)
+from friendly_computing_machine.bot.slack_payloads import (
+    ActionPayload,
+    ShortcutPayload,
+    ViewSubmissionPayload,
+)
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
     insert_slack_command,
     update_genai_text_response,
     upsert_message,
 )
+from friendly_computing_machine.manman.util import ManManAPI
 from friendly_computing_machine.models.genai import GenAITextCreate
 from friendly_computing_machine.models.slack import (
     SlackCommandCreate,
@@ -24,9 +35,6 @@ from friendly_computing_machine.temporal.util import (
     execute_workflow,
     get_temporal_queue_name,
 )
-
-from .modal_schemas import ServerActionModal, ServerOption, ServerSelectModal
-from .slack_payloads import ActionPayload, ShortcutPayload, ViewSubmissionPayload
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -181,7 +189,6 @@ def handle_whale_ai_command(ack, say, command):
             raise
 
 
-@app.event("app_mention")
 @app.error
 def global_error_handler(error, body, logger):
     """Handles errors globally."""
@@ -199,7 +206,7 @@ DUMMY_SERVERS = [
 
 
 @app.shortcut("server_control_shortcut")
-def open_server_select_modal(ack: Ack, body, client, logger):
+def open_server_select_modal(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     try:
         payload = ShortcutPayload.from_dict(body)
@@ -213,7 +220,7 @@ def open_server_select_modal(ack: Ack, body, client, logger):
 
 
 @app.view("server_select_modal")
-def handle_server_select_submission(ack: Ack, body, client, logger):
+def handle_server_select_submission(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     try:
         payload = ViewSubmissionPayload.from_dict(body)
@@ -229,17 +236,31 @@ def handle_server_select_submission(ack: Ack, body, client, logger):
 
 
 @app.action("start_server")
-def handle_start_server(ack: Ack, body, client, logger):
+def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info("Start server clicked")
     client.chat_postMessage(
         channel=payload.user_id, text="[Stub] Start server action triggered."
     )
+    # Use the ManManAPI class to get the client
+    try:
+        # perhaps a rather unfortunate name
+        mapi = ManManAPI.get_api()
+        mapi.start_game_server_host_gameserver_id_start_post(
+            1  # testing for now
+        )
+
+    except ValueError as e:
+        logger.error(f"Failed to get ManMan API client: {e}")
+        # Optionally inform the user about the configuration issue
+        client.chat_postMessage(
+            channel=payload.user_id, text="Error: ManMan API is not configured."
+        )
 
 
 @app.action("stop_server")
-def handle_stop_server(ack: Ack, body, client, logger):
+def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info("Stop server clicked")
@@ -249,7 +270,7 @@ def handle_stop_server(ack: Ack, body, client, logger):
 
 
 @app.action("restart_server")
-def handle_restart_server(ack: Ack, body, client, logger):
+def handle_restart_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info("Restart server clicked")
@@ -259,7 +280,7 @@ def handle_restart_server(ack: Ack, body, client, logger):
 
 
 @app.action("send_custom_command")
-def handle_custom_command(ack: Ack, body, client, logger):
+def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info(f"Custom command sent: {payload.custom_command}")
