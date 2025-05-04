@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from opentelemetry import trace
+from slack_bolt import Ack
 
 from friendly_computing_machine.bot.app import app, get_bot_config
 from friendly_computing_machine.db.dal import (
@@ -23,6 +24,9 @@ from friendly_computing_machine.temporal.util import (
     execute_workflow,
     get_temporal_queue_name,
 )
+
+from .modal_schemas import ServerActionModal, ServerOption, ServerSelectModal
+from .slack_payloads import ActionPayload, ShortcutPayload, ViewSubmissionPayload
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -177,8 +181,89 @@ def handle_whale_ai_command(ack, say, command):
             raise
 
 
+@app.event("app_mention")
 @app.error
 def global_error_handler(error, body, logger):
     """Handles errors globally."""
     logger.exception(f"Error: {error}")
     logger.info(f"Request body: {body}")
+
+
+# --- Server Control Modal Handlers ---
+
+DUMMY_SERVERS = [
+    ServerOption(label="Server Alpha", value="server_alpha"),
+    ServerOption(label="Server Beta", value="server_beta"),
+    ServerOption(label="Server Gamma", value="server_gamma"),
+]
+
+
+@app.shortcut("server_control_shortcut")
+def open_server_select_modal(ack: Ack, body, client, logger):
+    ack()
+    try:
+        payload = ShortcutPayload.from_dict(body)
+        modal = ServerSelectModal(options=DUMMY_SERVERS)
+        client.views_open(
+            trigger_id=payload.trigger_id,
+            view=modal.build(),
+        )
+    except Exception as e:
+        logger.error(f"Error opening server select modal: {e}")
+
+
+@app.view("server_select_modal")
+def handle_server_select_submission(ack: Ack, body, client, logger):
+    ack()
+    try:
+        payload = ViewSubmissionPayload.from_dict(body)
+        modal = ServerActionModal(
+            server_name=(payload.selected_server or "Unknown").replace("_", " ").title()
+        )
+        client.views_open(
+            trigger_id=payload.trigger_id,
+            view=modal.build(),
+        )
+    except Exception as e:
+        logger.error(f"Error opening server action modal: {e}")
+
+
+@app.action("start_server")
+def handle_start_server(ack: Ack, body, client, logger):
+    ack()
+    payload = ActionPayload.from_dict(body)
+    logger.info("Start server clicked")
+    client.chat_postMessage(
+        channel=payload.user_id, text="[Stub] Start server action triggered."
+    )
+
+
+@app.action("stop_server")
+def handle_stop_server(ack: Ack, body, client, logger):
+    ack()
+    payload = ActionPayload.from_dict(body)
+    logger.info("Stop server clicked")
+    client.chat_postMessage(
+        channel=payload.user_id, text="[Stub] Stop server action triggered."
+    )
+
+
+@app.action("restart_server")
+def handle_restart_server(ack: Ack, body, client, logger):
+    ack()
+    payload = ActionPayload.from_dict(body)
+    logger.info("Restart server clicked")
+    client.chat_postMessage(
+        channel=payload.user_id, text="[Stub] Restart server action triggered."
+    )
+
+
+@app.action("send_custom_command")
+def handle_custom_command(ack: Ack, body, client, logger):
+    ack()
+    payload = ActionPayload.from_dict(body)
+    logger.info(f"Custom command sent: {payload.custom_command}")
+    client.chat_postMessage(
+        channel=payload.user_id,
+        text=f"[Stub] Custom command sent: {payload.custom_command}",
+    )
