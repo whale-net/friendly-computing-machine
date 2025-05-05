@@ -103,6 +103,8 @@ spec:
             value: {{ .Values.env.temporal.host }}
           - name: APP_ENV
             value: {{ .Values.env.app_env }}
+          - name: MANMAN_HOST_URL
+            value: {{ .Values.env.manman.host }}
           - name: OTEL_SERVICE_NAME
             value: fcm-bot
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
