@@ -44,9 +44,12 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     logger.info(f"respond poorly: {respond_poorly}")
 
     context_prompt = (
-        "Three things to consider when generating a response:\n"
+        "There are three things to consider when generating a response:\n"
         "\n"
-        "1. Here is the summary of the previous genAI requests:\n"
+        "1. Here is the summary of the previous genAI requests. "
+        "Please consider them when producing your response when they are relevant. "
+        "Users will not be aware of this additional context, so it's best to avoid mentioning"
+        "it explicitly. Although, it can still influence your answer, that is part of what makes it fun\n"
         f"{params.previous_context}\n"
         "\n"
         "2. Here is the vibe of the prompt you are about to receive: "
@@ -55,13 +58,12 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
         if respond_poorly
         else ""
         "\n"
-        "3. Here is the new prompt you will need to respond to. \n"
-        "Consider the previous topics when responding, but don't make mention of them. "
+        "3. Here is the new prompt you will need to respond to: \n"
+        f"{params.prompt_text}\n\n"
         "Additionally, your response should not be too long. Ideally around 100-150 words, "
-        "but you can go with more if needed. If the user specifies that it should be a long response, "
-        "then feel free to disregard the response length restriction entirely. Do not forget the vibe check. \n"
-        "prompt:\n"
-        f"{params.prompt_text}"
+        "but you can go with more if that limit is too small for a useful response ."
+        "If the user specifies that it should be a long response, "
+        "then feel free to disregard the response length restriction entirely. \n"
     )
     return context_prompt
 
