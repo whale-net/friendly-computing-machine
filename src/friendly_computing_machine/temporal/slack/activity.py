@@ -112,7 +112,7 @@ async def prepare_prompt_for_slack_activity(prompt: str) -> str:
     # TODO - person name replacement
 
     # Replace @here and @channel with their escaped versions only if not already escaped
-    prompt = re.sub(r"(?<!<)@here", "<@here>", prompt)
-    prompt = re.sub(r"(?<!<)@channel", "<@channel>", prompt)
+    prompt = re.sub(r"(?<!<)@here", "<!here>", prompt)
+    prompt = re.sub(r"(?<!<)@channel", "<!channel>", prompt)
 
     return prompt
