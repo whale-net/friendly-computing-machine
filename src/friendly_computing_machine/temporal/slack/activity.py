@@ -44,26 +44,18 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     logger.info(f"respond poorly: {respond_poorly}")
 
     context_prompt = (
-        "There are three things to consider when generating a response:\n"
-        "\n"
-        "1. Here is the summary of the previous genAI requests. "
-        "Please consider them when producing your response when they are relevant. "
-        "Users will not be aware of this additional context, so it's best to avoid mentioning"
-        "it explicitly. Although, it can still influence your answer, that is part of what makes it fun\n"
-        f"{params.previous_context}\n"
-        "\n"
-        "2. Here is the vibe of the prompt you are about to receive: "
-        f"{params.vibe}\n"
-        "Respond opposite to this vibe in your final response\n"
-        if respond_poorly
-        else ""
-        "\n"
-        "3. Here is the new prompt you will need to respond to: \n"
+        "# Response Guidelines\n\n"
+        "## Context Information\n"
+        f"Previous conversation summary:\n{params.previous_context}\n\n"
+        f"Detected tone of incoming prompt: {params.vibe}\n"
+        f"{('Please intentionally respond with the opposite tone from what was detected.\n\n') if respond_poorly else ''}"
+        "## User Prompt\n"
         f"{params.prompt_text}\n\n"
-        "Additionally, your response should not be too long. Ideally around 100-150 words, "
-        "but you can go with more if that limit is too small for a useful response ."
-        "If the user specifies that it should be a long response, "
-        "then feel free to disregard the response length restriction entirely. \n"
+        "## Additional Instructions\n"
+        "- Consider the previous conversation context when relevant, but don't explicitly reference it\n"
+        "- Keep responses concise (100-150 words) unless the user specifically requests a longer answer\n"
+        "- Be helpful, accurate, and engaging in your response\n"
+        "- Format your response appropriately for the question type\n"
     )
     return context_prompt
 
