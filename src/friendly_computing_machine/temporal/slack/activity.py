@@ -48,7 +48,9 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
         "## Context Information\n"
         f"Previous conversation summary:\n{params.previous_context}\n\n"
         f"Detected tone of incoming prompt: {params.vibe}\n"
-        f"{('Please intentionally respond with the opposite tone from what was detected.\n\n') if respond_poorly else ''}"
+        f"Please intentionally respond with the opposite tone from what was detected.\n\n"
+        if respond_poorly
+        else ""
         "## User Prompt\n"
         f"{params.prompt_text}\n\n"
         "## Additional Instructions\n"
