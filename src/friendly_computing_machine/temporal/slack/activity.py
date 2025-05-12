@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 from dataclasses import dataclass
 
 from temporalio import activity
@@ -43,24 +44,20 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     logger.info(f"respond poorly: {respond_poorly}")
 
     context_prompt = (
-        "Three things to consider when generating a response:\n"
-        "\n"
-        "1. Here is the summary of the previous genAI requests:\n"
-        f"{params.previous_context}\n"
-        "\n"
-        "2. Here is the vibe of the prompt you are about to receive: "
-        f"{params.vibe}\n"
-        "Respond opposite to this vibe in your final response\n"
+        "# Response Guidelines\n\n"
+        "## Context Information\n"
+        f"Previous conversation summary:\n{params.previous_context}\n\n"
+        f"Detected tone of incoming prompt: {params.vibe}\n"
+        f"Please intentionally respond with the opposite tone from what was detected.\n\n"
         if respond_poorly
         else ""
-        "\n"
-        "3. Here is the new prompt you will need to respond to. \n"
-        "Consider the previous topics when responding, but don't make mention of them. "
-        "Additionally, your response should not be too long. Ideally around 100-150 words, "
-        "but you can go with more if needed. If the user specifies that it should be a long response, "
-        "then feel free to disregard the response length restriction entirely. Do not forget the vibe check. \n"
-        "prompt:\n"
-        f"{params.prompt_text}"
+        "## User Prompt\n"
+        f"{params.prompt_text}\n\n"
+        "## Additional Instructions\n"
+        "- Consider the previous conversation context when relevant, but don't explicitly reference it\n"
+        "- Keep responses concise (100-150 words) unless the user specifically requests a longer answer\n"
+        "- Be helpful, accurate, and engaging in your response\n"
+        "- Format your response appropriately for the question type\n"
     )
     return context_prompt
 
@@ -99,3 +96,19 @@ async def backfill_slack_user_info_activity() -> list[SlackUserCreate]:
     # TODO - persist these some other way to avoid passing back via temporal?
     # maybe not so bad for my purposes, but definitely not scalable
     return slack_user_creates
+
+
+@activity.defn
+async def prepare_prompt_for_slack_activity(prompt: str) -> str:
+    """
+    Prepare the prompt for the Gemini AI model.
+    This function can be used to modify or format the prompt before sending it to the model.
+    """
+
+    # TODO - person name replacement
+
+    # Replace @here and @channel with their escaped versions only if not already escaped
+    prompt = re.sub(r"(?<!<)@here", "<!here>", prompt)
+    prompt = re.sub(r"(?<!<)@channel", "<!channel>", prompt)
+
+    return prompt
