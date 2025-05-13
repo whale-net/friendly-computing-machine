@@ -1,7 +1,7 @@
 import logging
 import random
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from temporalio import activity
 
@@ -33,24 +33,28 @@ class GenerateContextPromptParams:
     previous_context: str
     vibe: str
 
+    should_invert_vibe: bool = field(default=False)
+
+    def __post_init__(self):
+        self.should_invert_vibe = random.random() < 0.1
+        logger.info(f"should invert vibe?: {self.should_invert_vibe}")
+
 
 @activity.defn
 async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     """
     Generate a context prompt based on previous messages and the current prompt.
     """
-
-    respond_poorly = random.random() < 0.1
-    logger.info(f"respond poorly: {respond_poorly}")
+    tone_text = f"Detected tone of incoming prompt: {params.vibe}\n"
+    if params.should_invert_vibe:
+        tone_text += "Please intentionally respond with the opposite tone from what was detected.\n"
 
     context_prompt = (
         "# Response Guidelines\n\n"
         "## Context Information\n"
         f"Previous conversation summary:\n{params.previous_context}\n\n"
-        f"Detected tone of incoming prompt: {params.vibe}\n"
-        f"Please intentionally respond with the opposite tone from what was detected.\n\n"
-        if respond_poorly
-        else ""
+        "## The Vibe\n"
+        f"{tone_text}\n"
         "## User Prompt\n"
         f"{params.prompt_text}\n\n"
         "## Additional Instructions\n"
@@ -58,6 +62,7 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
         "- Keep responses concise (100-150 words) unless the user specifically requests a longer answer\n"
         "- Be helpful, accurate, and engaging in your response\n"
         "- Format your response appropriately for the question type\n"
+        "- Please consider The Vibe when crafting your response\n"
     )
     return context_prompt
 
