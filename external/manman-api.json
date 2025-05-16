@@ -103,12 +103,17 @@
                     "game_server_instance_id": {
                         "title": "Game Server Instance Id",
                         "type": "integer"
+                    },
+                    "worker_id": {
+                        "title": "Worker Id",
+                        "type": "integer"
                     }
                 },
                 "required": [
                     "game_server_instance_id",
                     "game_server_config_id",
-                    "end_date"
+                    "end_date",
+                    "worker_id"
                 ],
                 "title": "GameServerInstance",
                 "type": "object"
@@ -134,12 +139,17 @@
                     "game_server_instance_id": {
                         "title": "Game Server Instance Id",
                         "type": "integer"
+                    },
+                    "worker_id": {
+                        "title": "Worker Id",
+                        "type": "integer"
                     }
                 },
                 "required": [
                     "game_server_instance_id",
                     "game_server_config_id",
-                    "end_date"
+                    "end_date",
+                    "worker_id"
                 ],
                 "title": "GameServerInstance",
                 "type": "object"
@@ -233,6 +243,18 @@
                         ],
                         "title": "End Date"
                     },
+                    "last_heartbeat": {
+                        "anyOf": [
+                            {
+                                "format": "date-time",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Heartbeat"
+                    },
                     "worker_id": {
                         "title": "Worker Id",
                         "type": "integer"
@@ -240,7 +262,8 @@
                 },
                 "required": [
                     "worker_id",
-                    "end_date"
+                    "end_date",
+                    "last_heartbeat"
                 ],
                 "title": "Worker",
                 "type": "object"
@@ -374,6 +397,29 @@
                     }
                 },
                 "summary": "Stop Game Server"
+            }
+        },
+        "/host/gameserver/instances/active": {
+            "get": {
+                "description": "Get all active game server instances for the current worker.",
+                "operationId": "get_active_game_server_instances_host_gameserver_instances_active_get",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/GameServerInstance-Output"
+                                    },
+                                    "title": "Response Get Active Game Server Instances Host Gameserver Instances Active Get",
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    }
+                },
+                "summary": "Get Active Game Server Instances"
             }
         },
         "/host/health": {
@@ -583,6 +629,42 @@
                     }
                 },
                 "summary": "Worker Create"
+            }
+        },
+        "/workerdal/worker/heartbeat": {
+            "put": {
+                "operationId": "worker_heartbeat_workerdal_worker_heartbeat_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Worker"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    }
+                },
+                "summary": "Worker Heartbeat"
             }
         },
         "/workerdal/worker/shutdown": {
