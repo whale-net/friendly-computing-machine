@@ -1,6 +1,39 @@
 {
     "components": {
         "schemas": {
+            "CurrentInstanceResponse": {
+                "description": "Response to the worker to start a game server instance.",
+                "properties": {
+                    "configs": {
+                        "items": {
+                            "$ref": "#/components/schemas/GameServerConfig"
+                        },
+                        "title": "Configs",
+                        "type": "array"
+                    },
+                    "game_server_isntances": {
+                        "items": {
+                            "$ref": "#/components/schemas/GameServerInstance-Output"
+                        },
+                        "title": "Game Server Isntances",
+                        "type": "array"
+                    },
+                    "workers": {
+                        "items": {
+                            "$ref": "#/components/schemas/Worker"
+                        },
+                        "title": "Workers",
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "game_server_isntances",
+                    "workers",
+                    "configs"
+                ],
+                "title": "CurrentInstanceResponse",
+                "type": "object"
+            },
             "GameServer": {
                 "properties": {
                     "app_id": {
@@ -408,11 +441,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "items": {
-                                        "$ref": "#/components/schemas/GameServerInstance-Output"
-                                    },
-                                    "title": "Response Get Active Game Server Instances Host Gameserver Instances Active Get",
-                                    "type": "array"
+                                    "$ref": "#/components/schemas/CurrentInstanceResponse"
                                 }
                             }
                         },
