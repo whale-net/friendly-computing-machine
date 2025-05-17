@@ -1,4 +1,3 @@
-import functools
 import logging
 import os
 from dataclasses import dataclass
@@ -6,8 +5,8 @@ from datetime import datetime, timedelta
 from threading import Lock
 
 from slack_bolt import App
-from slack_sdk import WebClient
 
+from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.db.dal import (
     get_bot_slack_user_slack_ids,
     get_music_polls,
@@ -21,21 +20,6 @@ __GLOBALS = {}
 
 logger = logging.getLogger(__name__)
 bot_config_lock = Lock()
-
-
-class SlackWebClientFCM(WebClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @functools.cached_property
-    def team_id(self) -> str:
-        """
-        :return: returns cached current team_id
-        """
-        team_info_response = self.team_info()
-        if team_info_response.status_code != 200:
-            raise RuntimeError("status_code not 200 team_info_response")
-        return team_info_response.get("team").get("id")
 
 
 def init_client():

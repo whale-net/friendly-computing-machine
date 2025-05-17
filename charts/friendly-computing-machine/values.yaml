@@ -38,5 +38,7 @@ env:
       endpoint: <traces_endpoint>
   temporal:
     host: <temporal_host>
+  manman:
+    host: <manman_host>
 #    metrics:
 #      endpoint: <metrics_endpoint>

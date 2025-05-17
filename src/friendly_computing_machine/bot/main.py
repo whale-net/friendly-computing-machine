@@ -2,7 +2,9 @@ import logging
 
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from friendly_computing_machine.bot.app import app
+# Import handlers *after* app to register decorators
+from friendly_computing_machine.bot import handlers  # noqa
+from friendly_computing_machine.bot.app import app  # Import app first
 from friendly_computing_machine.bot.task.taskpool import create_default_taskpool
 from friendly_computing_machine.health import run_health_server
 from friendly_computing_machine.util import NamedThreadPool
