@@ -11,11 +11,11 @@
                         "title": "Configs",
                         "type": "array"
                     },
-                    "game_server_isntances": {
+                    "game_server_instances": {
                         "items": {
                             "$ref": "#/components/schemas/GameServerInstance-Output"
                         },
-                        "title": "Game Server Isntances",
+                        "title": "Game Server Instances",
                         "type": "array"
                     },
                     "workers": {
@@ -27,7 +27,7 @@
                     }
                 },
                 "required": [
-                    "game_server_isntances",
+                    "game_server_instances",
                     "workers",
                     "configs"
                 ],
