@@ -5,7 +5,7 @@ from typing import Annotated
 import typer
 
 # Import the new ManManAPI class
-from friendly_computing_machine.manman.util import ManManAPI
+from friendly_computing_machine.manman.api import ManManAPI
 
 logger = logging.getLogger(__name__)
 FILENAME = os.path.basename(__file__)

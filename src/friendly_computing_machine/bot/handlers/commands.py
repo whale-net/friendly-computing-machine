@@ -5,8 +5,7 @@ from opentelemetry import trace
 from slack_bolt import Ack, Say
 
 from friendly_computing_machine.bot.app import app
-from friendly_computing_machine.bot.handlers.shortcuts import DUMMY_SERVERS
-from friendly_computing_machine.bot.modal_schemas import ServerSelectModal
+from friendly_computing_machine.bot.modal_builder import build_server_select_modal
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
@@ -133,7 +132,8 @@ def handle_test_command(ack: Ack, say: Say, command, client: SlackWebClientFCM):
             logger.info("slack-ack")
             span.set_attribute("slack.command", "/test")
             span.set_attribute("slack.command.text", command["text"])
-            modal = ServerSelectModal(options=DUMMY_SERVERS)
+            # modal = ServerSelectModal(options=DUMMY_SERVERS)
+            modal = build_server_select_modal()
             client.views_open(
                 trigger_id=command["trigger_id"],
                 view=modal.build(),

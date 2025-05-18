@@ -5,7 +5,7 @@ from slack_bolt import Ack
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ActionPayload
-from friendly_computing_machine.manman.util import ManManAPI
+from friendly_computing_machine.manman.api import ManManAPI
 
 logger = logging.getLogger(__name__)
 

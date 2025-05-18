@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List
 
@@ -17,8 +18,30 @@ from slack_sdk.models.views import View
 # ServerOption class is removed as it's replaced by slack_sdk.models.blocks.Option
 
 
+class BaseModalView(ABC):
+    """Abstract base class for modal views in the Slack application.
+
+    This class defines the common interface for all modal views and ensures
+    they all implement the necessary methods for building views.
+    """
+
+    callback_id: str
+    title: str
+
+    @abstractmethod
+    def build(self) -> View:
+        """Build and return a Slack View object.
+
+        This method must be implemented by all subclasses.
+
+        Returns:
+            View: A fully constructed Slack View object
+        """
+        pass
+
+
 @dataclass
-class ServerSelectModal:
+class ServerSelectModal(BaseModalView):
     options: List[Option]  # Use slack_sdk Option
     callback_id: str = "server_select_modal"
     title: str = "Select Server"
@@ -45,7 +68,7 @@ class ServerSelectModal:
 
 
 @dataclass
-class ServerActionModal:
+class ServerActionModal(BaseModalView):
     server_name: str
     callback_id: str = "server_action_modal"
     title: str = "Server Actions"
