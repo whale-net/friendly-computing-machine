@@ -10,11 +10,7 @@ from friendly_computing_machine.bot.slack_payloads import ShortcutPayload
 
 logger = logging.getLogger(__name__)
 
-DUMMY_SERVERS = [
-    Option(label="Server Alpha", value="server_alpha"),
-    Option(label="Server Beta", value="server_beta"),
-    Option(label="Server Gamma", value="server_gamma"),
-]
+# Removed unused DUMMY_SERVERS variable to clean up the code.
 
 
 @app.shortcut("server_control_shortcut")

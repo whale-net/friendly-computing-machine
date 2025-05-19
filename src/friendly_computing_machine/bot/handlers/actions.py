@@ -33,7 +33,7 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
 @app.action("stop_server")
 def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
-    print(body)
+    logger.debug(body)
     payload = ActionPayload.from_dict(body)
     logger.info("Stop server clicked")
     try:
@@ -63,7 +63,7 @@ def handle_restart_server(ack: Ack, body, client: SlackWebClientFCM, logger):
 def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
-    print(body)
+    logger.debug(body)
 
     if payload.custom_command is None:
         logger.error("Custom command is None")

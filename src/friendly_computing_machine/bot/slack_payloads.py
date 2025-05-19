@@ -36,7 +36,8 @@ class ViewSubmissionPayload:
 @dataclass
 class ActionPayload:
     user_id: str
-    # Idk what is going on in this class, i just need this
+    # Stores additional metadata associated with the view, typically used to pass
+    # contextual information between different parts of the Slack app.
     private_metadata: str
     # ????
     custom_command: Optional[str] = None

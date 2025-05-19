@@ -85,5 +85,4 @@ ENV UV_COMPILE_BYTECODE=0
 # RUN uv run opentelemetry-bootstrap -a requirements | uv pip install --requirement -
 
 #ENTRYPOINT ["uv", "run", "fcm"]
-#ENTRYPOINT ["sleep", "1000"]
 ENTRYPOINT ["uv", "run", "opentelemetry-instrument", "fcm"]

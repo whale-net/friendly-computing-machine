@@ -43,7 +43,11 @@ def handle_server_select_submission(ack: Ack, body, client: SlackWebClientFCM, l
         client.views_open(
             trigger_id=payload.trigger_id,
             # TODO - move arg out of build and into modal
-            view=modal.build(game_server_instance_id=payload.selected_server),
+            view=modal.build(
+                game_server_instance_id=int(payload.selected_server)
+                if payload.selected_server.isdigit()
+                else -1
+            ),
         )
         logger.info(f"Server manager opened for: {config.name}")
     except Exception as e:

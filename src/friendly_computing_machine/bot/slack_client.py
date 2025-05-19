@@ -14,5 +14,5 @@ class SlackWebClientFCM(WebClient):
         """
         team_info_response = self.team_info()
         if team_info_response.status_code != 200:
-            raise RuntimeError("status_code not 200 team_info_response")
+            raise RuntimeError(f"Failed to retrieve team info, expected HTTP 200 but got {team_info_response.status_code}")
         return team_info_response.get("team").get("id")
