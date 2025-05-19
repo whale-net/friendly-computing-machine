@@ -2,19 +2,18 @@ import datetime
 import logging
 
 from opentelemetry import trace
+from slack_bolt import Ack, Say
 
-from friendly_computing_machine.bot.app import app, get_bot_config
+from friendly_computing_machine.bot.app import app
+from friendly_computing_machine.bot.modal_builder import build_server_select_modal
+from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.db.dal import (
     insert_genai_text,
     insert_slack_command,
     update_genai_text_response,
-    upsert_message,
 )
 from friendly_computing_machine.models.genai import GenAITextCreate
-from friendly_computing_machine.models.slack import (
-    SlackCommandCreate,
-    SlackMessageCreate,
-)
+from friendly_computing_machine.models.slack import SlackCommandCreate
 from friendly_computing_machine.temporal.slack.workflow import (
     SlackContextGeminiWorkflow,
     SlackContextGeminiWorkflowParams,
@@ -28,61 +27,9 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 
 
-@app.event("message")
-def handle_message(event, say):
-    # TODO: typehint for event? or am I supposed to just yolo it?
-    with tracer.start_as_current_span("handle_message") as span:
-        try:
-            logger.debug(event)
-            sub_type = event.get("subtype", "")
-            span.set_attribute("slack.event.subtype", sub_type)
-
-            if sub_type == "message_changed":
-                # TODO - update message - for now, will use latest message for poll
-                logger.info(
-                    "message update received. not updating, not implemented (yet)"
-                )
-                span.set_attribute("message.processed", False)
-                span.set_attribute("message.reason", "message_changed subtype")
-                return
-            else:
-                message_event = event
-
-            message = SlackMessageCreate.from_slack_message_json(message_event)
-            span.set_attribute("slack.message.id", message.slack_id)
-            span.set_attribute("slack.channel.id", message.slack_channel_slack_id)
-            span.set_attribute("slack.user.id", message.slack_user_slack_id)
-
-            # Rules for inserting messages
-            # is in channel.is_music_poll
-            # there used to be a rule about bot user, bot thread, but that was removed
-            config = get_bot_config()
-
-            if message.slack_channel_slack_id not in {
-                info.slack_channel.slack_id for info in config.music_poll_infos
-            }:
-                logger.info(
-                    "skipping message %s - not in music poll channel", message.slack_id
-                )
-                span.set_attribute("message.processed", False)
-                span.set_attribute("message.reason", "not in music poll channel")
-                return
-
-            # if we reach this point, we can insert the message
-            # will be processed later
-            msg = upsert_message(message)
-            span.set_attribute("db.message.id", msg.id)
-            span.set_attribute("message.processed", True)
-            logger.info("message inserted. id=%s, slack_id=%s", msg.id, msg.slack_id)
-        except Exception as e:
-            span.record_exception(e)
-            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
-            raise
-
-
 # Name TBD, good enough for now, and doesn't reserve "ai" as a slash command
 @app.command("/wai")
-def handle_whale_ai_command(ack, say, command):
+def handle_whale_ai_command(ack: Ack, say: Say, command):
     with tracer.start_as_current_span("handle_whale_ai_command") as span:
         try:
             ack()
@@ -177,8 +124,27 @@ def handle_whale_ai_command(ack, say, command):
             raise
 
 
-@app.error
-def global_error_handler(error, body, logger):
-    """Handles errors globally."""
-    logger.exception(f"Error: {error}")
-    logger.info(f"Request body: {body}")
+@app.command("/test")
+def handle_test_command(ack: Ack, say: Say, command, client: SlackWebClientFCM):
+    with tracer.start_as_current_span("handle_test_command") as span:
+        try:
+            ack()
+            logger.info("slack-ack")
+            span.set_attribute("slack.command", "/test")
+            span.set_attribute("slack.command.text", command["text"])
+            # modal = ServerSelectModal(options=DUMMY_SERVERS)
+            modal = build_server_select_modal()
+            client.views_open(
+                trigger_id=command["trigger_id"],
+                view=modal.build(),
+            )
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            logger.exception("Error handling /test command")
+            # Reraise exception to be caught by global handler
+            raise
+        finally:
+            # This block will always run
+            logger.info("Finished handling /test command")
+            span.end()
