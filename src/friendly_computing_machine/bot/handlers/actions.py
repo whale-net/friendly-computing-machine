@@ -1,8 +1,8 @@
 import logging
 
-from external.manman_api.models.stdin_command_request import StdinCommandRequest
 from slack_bolt import Ack
 
+from external.manman_api.models.stdin_command_request import StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ActionPayload
@@ -16,14 +16,12 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info("Start server clicked")
-    client.chat_postMessage(channel=payload.user_id, text="start does nothing yo")
     # Use the ManManAPI class to get the client
     try:
-        # perhaps a rather unfortunate name
-        # mapi = ManManAPI.get_api()
-        # mapi.start_game_server_host_gameserver_id_start_post(1)  # testing for now
-        logger.info("start does nothing")
-
+        mapi = ManManAPI.get_api()
+        game_server_config_id = int(payload.private_metadata)
+        mapi.start_game_server_host_gameserver_id_start_post(game_server_config_id)
+        logger.info("started %s", game_server_config_id)
     except ValueError as e:
         logger.error(f"Failed to get ManMan API client: {e}")
         # Optionally inform the user about the configuration issue
@@ -40,19 +38,8 @@ def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     logger.info("Stop server clicked")
     try:
         mapi = ManManAPI.get_api()
-        game_server_instance_id = int(payload.private_metadata)
-        mapi.stop_game_server_host_gameserver_id_stop_post(game_server_instance_id)
-
-        # TODO: close the modal?
-        # if payload.view_id:
-        #     client.views_close(view_id=payload.view_id)
-
-        # Send confirmation message to the user
-        client.chat_postMessage(
-            channel=payload.user_id,
-            text="Server stop event sent. This message is to encourage you to close the modal since it will no longer do anyhting",
-        )
-
+        game_server_config_id = int(payload.private_metadata)
+        mapi.stop_game_server_host_gameserver_id_stop_post(game_server_config_id)
     except Exception as e:
         logger.exception(f"Failed to get ManMan API client: {e}")
         # Optionally inform the user about the configuration issue
