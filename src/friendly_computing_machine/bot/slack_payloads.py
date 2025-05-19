@@ -36,14 +36,29 @@ class ViewSubmissionPayload:
 @dataclass
 class ActionPayload:
     user_id: str
+    # Idk what is going on in this class, i just need this
+    private_metadata: str
+    # ????
     custom_command: Optional[str] = None
+    view_id: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ActionPayload":
         try:
-            custom_command = data["view"]["state"]["values"]["custom_input_block"][
-                "custom_command_input"
-            ]["value"]
+            custom_command = data["view"]["state"]["values"][
+                "stdin_custom_input_block"
+            ]["stdin_custom_command_input"]["value"]
         except Exception:
             custom_command = None
-        return cls(user_id=data["user"]["id"], custom_command=custom_command)
+
+        try:
+            view_id = data["view"]["id"]
+        except Exception:
+            view_id = None
+
+        return cls(
+            user_id=data["user"]["id"],
+            custom_command=custom_command,
+            private_metadata=data["view"]["private_metadata"],
+            view_id=view_id,
+        )

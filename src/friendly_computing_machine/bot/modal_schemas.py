@@ -9,6 +9,7 @@ from slack_sdk.models.blocks import (
     InputBlock,
     MarkdownTextObject,
     Option,
+    PlainTextInputElement,
     PlainTextObject,
     SectionBlock,
     StaticSelectElement,
@@ -63,6 +64,7 @@ class ServerSelectModal(BaseModalView):
                         options=self.options,  # Directly use the list of Option objects
                     ),
                 )
+                # TODO - use ActionsBlock with LinkButtonElement to list servers and avoid ddl
             ],
         )
 
@@ -75,13 +77,18 @@ class ServerActionModal(BaseModalView):
     actions: List[str] = field(default_factory=lambda: ["Start", "Stop", "Restart"])
     custom_button_text: str = "Send Custom"
 
-    def build(self) -> View:  # Return a slack_sdk View object
+    def build(
+        self, game_server_instance_id: int
+    ) -> View:  # Return a slack_sdk View object
         # No submit button needed for an action-only modal typically
         return View(
             type="modal",
+            private_metadata=str(game_server_instance_id),
             callback_id=self.callback_id,
             title=PlainTextObject(text=self.title),
             # close=PlainTextObject(text="Cancel"), # Example: Add a close button if needed
+            # just use close for submit
+            submit=PlainTextObject(text="Close (but green)", emoji=True),
             blocks=[
                 SectionBlock(
                     text=MarkdownTextObject(text=f"*Server:* {self.server_name}")
@@ -97,18 +104,22 @@ class ServerActionModal(BaseModalView):
                         for action in self.actions
                     ],
                 ),
-                # InputBlock(
-                #     block_id="custom_input_block",
-                #     label=PlainTextObject(text="Custom Command"),
-                #     element=PlainTextInputElement(action_id="custom_command_input"),
-                #     optional=True,
-                # ),
+                InputBlock(
+                    block_id="stdin_custom_input_block",
+                    label=PlainTextObject(
+                        text="Send a Command to the Server's Admin Console"
+                    ),
+                    element=PlainTextInputElement(
+                        action_id="stdin_custom_command_input"
+                    ),
+                    optional=True,
+                ),
                 ActionsBlock(
                     block_id="custom_action_block",
                     elements=[
                         ButtonElement(
                             text=PlainTextObject(text=self.custom_button_text),
-                            action_id="send_custom_command",
+                            action_id="send_stdin_custom_command",
                         ),
                     ],
                 ),

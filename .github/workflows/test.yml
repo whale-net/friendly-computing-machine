@@ -27,6 +27,10 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
+      - name: Generate external dependencies
+        run:
+          ./bin/generate_external_dependencies.sh
+
       - name: Install the project
         run: uv sync
 

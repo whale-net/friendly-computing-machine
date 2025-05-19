@@ -94,6 +94,11 @@
                         "title": "Is Default",
                         "type": "boolean"
                     },
+                    "is_visible": {
+                        "default": true,
+                        "title": "Is Visible",
+                        "type": "boolean"
+                    },
                     "name": {
                         "title": "Name",
                         "type": "string"
@@ -309,8 +314,32 @@
     },
     "openapi": "3.1.0",
     "paths": {
+        "/host/gameserver": {
+            "get": {
+                "description": "Get all game server configs\n\nAlthough it seems strange for us to return configs instead of instances,\nthis is the way the API is designed. We want to make the /gameserver/ endpoint\nthe way you would interact with a game server. The whole instance thing\nshould be abstracted away from the user.\n\n:return: list of game server configs",
+                "operationId": "get_game_servers_host_gameserver_get",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/GameServerConfig"
+                                    },
+                                    "title": "Response Get Game Servers Host Gameserver Get",
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    }
+                },
+                "summary": "Get Game Servers"
+            }
+        },
         "/host/gameserver/{id}/start": {
             "post": {
+                "description": "Given the game server config ID, start a game server instance\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
                 "operationId": "start_game_server_host_gameserver__id__start_post",
                 "parameters": [
                     {
@@ -348,7 +377,7 @@
         },
         "/host/gameserver/{id}/stdin": {
             "post": {
-                "description": "Stop all running game server instances for the current worker.",
+                "description": "Send a stdin command to the game server config's running instance\n\nThis finds the current worker, and sends a stdin command to it\nIt is up to the worker to handle the command\nand send it to the game server instance.\n\nThis endpoint does not have a bheavior defined if no server is running.\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:param body: StdinCommandRequest\n:return: arbitrary response",
                 "operationId": "stdin_game_server_host_gameserver__id__stdin_post",
                 "parameters": [
                     {
@@ -396,7 +425,7 @@
         },
         "/host/gameserver/{id}/stop": {
             "post": {
-                "description": "Stop all running game server instances for the current worker.",
+                "description": "Given the game server config ID, stop a game server instance\n\nFinds the current worker, and sends a stop command to it\nIt is up to the worker to handle the command\nand stop the game server instance.\n\nThis endpoint provides an abstract gameserver interface\nto users, so they don't have to know about the worker\nand how it works\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
                 "operationId": "stop_game_server_host_gameserver__id__stop_post",
                 "parameters": [
                     {
@@ -430,6 +459,54 @@
                     }
                 },
                 "summary": "Stop Game Server"
+            }
+        },
+        "/host/gameserver/instance/{id}/stdin": {
+            "post": {
+                "description": "Send a stdin command to the game server instance\n\nThis sends a command directly to the game server instance.\nThe worker is not involved in this process.\n\nThis endpoint does not have a behavior defined if the game server instance is not running.\n\n:param id: game server instance ID\n:param channel: rabbitmq channel\n:param body: StdinCommandRequest\n:return: arbitrary response",
+                "operationId": "stdin_game_server_instance_host_gameserver_instance__id__stdin_post",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "title": "Id",
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StdinCommandRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    }
+                },
+                "summary": "Stdin Game Server Instance"
             }
         },
         "/host/gameserver/instances/active": {

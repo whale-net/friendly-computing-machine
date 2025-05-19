@@ -15,11 +15,20 @@ def handle_server_select_submission(ack: Ack, body, client: SlackWebClientFCM, l
     try:
         payload = ViewSubmissionPayload.from_dict(body)
         modal = ServerActionModal(
-            server_name=(payload.selected_server or "Unknown").replace("_", " ").title()
+            server_name=(payload.selected_server or "Unknown")
+            .replace("_", " ")
+            .title(),
         )
         client.views_open(
             trigger_id=payload.trigger_id,
-            view=modal.build(),
+            # TODO - move arg out of build and into modal
+            view=modal.build(game_server_instance_id=payload.selected_server),
         )
     except Exception as e:
         logger.error(f"Error opening server action modal: {e}")
+
+
+@app.view("server_action_modal")
+def handle_view_submission_events(ack, body, logger):
+    ack()
+    logger.info(body)

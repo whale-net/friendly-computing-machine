@@ -2,6 +2,7 @@ import logging
 
 from slack_bolt import Ack
 
+from external.manman_api.models.stdin_command_request import StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ActionPayload
@@ -15,14 +16,13 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
     logger.info("Start server clicked")
-    client.chat_postMessage(
-        channel=payload.user_id, text="[Stub] Start server action triggered."
-    )
+    client.chat_postMessage(channel=payload.user_id, text="start does nothing yo")
     # Use the ManManAPI class to get the client
     try:
         # perhaps a rather unfortunate name
-        mapi = ManManAPI.get_api()
-        mapi.start_game_server_host_gameserver_id_start_post(1)  # testing for now
+        # mapi = ManManAPI.get_api()
+        # mapi.start_game_server_host_gameserver_id_start_post(1)  # testing for now
+        logger.info("start does nothing")
 
     except ValueError as e:
         logger.error(f"Failed to get ManMan API client: {e}")
@@ -35,11 +35,30 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
 @app.action("stop_server")
 def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
+    print(body)
     payload = ActionPayload.from_dict(body)
     logger.info("Stop server clicked")
-    client.chat_postMessage(
-        channel=payload.user_id, text="[Stub] Stop server action triggered."
-    )
+    try:
+        mapi = ManManAPI.get_api()
+        game_server_instance_id = int(payload.private_metadata)
+        mapi.stop_game_server_host_gameserver_id_stop_post(game_server_instance_id)
+
+        # TODO: close the modal?
+        # if payload.view_id:
+        #     client.views_close(view_id=payload.view_id)
+
+        # Send confirmation message to the user
+        client.chat_postMessage(
+            channel=payload.user_id,
+            text="Server stop event sent. This message is to encourage you to close the modal since it will no longer do anyhting",
+        )
+
+    except Exception as e:
+        logger.exception(f"Failed to get ManMan API client: {e}")
+        # Optionally inform the user about the configuration issue
+        client.chat_postMessage(
+            channel=payload.user_id, text="Error: ManMan API is not configured."
+        )
 
 
 @app.action("restart_server")
@@ -48,16 +67,41 @@ def handle_restart_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     payload = ActionPayload.from_dict(body)
     logger.info("Restart server clicked")
     client.chat_postMessage(
-        channel=payload.user_id, text="[Stub] Restart server action triggered."
+        channel=payload.user_id,
+        text="[Stub] Restart server action triggered. Currently does nothing.",
     )
 
 
-@app.action("send_custom_command")
+@app.action("send_stdin_custom_command")
 def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     ack()
     payload = ActionPayload.from_dict(body)
-    logger.info(f"Custom command sent: {payload.custom_command}")
-    client.chat_postMessage(
-        channel=payload.user_id,
-        text=f"[Stub] Custom command sent: {payload.custom_command}",
+    print(body)
+
+    if payload.custom_command is None:
+        logger.error("Custom command is None")
+        # message?
+        client.chat_postMessage(
+            channel=payload.user_id, text="Error: Custom command is empty."
+        )
+        return
+
+    logger.info(f"Custom command: {payload.custom_command}")
+
+    # TODO - parse this? seems rather wrong to just take user input but whatever for now
+    req = StdinCommandRequest(
+        commands=[payload.custom_command],
     )
+    try:
+        mapi = ManManAPI.get_api()
+        game_server_instance_id = int(payload.private_metadata)
+        mapi.stdin_game_server_host_gameserver_id_stdin_post(
+            game_server_instance_id,
+            req,
+        )
+    except Exception as e:
+        logger.exception(f"Failed to get ManMan API client: {e}")
+        # Optionally inform the user about the configuration issue
+        client.chat_postMessage(
+            channel=payload.user_id, text="Error: ManMan API error. Please try again"
+        )
