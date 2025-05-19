@@ -1,7 +1,6 @@
 import logging
 
 from slack_bolt import Ack
-from slack_sdk.models.blocks import Option
 
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.modal_builder import build_server_select_modal
