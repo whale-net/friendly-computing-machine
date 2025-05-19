@@ -29,7 +29,7 @@ jobs:
 
       - name: Generate external dependencies
         run:
-          ./manman/bin/generate_external_dependencies.sh
+          ./friendly-computing-machine/bin/generate_external_dependencies.sh
 
       - name: Install the project
         run: uv sync
