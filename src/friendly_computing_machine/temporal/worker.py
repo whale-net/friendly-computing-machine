@@ -31,9 +31,9 @@ from friendly_computing_machine.temporal.sample import (
 )
 from friendly_computing_machine.temporal.slack.activity import (
     backfill_slack_user_info_activity,
+    fix_slack_tagging_activity,
     generate_context_prompt,
     get_slack_channel_context,
-    prepare_prompt_for_slack_activity,
 )
 from friendly_computing_machine.temporal.slack.workflow import (
     SlackContextGeminiWorkflow,
@@ -71,7 +71,7 @@ ACTIVITIES = [
     upsert_slack_user_creates_activity,
     backfill_genai_text_slack_user_id_activity,
     backfill_genai_text_slack_channel_id_activity,
-    prepare_prompt_for_slack_activity,
+    fix_slack_tagging_activity,
 ]
 
 
