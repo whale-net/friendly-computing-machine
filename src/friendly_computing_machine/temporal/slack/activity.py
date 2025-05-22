@@ -104,16 +104,17 @@ async def backfill_slack_user_info_activity() -> list[SlackUserCreate]:
 
 
 @activity.defn
-async def prepare_prompt_for_slack_activity(prompt: str) -> str:
+async def fix_slack_tagging_activity(text: str) -> str:
     """
-    Prepare the prompt for the Gemini AI model.
-    This function can be used to modify or format the prompt before sending it to the model.
+    Fix slack tagging in the text.
+    This function replaces @here and @channel with their escaped versions.
+    TODO: It also replaces <@U12345> with @U12345.
     """
 
     # TODO - person name replacement
 
     # Replace @here and @channel with their escaped versions only if not already escaped
-    prompt = re.sub(r"(?<!<)@here", "<!here>", prompt)
-    prompt = re.sub(r"(?<!<)@channel", "<!channel>", prompt)
+    text = re.sub(r"(?<!<)@here", "<!here>", text)
+    text = re.sub(r"(?<!<)@channel", "<!channel>", text)
 
-    return prompt
+    return text
