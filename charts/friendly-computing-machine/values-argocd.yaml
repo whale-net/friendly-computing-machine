@@ -1,0 +1,54 @@
+# Example values file for Argo CD deployments
+# This file demonstrates how to configure the chart for optimal Argo CD usage
+
+# Standard configuration
+image:
+  name: "ghcr.io/whale-net/friendly-computing-machine"
+  tag: "latest"
+
+namespace: fcm
+
+deployment:
+  name: "production"
+  replicas: 2
+  health:
+    enabled: true
+
+temporal:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Argo CD optimized configuration
+argocd:
+  # Enable Argo CD specific features
+  enabled: true
+  # Use sync waves for proper ordering (automatically skips Helm hooks)
+  useSyncWaves: true
+  # Migration runs first (negative sync wave)
+  migrationSyncWave: -10
+
+# Environment configuration
+env:
+  app_env: production
+  db:
+    url: "postgresql+psycopg2://user:password@postgres:5432/fcm"
+  slack:
+    botToken: "xoxb-your-bot-token"
+    appToken: "xapp-your-app-token"
+  google:
+    api_key: "your-google-api-key"
+  otelCollector:
+    logs:
+      endpoint: "http://otel-collector:4317"
+    traces:
+      endpoint: "http://otel-collector:4317"
+  temporal:
+    host: "temporal-frontend:7233"
+  manman:
+    host: "http://manman-api:8080"

@@ -1,0 +1,85 @@
+import logging
+
+import typer
+
+from friendly_computing_machine.bot.subscribe.main import run_manman_subscribe
+from friendly_computing_machine.cli.context.app_env import T_app_env, setup_app_env
+from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
+from friendly_computing_machine.cli.context.db import T_database_url, setup_db
+from friendly_computing_machine.cli.context.log import setup_logging
+from friendly_computing_machine.cli.context.rabbitmq import (
+    FILENAME as RABBITMQ_FILENAME,
+)
+from friendly_computing_machine.cli.context.rabbitmq import (
+    T_rabbitmq_url,
+    setup_rabbitmq,
+)
+from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
+from friendly_computing_machine.cli.context.slack import (
+    T_slack_bot_token,
+    setup_slack_bot_only,
+)
+from friendly_computing_machine.db.util import should_run_migration
+
+logger = logging.getLogger(__name__)
+
+app = typer.Typer(
+    context_settings={"obj": {}},
+)
+
+
+@app.callback()
+def callback(
+    ctx: typer.Context,
+    slack_bot_token: T_slack_bot_token,
+    rabbitmq_url: T_rabbitmq_url,
+    app_env: T_app_env,
+    log_otlp: bool = False,
+):
+    """
+    ManMan Subscribe Service - Event-driven microservice for manman notifications.
+
+    Subscribes to RabbitMQ topics for worker and instance lifecycle events
+    and sends formatted Slack notifications with action buttons.
+    """
+    logger.debug("Subscribe CLI callback starting")
+    setup_logging(ctx, log_otlp=log_otlp)
+    setup_app_env(ctx, app_env)
+    setup_slack_bot_only(ctx, slack_bot_token)
+    setup_rabbitmq(ctx, rabbitmq_url)
+    logger.debug("Subscribe CLI callback complete")
+
+
+@app.command("run")
+def cli_run(
+    ctx: typer.Context,
+    database_url: T_database_url,
+    skip_migration_check: bool = False,
+):
+    """
+    Start the ManMan Subscribe Service.
+
+    This service subscribes to RabbitMQ topics for manman worker and instance events
+    and sends formatted notifications to Slack with action buttons.
+    """
+    setup_db(ctx, database_url)
+
+    if skip_migration_check:
+        logger.info("skipping migration check")
+    elif should_run_migration(
+        ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config
+    ):
+        logger.critical("migration check failed, please migrate")
+        raise RuntimeError("need to run migration")
+    else:
+        logger.info("migration check passed, starting normally")
+
+    logger.info("starting manman subscribe service")
+    run_manman_subscribe(
+        rabbitmq_url=ctx.obj[RABBITMQ_FILENAME]["rabbitmq_url"],
+        slack_bot_token=ctx.obj[SLACK_FILENAME]["slack_bot_token"],
+    )
+
+
+if __name__ == "__main__":
+    app()

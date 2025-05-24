@@ -6,21 +6,32 @@ namespace: fcm
 
 deployment:
   name: ""
-  skip_migration_check: true
   replicas: 1
 
   health:
     enabled: true
 
-  temporal:
-    replicas: 1
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
+# Argo CD specific configuration
+argocd:
+  # Enable Argo CD specific features and annotations
+  enabled: false
+  # Use Argo CD sync waves instead of Helm hooks for ordering
+  # When enabled, migration job runs in sync wave -10, deployments in wave 0
+  # This automatically skips Helm hooks to avoid conflicts
+  useSyncWaves: false
+  # Sync wave for migration job (lower numbers run first)
+  # Default -10 ensures migrations run before deployments (wave 0)
+  migrationSyncWave: -10
+
+temporal:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
 
 env:
   app_env: dev
