@@ -14,7 +14,11 @@ from friendly_computing_machine.cli.context.manman_host import (
     setup_manman_host_api,
 )
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
-from friendly_computing_machine.cli.context.slack import T_slack_app_token, setup_slack
+from friendly_computing_machine.cli.context.slack import (
+    T_slack_app_token,
+    T_slack_bot_token,
+    setup_slack,
+)
 from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
@@ -22,7 +26,6 @@ from friendly_computing_machine.cli.context.temporal import (
 from friendly_computing_machine.db.util import should_run_migration
 
 logger = logging.getLogger(__name__)
-
 app = typer.Typer(
     context_settings={"obj": {}},
 )
@@ -32,6 +35,7 @@ app = typer.Typer(
 def callback(
     ctx: typer.Context,
     slack_app_token: T_slack_app_token,
+    slack_bot_token: T_slack_bot_token,
     temporal_host: T_temporal_host,
     app_env: T_app_env,
     manman_host_url: T_manman_host_url,
@@ -39,7 +43,7 @@ def callback(
 ):
     logger.debug("CLI callback starting")
     setup_logging(ctx, log_otlp=log_otlp)
-    setup_slack(ctx, slack_app_token)
+    setup_slack(ctx, slack_app_token, slack_bot_token)
     setup_temporal(ctx, temporal_host, app_env)
     setup_manman_host_api(ctx, manman_host_url)
     logger.debug("CLI callback complete")
