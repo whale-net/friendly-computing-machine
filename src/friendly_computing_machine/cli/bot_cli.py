@@ -2,8 +2,6 @@ import logging
 
 import typer
 
-from friendly_computing_machine.bot.main import run_slack_bot
-from friendly_computing_machine.bot.util import slack_bot_who_am_i, slack_send_message
 from friendly_computing_machine.cli.context.app_env import T_app_env
 from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
@@ -70,6 +68,9 @@ def cli_run(
     setup_gemini(ctx, google_api_key)
 
     logger.info("starting bot")
+    # Lazy import to avoid initializing Slack app during CLI parsing
+    from friendly_computing_machine.bot.main import run_slack_bot
+
     run_slack_bot(
         app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
     )
@@ -77,9 +78,15 @@ def cli_run(
 
 @app.command("send-test-command")
 def cli_bot_test_message(channel: str, message: str):
+    # Lazy import to avoid initializing Slack app during CLI parsing
+    from friendly_computing_machine.bot.util import slack_send_message
+
     slack_send_message(channel, message)
 
 
 @app.command("who-am-i")
 def cli_bot_who_am_i():
+    # Lazy import to avoid initializing Slack app during CLI parsing
+    from friendly_computing_machine.bot.util import slack_bot_who_am_i
+
     logger.info(slack_bot_who_am_i())

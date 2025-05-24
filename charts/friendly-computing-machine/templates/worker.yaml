@@ -5,8 +5,12 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     app: temporal-worker
+  {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
+  annotations:
+    "argocd.argoproj.io/sync-wave": "0"
+  {{- end }}
 spec:
-  replicas: {{ .Values.deployment.temporal.replicas }} # Consider if worker replicas should be configured separately
+  replicas: {{ .Values.temporal.replicas }} # Consider if worker replicas should be configured separately
   selector:
     matchLabels:
       app: temporal-worker
@@ -21,17 +25,19 @@ spec:
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         resources: # Adjust resources based on worker needs
           requests:
-            cpu: {{ .Values.deployment.temporal.resources.requests.cpu }}
-            memory: {{ .Values.deployment.temporal.resources.requests.memory }}
+            cpu: {{ .Values.temporal.resources.requests.cpu }}
+            memory: {{ .Values.temporal.resources.requests.memory }}
           limits:
-            cpu: {{ .Values.deployment.temporal.resources.limits.cpu }}
-            memory: {{ .Values.deployment.temporal.resources.limits.memory }}
+            cpu: {{ .Values.temporal.resources.limits.cpu }}
+            memory: {{ .Values.temporal.resources.limits.memory }}
         # No ports needed for the worker
         # No health checks needed for the worker
         args:
           - workflow
           - --log-otlp
           - run
+          # migrations run as pre-install job
+          - --skip-migration-check
         env:
           - name: APP_ENV
             value: {{ .Values.env.app_env }}

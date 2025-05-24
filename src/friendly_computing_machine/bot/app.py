@@ -31,15 +31,33 @@ def init_client():
     )
 
 
-if os.environ.get("SKIP_SLACK_APP_INIT") == "ya":
-    # we don't always want to spawn a slack app (migrations)
-    # need to figure out better way to do this, but for now it works
-    # the magic mock is to just make all decorator stuff work because this is structured poorly
-    from unittest.mock import MagicMock
+# Slack app instance (initialized lazily)
+_app_instance = None
 
-    app = MagicMock()
-else:
-    app = App(client=init_client(), logger=logging.getLogger("slack_bolt"))
+
+def get_slack_app() -> App:
+    """Get the Slack app instance, initializing it if needed."""
+    global _app_instance
+    if _app_instance is None:
+        init_client()  # Initialize the client first
+        _app_instance = App(
+            client=get_slack_web_client(), logger=logging.getLogger("slack_bolt")
+        )
+    return _app_instance
+
+
+class _AppProxy:
+    """Proxy object that defers to the real app when methods are called."""
+
+    def __getattr__(self, name):
+        return getattr(get_slack_app(), name)
+
+    def __call__(self, *args, **kwargs):
+        return get_slack_app()(*args, **kwargs)
+
+
+# Create a proxy that can be imported and used with decorators
+app = _AppProxy()
 
 
 @dataclass
