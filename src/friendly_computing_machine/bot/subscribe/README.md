@@ -22,7 +22,7 @@ To start the subscribe service:
 ```bash
 python -m friendly_computing_machine.cli.main bot subscribe \
   --rabbitmq-url "amqp://user:pass@localhost:5672/" \
-  --slack-web-api-token "xoxb-your-token-here" \
+  --slack-bot-token "xoxb-your-token-here" \
   --database-url "postgresql://user:pass@localhost/db"
 ```
 
