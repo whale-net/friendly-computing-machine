@@ -1,8 +1,8 @@
 from typing import Optional  # Import Optional
 
-from external.manman_api.api.default_api import DefaultApi
-from external.manman_api.api_client import ApiClient
-from external.manman_api.configuration import Configuration
+from external.old_manman_api.api.default_api import DefaultApi
+from external.old_manman_api.api_client import ApiClient
+from external.old_manman_api.configuration import Configuration
 
 
 class ManManAPI:

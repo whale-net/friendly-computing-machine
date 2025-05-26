@@ -1,8 +1,8 @@
 import logging
 
-from external.manman_api.models.stdin_command_request import StdinCommandRequest
 from slack_bolt import Ack
 
+from external.old_manman_api.models.stdin_command_request import StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ActionPayload

@@ -1,21 +1,31 @@
-FROM openapitools/openapi-generator-cli:v7.13.0 as generator
+FROM openapitools/openapi-generator-cli:v7.12.0 AS generator
 
 WORKDIR /codegen
-COPY ./external/manman-api.json /codegen/manman-api.json
+# Copy the entire external directory
+COPY ./external /codegen/external
 
-# SUE ME not the same args as the script. may combine that one day, we'll see.
-#RUN openapi-generator-cli generate \
-RUN java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar \
-    generate \
-    -i /codegen/manman-api.json \
-    -g python \
-    -o /codegen/python-client \
-    --skip-validate-spec \
-    --additional-properties=packageName=external.manman_api
+# Generate clients for all API specs using shell built-ins (no need for findutils)
+RUN mkdir -p /codegen/src/external && \
+    touch /codegen/src/external/__init__.py && \
+    for spec_file in /codegen/external/*.json /codegen/external/*.yaml /codegen/external/*.yml; do \
+        if [ -f "$spec_file" ]; then \
+            package_name=$(basename "$spec_file" | sed 's/\.[^.]*$//' | tr '-' '_'); \
+            echo "Generating client for $spec_file with package name: $package_name"; \
+            java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar \
+                generate \
+                -i "$spec_file" \
+                -g python \
+                -o "/codegen/tmp_$package_name" \
+                --skip-validate-spec \
+                --additional-properties=packageName=external.$package_name; \
+            mv "/codegen/tmp_$package_name/external/$package_name" "/codegen/src/external/$package_name"; \
+            rm -rf "/codegen/tmp_$package_name"; \
+        fi; \
+    done
 
 ######
 
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 # not sure if it's necessary to pin uv for this project, but whatever may as well
 # NOTE: update in github actions too
 COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
@@ -25,8 +35,8 @@ WORKDIR /app
 
 RUN mkdir /app/src
 RUN mkdir /app/src/external
-COPY --from=generator /codegen/python-client/external/* /app/src/external/manman_api/
-RUN touch /app/src/external/__init__.py
+# Copy all generated external packages
+COPY --from=generator /codegen/src/external/ /app/src/external/
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
