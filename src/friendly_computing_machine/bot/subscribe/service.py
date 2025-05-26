@@ -1,5 +1,10 @@
+import asyncio
 import logging
 from typing import Optional
+
+from amqpstorm import Connection
+
+from friendly_computing_machine.bot.app import SlackWebClientFCM
 
 logger = logging.getLogger(__name__)
 
@@ -10,26 +15,25 @@ class ManManSubscribeService:
     notifications to Slack based on worker and instance status changes.
 
     This service subscribes to manman topics for:
-    - Worker lifecycle events (start, running, lost, crashed, complete)
-    - Instance lifecycle events (start, init, running, lost, crashed, complete)
+    - Worker lifecycle events (start, running, lost, complete)
+    - Instance lifecycle events (start, init, running, lost, complete)
 
     Events are processed to:
     - Send formatted Slack messages with action buttons
-    - Update status tracking in the database
-    - Handle recovery scenarios for lost workers/instances
     """
 
-    def __init__(self, rabbitmq_url: str, slack_bot_token: str):
+    def __init__(self, rabbitmq_connection: Connection, slack_api: SlackWebClientFCM):
         """
         Initialize the ManMan Subscribe Service.
 
         Args:
-            rabbitmq_url: URL for RabbitMQ connection
+            rabbitmq_connection: Connection object for RabbitMQ
             slack_bot_token: Slack Bot Token for Web API calls (sending messages)
         """
-        self.rabbitmq_url = rabbitmq_url
-        self.slack_bot_token = slack_bot_token
-        self._running = False
+        self._rabbitmq_connection = rabbitmq_connection
+        self._channel = rabbitmq_connection.channel()
+        self._slack_api = slack_api
+        self._is_running = False
 
         logger.info("ManMan Subscribe Service initialized")
 
@@ -38,20 +42,23 @@ class ManManSubscribeService:
         Start the subscribe service.
 
         This will:
-        1. Connect to RabbitMQ
-        2. Set up topic subscriptions for worker and instance events
-        3. Begin processing messages
+        1. Set up topic subscriptions for worker and instance events
+        2. Begin processing messages
         """
         logger.info("Starting ManMan Subscribe Service")
-        self._running = True
+        self._is_running = True
 
-        # TODO: Implement RabbitMQ connection and topic subscription
-        logger.warning(
-            "ManMan Subscribe Service is a stub - RabbitMQ connection not implemented"
-        )
+        # TODO - set up RabbitMQ subscriptions
 
         try:
-            await self._run_message_loop()
+            while self._is_running:
+                # TODO: Implement message consumption from RabbitMQ
+                # TODO: Process worker status updates
+                # TODO: Process instance status updates
+                # TODO: Send Slack notifications
+                await self._process_pending_messages()
+
+                await asyncio.sleep(0.25)
         except Exception as e:
             logger.error(f"Error in subscribe service: {e}")
             raise
@@ -59,32 +66,12 @@ class ManManSubscribeService:
     async def stop(self):
         """Stop the subscribe service gracefully."""
         logger.info("Stopping ManMan Subscribe Service")
-        self._running = False
-
-    async def _run_message_loop(self):
-        """
-        Main message processing loop.
-
-        Listens for messages from:
-        - worker.{id}.status-updates
-        - game-server-instance.{id}.status-updates
-        """
-        while self._running:
-            # TODO: Implement message consumption from RabbitMQ
-            # TODO: Process worker status updates
-            # TODO: Process instance status updates
-            # TODO: Send Slack notifications
-            # TODO: Update database status tracking
-
-            await self._process_pending_messages()
+        self._is_running = False
 
     async def _process_pending_messages(self):
         """Process any pending messages from the queues."""
-        # Stub implementation - just sleep to prevent busy waiting
-        import asyncio
-
-        await asyncio.sleep(1)
         logger.debug("Processing messages (stub)")
+        # fetch messages from RabbitMQ queues
 
     def _handle_worker_status_update(self, worker_id: str, status: str, metadata: dict):
         """

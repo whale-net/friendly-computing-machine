@@ -4,6 +4,8 @@ from typing import Annotated
 
 import typer
 
+from friendly_computing_machine.bot.app import init_web_client
+
 # Slack App Token - for Socket Mode (real-time events)
 T_slack_app_token = Annotated[str, typer.Option(..., envvar="SLACK_APP_TOKEN")]
 # Slack Bot Token - for Web API calls (posting messages, opening modals)
@@ -29,6 +31,7 @@ def setup_slack(
         "slack_app_token": slack_app_token,
         "slack_bot_token": slack_bot_token,
     }
+    init_web_client(slack_bot_token)
     logger.debug("slack setup complete")
 
 
@@ -49,4 +52,5 @@ def setup_slack_bot_only(
     ctx.obj[FILENAME] = {
         "slack_bot_token": slack_bot_token,
     }
+    init_web_client(slack_bot_token)
     logger.debug("slack bot-only setup complete")

@@ -14,4 +14,4 @@ def test_service_initialization():
 
     assert service.rabbitmq_url == "amqp://test:test@localhost:5672/"
     assert service.slack_bot_token == "xoxb-test-token"
-    assert not service._running
+    assert not service._is_running
