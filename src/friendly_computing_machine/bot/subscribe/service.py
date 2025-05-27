@@ -238,102 +238,99 @@ class ManManSubscribeService:
     def _amqp_message_callback(self, message, queue_config: QueueConfig):
         """
         Synchronous callback executed by AMQPStorm's I/O thread when a message is received.
-        Parses the message and schedules asynchronous processing on the asyncio event loop.
+        Extracts necessary data and schedules the full asynchronous processing on the event loop.
         """
         if not self._loop:  # Should be set by start()
             logger.error(
                 "Event loop not available in AMQP callback. Cannot process message."
             )
-            # Potentially try to reject if channel is available, but this is a bad state.
+            # Cannot safely reject here without the loop or a valid channel reference strategy
+            # for this specific scenario. This indicates a severe setup issue.
+            return
+
+        try:
+            # Extract all necessary information from the message object here,
+            # as the message object itself might not be safe to pass across threads
+            # or its lifetime might be tied to the callback's scope in some libraries.
+            body = message.body
+            delivery_tag = message.delivery_tag
+        except Exception as e:
+            logger.error(
+                f"Error accessing message properties in AMQP callback for queue {queue_config.name}: {e}"
+            )
+            # Cannot process further if basic message properties are inaccessible.
             return
 
         logger.info(
-            f"Received message on queue {queue_config.name}: {message.body[:100]}..."
+            f"Received message on queue {queue_config.name} (delivery_tag: {delivery_tag}), scheduling for async processing."
         )
-        try:
-            message_data = json.loads(message.body)
-            # Schedule the async processing on the asyncio event loop
-            asyncio.run_coroutine_threadsafe(
-                self._process_consumed_message(
-                    message_data, queue_config, message.delivery_tag
-                ),
-                self._loop,
-            )
-        except json.JSONDecodeError:
-            logger.warning(
-                f"Message on {queue_config.name} (delivery_tag: {message.delivery_tag}) is not valid JSON, scheduling rejection: {message.body}"
-            )
+        asyncio.run_coroutine_threadsafe(
+            self._process_message_async(body, delivery_tag, queue_config), self._loop
+        )
 
-            async def reject_invalid_json():
-                try:
-                    await asyncio.to_thread(
-                        self._channel.basic.reject,
-                        delivery_tag=message.delivery_tag,
-                        requeue=False,
-                    )
-                    logger.info(
-                        f"Message {message.delivery_tag} rejected (invalid JSON)."
-                    )
-                except Exception as e_reject:
-                    logger.error(
-                        f"Async rejection failed for {message.delivery_tag} (invalid JSON): {e_reject}"
-                    )
-
-            asyncio.run_coroutine_threadsafe(reject_invalid_json(), self._loop)
-        except Exception as e:
-            logger.error(
-                f"Error in AMQP callback for {queue_config.name} (delivery_tag: {message.delivery_tag}): {e}, scheduling rejection."
-            )
-
-            async def reject_on_error():
-                try:
-                    await asyncio.to_thread(
-                        self._channel.basic.reject,
-                        delivery_tag=message.delivery_tag,
-                        requeue=False,
-                    )
-                    logger.info(
-                        f"Message {message.delivery_tag} rejected (callback error)."
-                    )
-                except Exception as e_reject:
-                    logger.error(
-                        f"Async rejection failed for {message.delivery_tag} (callback error): {e_reject}"
-                    )
-
-            asyncio.run_coroutine_threadsafe(reject_on_error(), self._loop)
-
-    async def _process_consumed_message(
-        self, message_data: dict, queue_config: QueueConfig, delivery_tag: int
+    async def _process_message_async(
+        self, body: bytes, delivery_tag: int, queue_config: QueueConfig
     ):
         """
-        Asynchronously processes a consumed message.
-        Deserializes, calls the handler, and acknowledges/rejects the message.
-        Runs in the asyncio event loop.
+        Asynchronously parses, processes, and acknowledges/rejects a message.
+        This method runs in the asyncio event loop.
         """
         logger.info(
             f"Async processing message from {queue_config.name} (delivery_tag: {delivery_tag})"
         )
         try:
+            message_data = json.loads(body)
+            logger.debug(f"Message JSON parsed for {delivery_tag}: {message_data}")
+
             status_info = StatusInfo.from_dict(message_data)
+            logger.debug(f"StatusInfo deserialized for {delivery_tag}: {status_info}")
+
             await self._handle_status_info_async(queue_config.handler, status_info)
-            await asyncio.to_thread(self._channel.basic.ack, delivery_tag=delivery_tag)
+
             logger.debug(
-                f"Message from {queue_config.name} (delivery_tag: {delivery_tag}) acknowledged."
+                f"Attempting to ACK message {delivery_tag} on queue {queue_config.name}."
             )
+            if self._channel and self._channel.is_open:  # Ensure channel is usable
+                await asyncio.to_thread(
+                    self._channel.basic.ack, delivery_tag=delivery_tag
+                )
+                logger.info(
+                    f"Message {delivery_tag} from {queue_config.name} acknowledged."
+                )
+            else:
+                logger.warning(
+                    f"Channel not available or closed, cannot ACK message {delivery_tag} from {queue_config.name}."
+                )
+                # This message will likely be redelivered by RabbitMQ after visibility timeout.
+
+        except json.JSONDecodeError as e:
+            logger.warning(
+                f"Invalid JSON in message from {queue_config.name} (delivery_tag: {delivery_tag}): {e}. Body: {body[:200]}"
+            )
+            if self._channel and self._channel.is_open:
+                await asyncio.to_thread(
+                    self._channel.basic.reject, delivery_tag=delivery_tag, requeue=False
+                )
+                logger.info(f"Message {delivery_tag} (invalid JSON) rejected.")
+            else:
+                logger.warning(
+                    f"Channel not available or closed, cannot REJECT (invalid JSON) message {delivery_tag}."
+                )
         except Exception as e:
             logger.error(
-                f"Error processing consumed message from {queue_config.name} (delivery_tag: {delivery_tag}): {e}"
+                f"Error processing message from {queue_config.name} (delivery_tag: {delivery_tag}): {e}",
+                exc_info=True,
             )
-            try:
+            if self._channel and self._channel.is_open:
                 await asyncio.to_thread(
                     self._channel.basic.reject, delivery_tag=delivery_tag, requeue=False
                 )
                 logger.warning(
-                    f"Message from {queue_config.name} (delivery_tag: {delivery_tag}) rejected due to processing error."
+                    f"Message {delivery_tag} rejected due to processing error."
                 )
-            except Exception as e_reject:
-                logger.error(
-                    f"Failed to reject message from {queue_config.name} (delivery_tag: {delivery_tag}) after processing error: {e_reject}"
+            else:
+                logger.warning(
+                    f"Channel not available or closed, cannot REJECT (processing error) message {delivery_tag}."
                 )
 
     async def _handle_status_info_async(
