@@ -76,6 +76,52 @@ def cli_run(
     )
 
 
+@app.command("run-taskpool")
+def cli_run_taskpool(
+    ctx: typer.Context,
+    database_url: T_database_url,
+    skip_migration_check: bool = False,
+):
+    setup_db(ctx, database_url)
+    if skip_migration_check:
+        logger.info("skipping migration check")
+    elif should_run_migration(
+        ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config
+    ):
+        logger.critical("migration check failed, please migrate")
+        raise RuntimeError("need to run migration")
+    else:
+        logger.info("migration check passed, starting normally")
+
+    logger.info("starting task pool service")
+    # Lazy import to avoid initializing dependencies during CLI parsing
+    from friendly_computing_machine.bot.main import run_taskpool_only
+
+    run_taskpool_only()
+
+
+@app.command("run-slack-socket-app")
+def cli_run_slack_socket_app(
+    ctx: typer.Context,
+    google_api_key: T_google_api_key,
+    skip_migration_check: bool = False,
+):
+    if skip_migration_check:
+        logger.info("skipping migration check")
+    else:
+        logger.info("migration check passed, starting normally")
+
+    setup_gemini(ctx, google_api_key)
+
+    logger.info("starting slack bot service (no task pool)")
+    # Lazy import to avoid initializing Slack app during CLI parsing
+    from friendly_computing_machine.bot.main import run_slack_bot_only
+
+    run_slack_bot_only(
+        app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
+    )
+
+
 @app.command("send-test-command")
 def cli_bot_test_message(channel: str, message: str):
     # Lazy import to avoid initializing Slack app during CLI parsing

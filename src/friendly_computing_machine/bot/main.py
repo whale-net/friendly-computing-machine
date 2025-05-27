@@ -25,3 +25,25 @@ def run_slack_bot(app_token: str):  # ), bot_token: str):
         executor.submit(task_pool.start, thread_name="task")
         run_health_server()
         logger.info("slack bot work submit, should be running")
+
+
+def run_slack_bot_only(app_token: str):
+    """Run only the Slack bot without the task pool."""
+    logger.info("starting slack bot service (no task pool)")
+    with NamedThreadPool() as executor:
+        slack_socket_handler = SocketModeHandler(get_slack_app(), app_token)
+
+        executor.submit(slack_socket_handler.start, thread_name="bolt")
+        run_health_server()
+        logger.info("slack bot service started without task pool")
+
+
+def run_taskpool_only():
+    """Run only the task pool without the Slack bot."""
+    logger.info("starting task pool service")
+    with NamedThreadPool() as executor:
+        task_pool = create_default_taskpool()
+
+        executor.submit(task_pool.start, thread_name="task")
+        run_health_server()
+        logger.info("task pool service started without slack bot")

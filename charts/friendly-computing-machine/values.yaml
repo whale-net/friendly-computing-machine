@@ -33,6 +33,18 @@ temporal:
       cpu: 100m
       memory: 128Mi
 
+taskpool:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  health:
+    enabled: true
+
 subscribe:
   replicas: 1
   resources:

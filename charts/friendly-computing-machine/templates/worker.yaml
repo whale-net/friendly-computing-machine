@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: temporal-worker-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  name: fcm-temporal-worker-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
   namespace: {{ .Values.namespace }}
   labels:
-    app: temporal-worker
+    app: fcm-temporal-worker
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
@@ -13,15 +13,15 @@ spec:
   replicas: {{ .Values.temporal.replicas }} # Consider if worker replicas should be configured separately
   selector:
     matchLabels:
-      app: temporal-worker
+      app: fcm-temporal-worker
   template:
     metadata:
       namespace: {{ .Values.namespace }} # Assuming same namespace, adjust if needed
       labels:
-        app: temporal-worker
+        app: fcm-temporal-worker
     spec:
       containers:
-      - name: temporal-worker
+      - name: fcm-temporal-worker
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         resources: # Adjust resources based on worker needs
           requests:

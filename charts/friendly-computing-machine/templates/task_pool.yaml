@@ -1,39 +1,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fcm-slackbot-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  name: fcm-taskpool-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
   namespace: {{ .Values.namespace }}
   labels:
-    app: fcm-slackbot
+    app: fcm-taskpool
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
   {{- end }}
 spec:
-  replicas: {{ .Values.deployment.replicas }}
+  replicas: {{ .Values.taskpool.replicas }}
   selector:
     matchLabels:
-      app: fcm-slackbot
+      app: fcm-taskpool
   template:
     metadata:
       namespace: {{ .Values.namespace }}
       labels:
-        app: fcm-slackbot
+        app: fcm-taskpool
     spec:
       containers:
-      - name: fcm-slackbot
+      - name: fcm-taskpool
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: {{ .Values.taskpool.resources.requests.cpu }}
+            memory: {{ .Values.taskpool.resources.requests.memory }}
           limits:
-            cpu: 100m
-            memory: 128Mi
+            cpu: {{ .Values.taskpool.resources.limits.cpu }}
+            memory: {{ .Values.taskpool.resources.limits.memory }}
         ports:
         - containerPort: 7654
           name: health
-        {{- if .Values.deployment.health.enabled }}
+        {{- if .Values.taskpool.health.enabled }}
         livenessProbe:
           httpGet:
             path: /
@@ -52,7 +52,7 @@ spec:
         args:
           - bot
           - --log-otlp
-          - run-slack-socket-app
+          - run-taskpool
           # migrations run as pre-install job
           - --skip-migration-check
         # TODO - improve how secrets are sourced in this template
@@ -63,8 +63,6 @@ spec:
             value: {{ .Values.env.slack.appToken }}
           - name: DATABASE_URL
             value: {{ .Values.env.db.url }}
-          - name: GOOGLE_API_KEY
-            value: {{ .Values.env.google.api_key }}
           - name: TEMPORAL_HOST
             value: {{ .Values.env.temporal.host }}
           - name: APP_ENV
@@ -72,7 +70,7 @@ spec:
           - name: MANMAN_HOST_URL
             value: {{ .Values.env.manman.host }}
           - name: OTEL_SERVICE_NAME
-            value: fcm-slackbot
+            value: fcm-taskpool
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: {{ .Values.env.otelCollector.logs.endpoint }}
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -80,4 +78,4 @@ spec:
 {{/*          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT*/}}
 {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
           - name: OTEL_RESOURCE_ATTRIBUTES
-            value: "deployment-name={{ .Values.deployment.name }}"
+            value: "deployment-name=taskpool{{- if .Values.deployment.name }}-{{ .Values.deployment.name }}{{- end }}"
