@@ -93,3 +93,5 @@ spec:
 {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: "deployment-name={{ .Values.deployment.name }}"
+          - name: MANMAN_HOST_URL
+            value: {{ .Values.env.manman.host }}

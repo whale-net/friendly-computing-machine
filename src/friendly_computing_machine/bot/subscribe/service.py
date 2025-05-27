@@ -160,7 +160,7 @@ class ManManSubscribeService:
             config: Queue configuration object
         """
         try:
-            message = self._channel.basic_get(queue=config.name, no_ack=False)
+            message = self._channel.basic.get(queue=config.name, no_ack=False)
             if not message:
                 return
 
