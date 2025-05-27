@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fcm-subscribe-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: fcm-subscribe
+  {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
+  annotations:
+    "argocd.argoproj.io/sync-wave": "0"
+  {{- end }}
+spec:
+  replicas: {{ .Values.subscribe.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: fcm-subscribe
+  template:
+    metadata:
+      namespace: {{ .Values.namespace }}
+      labels:
+        app: fcm-subscribe
+    spec:
+      containers:
+      - name: fcm-subscribe
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        resources:
+          requests:
+            cpu: {{ .Values.subscribe.resources.requests.cpu | default "100m" }}
+            memory: {{ .Values.subscribe.resources.requests.memory | default "128Mi" }}
+          limits:
+            cpu: {{ .Values.subscribe.resources.limits.cpu | default "100m" }}
+            memory: {{ .Values.subscribe.resources.limits.memory | default "128Mi" }}
+        ports:
+        - containerPort: 7654
+          name: health
+        {{- if .Values.deployment.health.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 10
+        {{- end }}
+        args:
+          - subscribe
+          - --log-otlp
+          - run
+          # migrations run as pre-install job
+          - --skip-migration-check
+        # Environment variables for the subscribe service
+        env:
+          - name: SLACK_BOT_TOKEN
+            value: {{ .Values.env.slack.botToken }}
+          - name: DATABASE_URL
+            value: {{ .Values.env.db.url }}
+          - name: APP_ENV
+            value: {{ .Values.env.app_env }}
+          # RabbitMQ individual connection parameters
+          - name: FCM_RABBITMQ_HOST
+            value: {{ .Values.env.rabbitmq.host }}
+          - name: FCM_RABBITMQ_PORT
+            value: "{{ .Values.env.rabbitmq.port }}"
+          - name: FCM_RABBITMQ_USER
+            value: {{ .Values.env.rabbitmq.user }}
+          - name: FCM_RABBITMQ_PASSWORD
+            value: {{ .Values.env.rabbitmq.password }}
+          {{- if .Values.env.rabbitmq.enableSsl }}
+          - name: FCM_RABBITMQ_ENABLE_SSL
+            value: "{{ .Values.env.rabbitmq.enableSsl }}"
+          {{- end }}
+          {{- if .Values.env.rabbitmq.sslHostname }}
+          - name: FCM_RABBITMQ_SSL_HOSTNAME
+            value: {{ .Values.env.rabbitmq.sslHostname }}
+          {{- end }}
+          # OpenTelemetry configuration
+          - name: OTEL_SERVICE_NAME
+            value: fcm-subscribe
+          - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+            value: {{ .Values.env.otelCollector.logs.endpoint }}
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: {{ .Values.env.otelCollector.traces.endpoint }}
+{{/*          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT*/}}
+{{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
+          - name: OTEL_RESOURCE_ATTRIBUTES
+            value: "deployment-name={{ .Values.deployment.name }}"

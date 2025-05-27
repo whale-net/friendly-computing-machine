@@ -4,7 +4,9 @@ import logging
 from friendly_computing_machine.bot.app import get_slack_web_client
 from friendly_computing_machine.bot.subscribe.service import ManManSubscribeService
 from friendly_computing_machine.health import run_health_server
-from friendly_computing_machine.rabbitmq.util import get_rabbitmq_connection
+from friendly_computing_machine.rabbitmq.util import (
+    get_rabbitmq_connection,
+)
 from friendly_computing_machine.util import NamedThreadPool
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,6 @@ def run_manman_subscribe(slack_bot_token: str):
     and sends notifications to Slack.
 
     Args:
-        rabbitmq_url: URL for RabbitMQ connection
         slack_bot_token: Slack Bot Token for Web API calls (sending messages)
     """
     logger.info("Starting ManMan Subscribe Service")

@@ -34,21 +34,17 @@ def init_rabbitmq(
             "RabbitMQ connection already initialized. Please use get_rabbitmq_connection() to access the connection."
         )
 
-    __global.rabbitmq_host = rabbitmq_host or os.getenv("MANMAN_RABBITMQ_HOST")
+    __global.rabbitmq_host = rabbitmq_host or os.getenv("FCM_RABBITMQ_HOST")
     __global.rabbitmq_port = rabbitmq_port or (
-        int(os.getenv("MANMAN_RABBITMQ_PORT"))
-        if os.getenv("MANMAN_RABBITMQ_PORT")
-        else None
+        int(os.getenv("FCM_RABBITMQ_PORT")) if os.getenv("FCM_RABBITMQ_PORT") else None
     )
-    __global.rabbitmq_user = rabbitmq_user or os.getenv("MANMAN_RABBITMQ_USER")
-    __global.rabbitmq_password = rabbitmq_password or os.getenv(
-        "MANMAN_RABBITMQ_PASSWORD"
-    )
+    __global.rabbitmq_user = rabbitmq_user or os.getenv("FCM_RABBITMQ_USER")
+    __global.rabbitmq_password = rabbitmq_password or os.getenv("FCM_RABBITMQ_PASSWORD")
     __global.rabbitmq_enable_ssl = rabbitmq_enable_ssl or (
-        os.getenv("MANMAN_RABBITMQ_ENABLE_SSL", "").lower() in ("true", "1", "yes")
+        os.getenv("FCM_RABBITMQ_ENABLE_SSL", "").lower() in ("true", "1", "yes")
     )
     __global.rabbitmq_ssl_hostname = rabbitmq_ssl_hostname or os.getenv(
-        "MANMAN_RABBITMQ_SSL_HOSTNAME"
+        "FCM_RABBITMQ_SSL_HOSTNAME"
     )
 
     logger.info("RabbitMQ configuration initialized")

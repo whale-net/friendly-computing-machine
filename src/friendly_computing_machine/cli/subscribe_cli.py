@@ -8,10 +8,12 @@ from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.cli.context.rabbitmq import (
-    FILENAME as RABBITMQ_FILENAME,
-)
-from friendly_computing_machine.cli.context.rabbitmq import (
-    T_rabbitmq_url,
+    T_rabbitmq_enable_ssl,
+    T_rabbitmq_host,
+    T_rabbitmq_password,
+    T_rabbitmq_port,
+    T_rabbitmq_ssl_hostname,
+    T_rabbitmq_user,
     setup_rabbitmq,
 )
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
@@ -32,8 +34,13 @@ app = typer.Typer(
 def callback(
     ctx: typer.Context,
     slack_bot_token: T_slack_bot_token,
-    rabbitmq_url: T_rabbitmq_url,
     app_env: T_app_env,
+    rabbitmq_host: T_rabbitmq_host,
+    rabbitmq_port: T_rabbitmq_port = 5672,
+    rabbitmq_user: T_rabbitmq_user = None,
+    rabbitmq_password: T_rabbitmq_password = None,
+    rabbitmq_enable_ssl: T_rabbitmq_enable_ssl = False,
+    rabbitmq_ssl_hostname: T_rabbitmq_ssl_hostname = None,
     log_otlp: bool = False,
 ):
     """
@@ -46,7 +53,15 @@ def callback(
     setup_logging(ctx, log_otlp=log_otlp)
     setup_app_env(ctx, app_env)
     setup_slack_bot_only(ctx, slack_bot_token)
-    setup_rabbitmq(ctx, rabbitmq_url)
+    setup_rabbitmq(
+        ctx,
+        rabbitmq_host=rabbitmq_host,
+        rabbitmq_port=rabbitmq_port,
+        rabbitmq_user=rabbitmq_user,
+        rabbitmq_password=rabbitmq_password,
+        rabbitmq_enable_ssl=rabbitmq_enable_ssl,
+        rabbitmq_ssl_hostname=rabbitmq_ssl_hostname,
+    )
     logger.debug("Subscribe CLI callback complete")
 
 
@@ -76,10 +91,5 @@ def cli_run(
 
     logger.info("starting manman subscribe service")
     run_manman_subscribe(
-        rabbitmq_url=ctx.obj[RABBITMQ_FILENAME]["rabbitmq_url"],
         slack_bot_token=ctx.obj[SLACK_FILENAME]["slack_bot_token"],
     )
-
-
-if __name__ == "__main__":
-    app()

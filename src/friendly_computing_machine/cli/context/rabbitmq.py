@@ -4,24 +4,23 @@ from typing import Annotated, Optional
 
 import typer
 
-T_rabbitmq_url = Annotated[str, typer.Option(..., envvar="RABBITMQ_URL")]
-T_rabbitmq_host = Annotated[
-    Optional[str], typer.Option(None, envvar="MANMAN_RABBITMQ_HOST")
-]
+from friendly_computing_machine.rabbitmq.util import init_rabbitmq
+
+T_rabbitmq_host = Annotated[str, typer.Option(..., envvar="FCM_RABBITMQ_HOST")]
 T_rabbitmq_port = Annotated[
-    Optional[int], typer.Option(None, envvar="MANMAN_RABBITMQ_PORT")
+    Optional[int], typer.Option(..., envvar="FCM_RABBITMQ_PORT")
 ]
 T_rabbitmq_user = Annotated[
-    Optional[str], typer.Option(None, envvar="MANMAN_RABBITMQ_USER")
+    Optional[str], typer.Option(..., envvar="FCM_RABBITMQ_USER")
 ]
 T_rabbitmq_password = Annotated[
-    Optional[str], typer.Option(None, envvar="MANMAN_RABBITMQ_PASSWORD")
+    Optional[str], typer.Option(..., envvar="FCM_RABBITMQ_PASSWORD")
 ]
 T_rabbitmq_enable_ssl = Annotated[
-    Optional[bool], typer.Option(None, envvar="MANMAN_RABBITMQ_ENABLE_SSL")
+    Optional[bool], typer.Option(..., envvar="FCM_RABBITMQ_ENABLE_SSL")
 ]
 T_rabbitmq_ssl_hostname = Annotated[
-    Optional[str], typer.Option(None, envvar="MANMAN_RABBITMQ_SSL_HOSTNAME")
+    Optional[str], typer.Option(..., envvar="FCM_RABBITMQ_SSL_HOSTNAME")
 ]
 
 FILENAME = os.path.basename(__file__)
@@ -30,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 def setup_rabbitmq(
     ctx: typer.Context,
-    rabbitmq_url: T_rabbitmq_url,
-    rabbitmq_host: T_rabbitmq_host = None,
+    rabbitmq_host: T_rabbitmq_host,
     rabbitmq_port: T_rabbitmq_port = None,
     rabbitmq_user: T_rabbitmq_user = None,
     rabbitmq_password: T_rabbitmq_password = None,
@@ -40,7 +38,6 @@ def setup_rabbitmq(
 ):
     logger.debug("rabbitmq setup starting")
     ctx.obj[FILENAME] = {
-        "rabbitmq_url": rabbitmq_url,
         "rabbitmq_host": rabbitmq_host,
         "rabbitmq_port": rabbitmq_port,
         "rabbitmq_user": rabbitmq_user,
@@ -48,4 +45,12 @@ def setup_rabbitmq(
         "rabbitmq_enable_ssl": rabbitmq_enable_ssl,
         "rabbitmq_ssl_hostname": rabbitmq_ssl_hostname,
     }
+    init_rabbitmq(
+        rabbitmq_host=rabbitmq_host,
+        rabbitmq_port=rabbitmq_port,
+        rabbitmq_user=rabbitmq_user,
+        rabbitmq_password=rabbitmq_password,
+        rabbitmq_enable_ssl=rabbitmq_enable_ssl,
+        rabbitmq_ssl_hostname=rabbitmq_ssl_hostname,
+    )
     logger.debug("rabbitmq setup complete")
