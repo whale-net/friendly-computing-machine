@@ -3,10 +3,16 @@ import logging
 import typer
 
 from friendly_computing_machine.bot.subscribe.main import run_manman_subscribe
+from friendly_computing_machine.cli.context.app_env import FILENAME as APP_ENV_FILENAME
 from friendly_computing_machine.cli.context.app_env import T_app_env, setup_app_env
 from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
 from friendly_computing_machine.cli.context.log import setup_logging
+from friendly_computing_machine.cli.context.manman_host import (
+    T_manman_host_url,
+    setup_manman_status_api,
+    setup_old_manman_api,
+)
 from friendly_computing_machine.cli.context.rabbitmq import (
     T_rabbitmq_enable_ssl,
     T_rabbitmq_host,
@@ -17,7 +23,6 @@ from friendly_computing_machine.cli.context.rabbitmq import (
     T_rabbitmq_vhost,
     setup_rabbitmq,
 )
-from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
 from friendly_computing_machine.cli.context.slack import (
     T_slack_bot_token,
     setup_slack_bot_only,
@@ -37,6 +42,7 @@ def callback(
     ctx: typer.Context,
     slack_bot_token: T_slack_bot_token,
     app_env: T_app_env,
+    manman_host_url: T_manman_host_url,
     rabbitmq_host: T_rabbitmq_host,
     rabbitmq_port: T_rabbitmq_port = 5672,
     rabbitmq_user: T_rabbitmq_user = None,
@@ -56,6 +62,8 @@ def callback(
     setup_logging(ctx, log_otlp=log_otlp)
     setup_app_env(ctx, app_env)
     setup_slack_bot_only(ctx, slack_bot_token)
+    setup_old_manman_api(ctx, manman_host_url)
+    setup_manman_status_api(ctx, manman_host_url)
     setup_rabbitmq(
         ctx,
         rabbitmq_host=rabbitmq_host,
@@ -94,6 +102,4 @@ def cli_run(
         logger.info("migration check passed, starting normally")
     run_health_server()
     logger.info("starting manman subscribe service")
-    run_manman_subscribe(
-        slack_bot_token=ctx.obj[SLACK_FILENAME]["slack_bot_token"],
-    )
+    run_manman_subscribe(app_env=ctx.obj[APP_ENV_FILENAME]["app_env"])

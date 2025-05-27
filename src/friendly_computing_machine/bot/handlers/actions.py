@@ -6,7 +6,7 @@ from external.old_manman_api.models.stdin_command_request import StdinCommandReq
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_payloads import ActionPayload
-from friendly_computing_machine.manman.api import ManManAPI
+from friendly_computing_machine.manman.api import OldManManAPI
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     logger.info("Start server clicked")
     # Use the ManManAPI class to get the client
     try:
-        mapi = ManManAPI.get_api()
+        mapi = OldManManAPI.get_api()
         game_server_config_id = int(payload.private_metadata)
         mapi.start_game_server_host_gameserver_id_start_post(game_server_config_id)
         logger.info("started %s", game_server_config_id)
@@ -37,7 +37,7 @@ def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     payload = ActionPayload.from_dict(body)
     logger.info("Stop server clicked")
     try:
-        mapi = ManManAPI.get_api()
+        mapi = OldManManAPI.get_api()
         game_server_config_id = int(payload.private_metadata)
         mapi.stop_game_server_host_gameserver_id_stop_post(game_server_config_id)
     except Exception as e:
@@ -80,7 +80,7 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
         commands=[payload.custom_command],
     )
     try:
-        mapi = ManManAPI.get_api()
+        mapi = OldManManAPI.get_api()
         game_server_instance_id = int(payload.private_metadata)
         mapi.stdin_game_server_host_gameserver_id_stdin_post(
             game_server_instance_id,

@@ -4,6 +4,7 @@ from typing import Optional
 
 from amqpstorm import Connection
 
+from external.manman_status_api.api.default_api import DefaultApi as ManManStatusAPI
 from friendly_computing_machine.bot.app import SlackWebClientFCM
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,13 @@ class ManManSubscribeService:
     - Send formatted Slack messages with action buttons
     """
 
-    def __init__(self, rabbitmq_connection: Connection, slack_api: SlackWebClientFCM):
+    def __init__(
+        self,
+        app_env: str,
+        rabbitmq_connection: Connection,
+        slack_api: SlackWebClientFCM,
+        manman_status_api: ManManStatusAPI,
+    ):
         """
         Initialize the ManMan Subscribe Service.
 
@@ -34,6 +41,12 @@ class ManManSubscribeService:
         self._channel = rabbitmq_connection.channel()
         self._slack_api = slack_api
         self._is_running = False
+        self._manman_status_api = manman_status_api
+        self._app_env = app_env
+
+        # hardcoding this for now, sue me
+        self._worker_status_queue = f"fcm-{self._app_env}.manman.worker.status"
+        self._instance_status_queue = f"fcm-{self._app_env}.manman.server.status"
 
         logger.info("ManMan Subscribe Service initialized")
 
@@ -49,6 +62,21 @@ class ManManSubscribeService:
         self._is_running = True
 
         # TODO - set up RabbitMQ subscriptions
+
+        self._channel.queue.declare(queue=self._worker_status_queue, durable=True)
+        self._channel.queue.declare(queue=self._instance_status_queue, durable=True)
+
+        # hardcoding, sue me
+        self._channel.queue.bind(
+            exchange="external",
+            queue=self._worker_status_queue,
+            routing_key="external.status.worker-instance.*",
+        )
+        self._channel.queue.bind(
+            exchange="external",
+            queue=self._instance_status_queue,
+            routing_key="external.status.game-server-instance.*",
+        )
 
         try:
             while self._is_running:
