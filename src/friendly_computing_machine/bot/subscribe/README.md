@@ -16,8 +16,14 @@ This service subscribes to the following topics:
 
 ## Usage
 
-just use tilt
+To run the ManMan Subscribe Service using Tilt, follow these steps:
 
+1. Ensure you have [Tilt](https://tilt.dev/) installed on your system. You can install it by following the instructions on the [Tilt installation page](https://docs.tilt.dev/install.html).
+2. Navigate to the root directory of the project in your terminal.
+3. Run the following command to start the service:
+
+   ```bash
+   tilt up
 ## Environment Variables
 
 read the cli entrypoint and callback
