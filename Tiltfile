@@ -7,11 +7,6 @@ load('ext://dotenv', 'dotenv')
 # load env vars from .env
 dotenv()
 
-docker_build(
-    'fcm',
-    context='.'
-)
-
 load('ext://helm_resource', 'helm_resource', 'helm_repo')
 helm_repo('dev-util', 'https://whale-net.github.io/dev-util')
 # setup postgres
@@ -20,6 +15,11 @@ helm_resource('otelcollector-dev', 'dev-util/otelcollector-dev', resource_deps=[
 )
 # no need to publicly expose otel collector
 #k8s_resource(workload='otelcollector-dev', port_forwards='4317:4317')
+
+docker_build(
+    'fcm',
+    context='.'
+)
 
 # create fcm app
 k8s_yaml(
@@ -41,6 +41,7 @@ k8s_yaml(
             'env.rabbitmq.port={}'.format(os.getenv('FCM_RABBITMQ_PORT', '5672')),
             'env.rabbitmq.user={}'.format(os.getenv('FCM_RABBITMQ_USER', 'guest')),
             'env.rabbitmq.password={}'.format(os.getenv('FCM_RABBITMQ_PASSWORD', 'guest')),
+            'env.rabbitmq.vhost={}'.format(os.getenv('FCM_RABBITMQ_VHOST', '/')),
             'env.rabbitmq.enableSsl={}'.format(os.getenv('FCM_RABBITMQ_ENABLE_SSL', 'false')),
             'env.otelCollector.logs.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),
             'env.otelCollector.traces.endpoint=http://otel-collector.{}.svc.cluster.local:4317'.format(namespace),

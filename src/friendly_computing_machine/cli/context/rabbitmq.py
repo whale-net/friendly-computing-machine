@@ -22,6 +22,9 @@ T_rabbitmq_enable_ssl = Annotated[
 T_rabbitmq_ssl_hostname = Annotated[
     Optional[str], typer.Option(..., envvar="FCM_RABBITMQ_SSL_HOSTNAME")
 ]
+T_rabbitmq_vhost = Annotated[
+    Optional[str], typer.Option(..., envvar="FCM_RABBITMQ_VHOST")
+]
 
 FILENAME = os.path.basename(__file__)
 logger = logging.getLogger(__name__)
@@ -35,6 +38,7 @@ def setup_rabbitmq(
     rabbitmq_password: T_rabbitmq_password = None,
     rabbitmq_enable_ssl: T_rabbitmq_enable_ssl = None,
     rabbitmq_ssl_hostname: T_rabbitmq_ssl_hostname = None,
+    rabbitmq_vhost: T_rabbitmq_vhost = None,
 ):
     logger.debug("rabbitmq setup starting")
     ctx.obj[FILENAME] = {
@@ -44,6 +48,7 @@ def setup_rabbitmq(
         "rabbitmq_password": rabbitmq_password,
         "rabbitmq_enable_ssl": rabbitmq_enable_ssl,
         "rabbitmq_ssl_hostname": rabbitmq_ssl_hostname,
+        "rabbitmq_vhost": rabbitmq_vhost,
     }
     init_rabbitmq(
         rabbitmq_host=rabbitmq_host,
@@ -52,5 +57,6 @@ def setup_rabbitmq(
         rabbitmq_password=rabbitmq_password,
         rabbitmq_enable_ssl=rabbitmq_enable_ssl,
         rabbitmq_ssl_hostname=rabbitmq_ssl_hostname,
+        rabbitmq_vhost=rabbitmq_vhost,
     )
     logger.debug("rabbitmq setup complete")

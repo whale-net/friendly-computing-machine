@@ -14,6 +14,7 @@ from friendly_computing_machine.cli.context.rabbitmq import (
     T_rabbitmq_port,
     T_rabbitmq_ssl_hostname,
     T_rabbitmq_user,
+    T_rabbitmq_vhost,
     setup_rabbitmq,
 )
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
@@ -42,6 +43,7 @@ def callback(
     rabbitmq_password: T_rabbitmq_password = None,
     rabbitmq_enable_ssl: T_rabbitmq_enable_ssl = False,
     rabbitmq_ssl_hostname: T_rabbitmq_ssl_hostname = None,
+    rabbitmq_vhost: T_rabbitmq_vhost = "/",
     log_otlp: bool = False,
 ):
     """
@@ -62,6 +64,7 @@ def callback(
         rabbitmq_password=rabbitmq_password,
         rabbitmq_enable_ssl=rabbitmq_enable_ssl,
         rabbitmq_ssl_hostname=rabbitmq_ssl_hostname,
+        rabbitmq_vhost=rabbitmq_vhost,
     )
     logger.debug("Subscribe CLI callback complete")
 

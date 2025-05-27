@@ -3,11 +3,9 @@ import logging
 
 from friendly_computing_machine.bot.app import get_slack_web_client
 from friendly_computing_machine.bot.subscribe.service import ManManSubscribeService
-from friendly_computing_machine.health import run_health_server
 from friendly_computing_machine.rabbitmq.util import (
     get_rabbitmq_connection,
 )
-from friendly_computing_machine.util import NamedThreadPool
 
 logger = logging.getLogger(__name__)
 
@@ -39,18 +37,13 @@ def run_manman_subscribe(slack_bot_token: str):
             await service.stop()
             raise
 
-    # Run the service with health server in a thread pool
-    with NamedThreadPool() as executor:
-        # Start the health server in a separate thread
-        executor.submit(run_health_server, thread_name="health")
+    # Run the main subscribe service
+    try:
+        asyncio.run(run_service())
+    except KeyboardInterrupt:
+        logger.info("Service interrupted")
+    except Exception as e:
+        logger.error(f"Service failed: {e}")
+        raise
 
-        # Run the main subscribe service
-        try:
-            asyncio.run(run_service())
-        except KeyboardInterrupt:
-            logger.info("Service interrupted")
-        except Exception as e:
-            logger.error(f"Service failed: {e}")
-            raise
-
-        logger.info("ManMan Subscribe Service stopped")
+    logger.info("ManMan Subscribe Service stopped")
