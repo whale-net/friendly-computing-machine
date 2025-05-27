@@ -30,8 +30,25 @@ spec:
           limits:
             cpu: {{ .Values.temporal.resources.limits.cpu }}
             memory: {{ .Values.temporal.resources.limits.memory }}
-        # No ports needed for the worker
-        # No health checks needed for the worker
+        ports:
+        - containerPort: 7654
+          name: health
+        {{- if .Values.temporal.health.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 10
+        {{- end }}
         args:
           - workflow
           - --log-otlp

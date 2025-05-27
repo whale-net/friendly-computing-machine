@@ -32,6 +32,8 @@ temporal:
     limits:
       cpu: 100m
       memory: 128Mi
+  health:
+    enabled: true
 
 taskpool:
   replicas: 1
@@ -54,6 +56,8 @@ subscribe:
     limits:
       cpu: 100m
       memory: 128Mi
+  health:
+    enabled: true
 
 env:
   app_env: dev
@@ -71,6 +75,8 @@ env:
     password: <rabbitmq_password>
     enableSsl: false
     sslHostname: <ssl_hostname>
+    # for now this is just being set here
+    vhost: "/"
   otelCollector:
     logs:
       endpoint: <logs_endpoint>

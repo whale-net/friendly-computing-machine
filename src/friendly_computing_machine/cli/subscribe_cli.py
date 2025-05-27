@@ -22,6 +22,7 @@ from friendly_computing_machine.cli.context.slack import (
     setup_slack_bot_only,
 )
 from friendly_computing_machine.db.util import should_run_migration
+from friendly_computing_machine.health import run_health_server
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ def cli_run(
         raise RuntimeError("need to run migration")
     else:
         logger.info("migration check passed, starting normally")
-
+    run_health_server()
     logger.info("starting manman subscribe service")
     run_manman_subscribe(
         slack_bot_token=ctx.obj[SLACK_FILENAME]["slack_bot_token"],

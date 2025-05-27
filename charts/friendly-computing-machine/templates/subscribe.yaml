@@ -33,7 +33,7 @@ spec:
         ports:
         - containerPort: 7654
           name: health
-        {{- if .Values.deployment.health.enabled }}
+        {{- if .Values.subscribe.health.enabled }}
         livenessProbe:
           httpGet:
             path: /
@@ -72,6 +72,8 @@ spec:
             value: {{ .Values.env.rabbitmq.user }}
           - name: FCM_RABBITMQ_PASSWORD
             value: {{ .Values.env.rabbitmq.password }}
+          - name: FCM_RABBITMQ_VHOST
+            value: {{ .Values.env.rabbitmq.vhost | default "/" }}
           {{- if .Values.env.rabbitmq.enableSsl }}
           - name: FCM_RABBITMQ_ENABLE_SSL
             value: "{{ .Values.env.rabbitmq.enableSsl }}"

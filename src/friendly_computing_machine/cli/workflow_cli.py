@@ -20,6 +20,7 @@ from friendly_computing_machine.cli.context.temporal import (
     setup_temporal,
 )
 from friendly_computing_machine.db.util import should_run_migration
+from friendly_computing_machine.health import run_health_server
 from friendly_computing_machine.temporal.worker import run_worker
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ def cli_run(
         logger.info("migration check passed, starting normally")
 
     setup_gemini(ctx, google_api_key)
+
+    run_health_server()
 
     logger.info("starting temporal worker")
     # TODO - pass down context

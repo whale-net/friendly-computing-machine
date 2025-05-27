@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Optional
 
 import amqpstorm
@@ -14,6 +13,7 @@ class __global:
     rabbitmq_password = None
     rabbitmq_enable_ssl = None
     rabbitmq_ssl_hostname = None
+    rabbitmq_vhost = None
     _connection = None
 
 
@@ -24,6 +24,7 @@ def init_rabbitmq(
     rabbitmq_password: Optional[str] = None,
     rabbitmq_enable_ssl: Optional[bool] = None,
     rabbitmq_ssl_hostname: Optional[str] = None,
+    rabbitmq_vhost: Optional[str] = None,
 ):
     """
     Initialize the RabbitMQ connection settings in the global context.
@@ -34,18 +35,13 @@ def init_rabbitmq(
             "RabbitMQ connection already initialized. Please use get_rabbitmq_connection() to access the connection."
         )
 
-    __global.rabbitmq_host = rabbitmq_host or os.getenv("FCM_RABBITMQ_HOST")
-    __global.rabbitmq_port = rabbitmq_port or (
-        int(os.getenv("FCM_RABBITMQ_PORT")) if os.getenv("FCM_RABBITMQ_PORT") else None
-    )
-    __global.rabbitmq_user = rabbitmq_user or os.getenv("FCM_RABBITMQ_USER")
-    __global.rabbitmq_password = rabbitmq_password or os.getenv("FCM_RABBITMQ_PASSWORD")
-    __global.rabbitmq_enable_ssl = rabbitmq_enable_ssl or (
-        os.getenv("FCM_RABBITMQ_ENABLE_SSL", "").lower() in ("true", "1", "yes")
-    )
-    __global.rabbitmq_ssl_hostname = rabbitmq_ssl_hostname or os.getenv(
-        "FCM_RABBITMQ_SSL_HOSTNAME"
-    )
+    __global.rabbitmq_host = rabbitmq_host
+    __global.rabbitmq_port = rabbitmq_port
+    __global.rabbitmq_user = rabbitmq_user
+    __global.rabbitmq_password = rabbitmq_password
+    __global.rabbitmq_enable_ssl = rabbitmq_enable_ssl
+    __global.rabbitmq_ssl_hostname = rabbitmq_ssl_hostname
+    __global.rabbitmq_vhost = rabbitmq_vhost
 
     logger.info("RabbitMQ configuration initialized")
 
@@ -81,6 +77,7 @@ def get_rabbitmq_connection() -> amqpstorm.Connection:
             port=port,
             username=username,
             password=password,
+            virtual_host=__global.rabbitmq_vhost or "/",
             **ssl_options,
         )
 
