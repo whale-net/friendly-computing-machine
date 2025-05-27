@@ -133,7 +133,14 @@
             "title": "As Of"
           },
           "status_info_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Status Info Id"
           },
           "worker_id": {
@@ -162,8 +169,7 @@
         "type": "object",
         "required": [
           "class_name",
-          "status_type",
-          "status_info_id"
+          "status_type"
         ],
         "title": "StatusInfo"
       },
