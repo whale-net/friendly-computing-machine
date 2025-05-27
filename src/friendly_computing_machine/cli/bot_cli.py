@@ -47,35 +47,6 @@ def callback(
     logger.debug("CLI callback complete")
 
 
-@app.command("run")
-def cli_run(
-    ctx: typer.Context,
-    google_api_key: T_google_api_key,
-    database_url: T_database_url,
-    skip_migration_check: bool = False,
-):
-    setup_db(ctx, database_url)
-    if skip_migration_check:
-        logger.info("skipping migration check")
-    elif should_run_migration(
-        ctx.obj[DB_FILENAME].engine, ctx.obj[DB_FILENAME].alembic_config
-    ):
-        logger.critical("migration check failed, please migrate")
-        raise RuntimeError("need to run migration")
-    else:
-        logger.info("migration check passed, starting normally")
-
-    setup_gemini(ctx, google_api_key)
-
-    logger.info("starting bot")
-    # Lazy import to avoid initializing Slack app during CLI parsing
-    from friendly_computing_machine.bot.main import run_slack_bot
-
-    run_slack_bot(
-        app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
-    )
-
-
 @app.command("run-taskpool")
 def cli_run_taskpool(
     ctx: typer.Context,
