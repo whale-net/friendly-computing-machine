@@ -6,6 +6,10 @@ from sqlmodel import Session, and_, exists, not_, null, or_, select
 
 from friendly_computing_machine.db.util import SessionManager, db_update
 from friendly_computing_machine.models.genai import GenAIText, GenAITextCreate
+from friendly_computing_machine.models.manman import (
+    ManManStatusUpdate,
+    ManManStatusUpdateCreate,
+)
 from friendly_computing_machine.models.music_poll import (
     MusicPoll,
     MusicPollCreate,
@@ -637,3 +641,55 @@ def update_slack_command(
 #             session.commit()
 #             return True
 #         return False
+
+
+def insert_manman_status_update(
+    manman_status_update: ManManStatusUpdateCreate, session: Optional[Session] = None
+) -> ManManStatusUpdate:
+    with SessionManager(session) as session:
+        db_manman_status_update = ManManStatusUpdate.model_validate(
+            manman_status_update
+        )
+        session.add(db_manman_status_update)
+        session.commit()
+        session.refresh(db_manman_status_update)
+        return db_manman_status_update
+
+
+def get_manman_status_update_by_id(
+    manman_status_update_id: int, session: Optional[Session] = None
+) -> ManManStatusUpdate | None:
+    with SessionManager(session) as session:
+        return session.get(ManManStatusUpdate, manman_status_update_id)
+
+
+def get_manman_status_updates(
+    session: Optional[Session] = None, skip: int = 0, limit: int = 100
+) -> list[ManManStatusUpdate]:
+    with SessionManager(session) as session:
+        stmt = select(ManManStatusUpdate).offset(skip).limit(limit)
+        return list(session.exec(stmt).all())
+
+
+def update_manman_status_update(
+    manman_status_update_id: int,
+    updates: dict[str, any],
+    session: Optional[Session] = None,
+) -> ManManStatusUpdate | None:
+    with SessionManager(session) as session:
+        manman_status_update = db_update(
+            session, ManManStatusUpdate, manman_status_update_id, updates
+        )
+    return manman_status_update
+
+
+def delete_manman_status_update(
+    manman_status_update_id: int, session: Optional[Session] = None
+) -> bool:
+    with SessionManager(session) as session:
+        manman_status_update = session.get(ManManStatusUpdate, manman_status_update_id)
+        if manman_status_update:
+            session.delete(manman_status_update)
+            session.commit()
+            return True
+        return False
