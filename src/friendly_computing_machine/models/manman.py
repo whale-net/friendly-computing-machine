@@ -36,8 +36,11 @@ class ManManStatusUpdate(ManManStatusUpdateBase, table=True):
     id: int = Field(default=None, nullable=False, primary_key=True)
 
     # trying out putting this on the model instead of the base class
-    slack_message_id: str | None = Field(
-        nullable=True, index=True, description="Slack message ID if applicable"
+    slack_message_id: int | None = Field(
+        nullable=True,
+        index=True,
+        foreign_key="slackmessage.id",
+        default=None,
     )
 
 
@@ -58,4 +61,5 @@ class ManManStatusUpdateCreate(ManManStatusUpdateBase):
             service_type=service_type,
             service_id=service_id,
             as_of=status_info.as_of,
+            # not passed in from status info
         )

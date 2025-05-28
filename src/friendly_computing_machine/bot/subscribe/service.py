@@ -362,10 +362,8 @@ class ManManSubscribeService:
             status_info: StatusInfo object containing worker status information
         """
         logger.info(
-            f"Worker {status_info.worker_id} status update: {status_info.status}"
+            f"Worker {status_info.worker_id} status update: {status_info.status_info_id}"
         )
-
-        # TODO START HERE 5/27
 
         # TODO: temporal workflow
         # create a workflow for each worker/server instance by-id
@@ -402,6 +400,11 @@ class ManManSubscribeService:
             StatusType.RUNNING,
             StatusType.LOST,
         ):
+            # TODO START HERE 5/28 - the timing is needed to allow the above update to insert. perhaps need retry for now
+            # will see how temporla hnales this
+            import time
+
+            time.sleep(2)  # test
             status_update = get_manman_status_update_from_create(status_update_create)
             # TODO: Send appropriate Slack message with buttons
             # slack_send_message()
@@ -419,7 +422,7 @@ class ManManSubscribeService:
                 f"Unhandled worker status type for worker: {status_info.status_type}"
             )
         logger.info(
-            f"Worker {status_info.worker_id} status update processed: {status_info.status}"
+            f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
         )
 
     def _handle_instance_status_update(self, status_info: StatusInfo):
@@ -430,7 +433,7 @@ class ManManSubscribeService:
             status_info: StatusInfo object containing instance status information
         """
         logger.info(
-            f"Instance {status_info.game_server_instance_id} status update: {status_info.status}"
+            f"Instance {status_info.game_server_instance_id} status update: {status_info.status_info_id}"
         )
         # TODO: Implement instance status handling
         # TODO: Send appropriate Slack message with action buttons
