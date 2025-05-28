@@ -163,3 +163,43 @@ class SlackCommand(SlackCommandBase, table=True):
 
 class SlackCommandCreate(SlackCommandBase):
     pass
+
+
+# ------
+# slack special channels
+
+
+class SlackSpecialChannelTypeBase(Base):
+    type_name: str = Field(index=True, unique=True)
+    friendly_type_name: str
+
+
+class SlackSpecialChannelType(SlackSpecialChannelTypeBase, table=True):
+    id: int = Field(default=None, nullable=False, primary_key=True)
+
+
+class SlackSpecialChannelTypeCreate(SlackSpecialChannelTypeBase):
+    pass
+
+
+class SlackSpecialChannelBase(Base):
+    reason: Optional[str] = None
+
+    # no updated at wahtever
+    enabled: bool = True
+
+
+class SlackSpecialChannel(SlackSpecialChannelBase, table=True):
+    id: int = Field(default=None, nullable=False, primary_key=True)
+
+    slack_channel_id: int = Field(
+        nullable=False, foreign_key="slackchannel.id", index=True
+    )
+
+    slack_special_channel_type_id: int = Field(
+        nullable=False, foreign_key="slackspecialchanneltype.id", index=True
+    )
+
+
+class SlackSpecialChannelCreate(SlackSpecialChannelBase):
+    pass

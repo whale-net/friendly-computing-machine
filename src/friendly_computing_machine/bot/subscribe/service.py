@@ -9,6 +9,7 @@ from amqpstorm import Connection
 
 from external.manman_status_api.api.default_api import DefaultApi as ManManStatusAPI
 from external.manman_status_api.models.status_info import StatusInfo
+from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.app import SlackWebClientFCM
 
 logger = logging.getLogger(__name__)
@@ -380,8 +381,46 @@ class ManManSubscribeService:
         # TODO - if new -> send slack message
         # TODO - if exists -> update slack message
         # TODO - always retrieve info in paralell (? what is this requirement mean? just temporal note?)
+        # from friendly_computing_machine.bot.util import slack_send_message
+        from friendly_computing_machine.db.dal import (
+            get_manman_status_update_from_create,
+            insert_manman_status_update,
+            update_manman_status_update,
+        )
+        from friendly_computing_machine.models.manman import (
+            ManManStatusUpdateCreate,
+        )
 
-        # TODO: Send appropriate Slack message with buttons
+        status_update_create = ManManStatusUpdateCreate.from_status_info(status_info)
+        if status_info.status_type == StatusType.CREATED:
+            # If the worker is initializing, we create a new status update
+            up = insert_manman_status_update(status_update_create)
+            logger.info(
+                "Created new ManMan status update for initializing worker %s", up.id
+            )
+        elif status_info.status_type in (
+            StatusType.RUNNING,
+            StatusType.LOST,
+        ):
+            status_update = get_manman_status_update_from_create(status_update_create)
+            # TODO: Send appropriate Slack message with buttons
+            # slack_send_message()
+            logger.info("TODO send slack message update")
+            status_update.current_status = status_info.status_type.value
+            update_manman_status_update(status_update)
+        elif status_info.status_type == StatusType.COMPLETE:
+            status_update = get_manman_status_update_from_create(status_update_create)
+            status_update.current_status = status_info.status_type.value
+            logger.info("TODO send slack message update")
+            update_manman_status_update(status_update)
+        else:
+            # includes Initializing, which is not handled here, but is for server
+            raise ValueError(
+                f"Unhandled worker status type for worker: {status_info.status_type}"
+            )
+        logger.info(
+            f"Worker {status_info.worker_id} status update processed: {status_info.status}"
+        )
 
     def _handle_instance_status_update(self, status_info: StatusInfo):
         """

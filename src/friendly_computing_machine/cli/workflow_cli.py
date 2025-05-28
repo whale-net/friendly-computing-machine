@@ -7,14 +7,18 @@ from friendly_computing_machine.cli.context.app_env import FILENAME as APP_ENV_F
 from friendly_computing_machine.cli.context.app_env import T_app_env, setup_app_env
 from friendly_computing_machine.cli.context.db import FILENAME as DB_FILENAME
 from friendly_computing_machine.cli.context.db import T_database_url, setup_db
+from friendly_computing_machine.cli.context.gemini import T_google_api_key, setup_gemini
+from friendly_computing_machine.cli.context.log import setup_logging
 
 # from friendly_computing_machine.cli.context.slack import (
 #     setup_slack,
 #     T_slack_app_token,
 #     FILENAME as SLACK_FILENAME,
 # )
-from friendly_computing_machine.cli.context.gemini import T_google_api_key, setup_gemini
-from friendly_computing_machine.cli.context.log import setup_logging
+from friendly_computing_machine.cli.context.slack import (
+    T_slack_bot_token,
+    setup_slack_web_client_only,
+)
 from friendly_computing_machine.cli.context.temporal import (
     T_temporal_host,
     setup_temporal,
@@ -53,6 +57,7 @@ def cli_run(
     # keeping these on run for now just since it seems right
     google_api_key: T_google_api_key,
     database_url: T_database_url,
+    slack_bot_token: T_slack_bot_token,
     skip_migration_check: bool = False,
 ):
     setup_db(ctx, database_url)
@@ -67,7 +72,7 @@ def cli_run(
         logger.info("migration check passed, starting normally")
 
     setup_gemini(ctx, google_api_key)
-
+    setup_slack_web_client_only(ctx, slack_bot_token)
     run_health_server()
 
     logger.info("starting temporal worker")

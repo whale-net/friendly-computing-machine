@@ -36,6 +36,26 @@ def get_manman_status_update_by_id(
         return session.get(ManManStatusUpdate, manman_status_update_id)
 
 
+def get_manman_status_update_from_create(
+    manman_status_update_create: ManManStatusUpdateCreate,
+    session: Optional[Session] = None,
+) -> ManManStatusUpdate:
+    """Get a ManMan status update from a ManManStatusUpdateCreate instance."""
+    with SessionManager(session) as session:
+        stmt = select(ManManStatusUpdate).where(
+            ManManStatusUpdate.service_type == manman_status_update_create.service_type,
+            ManManStatusUpdate.service_id == manman_status_update_create.service_id,
+        )
+        code = session.exec(stmt).first()
+        if not code:
+            raise ValueError(
+                f"No ManManStatusUpdate found for service_type={manman_status_update_create.service_type} "
+                f"and service_id={manman_status_update_create.service_id}"
+            )
+        logger.info("found ManManStatusUpdate.id=%s", code.id)
+        return code
+
+
 def get_manman_status_updates(
     session: Optional[Session] = None, skip: int = 0, limit: int = 100
 ) -> list[ManManStatusUpdate]:

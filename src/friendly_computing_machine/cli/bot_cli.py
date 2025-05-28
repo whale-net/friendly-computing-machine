@@ -75,6 +75,7 @@ def cli_run_taskpool(
 def cli_run_slack_socket_app(
     ctx: typer.Context,
     google_api_key: T_google_api_key,
+    database_url: T_database_url,
     skip_migration_check: bool = False,
 ):
     if skip_migration_check:
@@ -83,6 +84,10 @@ def cli_run_slack_socket_app(
         logger.info("migration check passed, starting normally")
 
     setup_gemini(ctx, google_api_key)
+    # TODO - one day this could be moved to temporal jobs
+    # which would remove the need for this db check and allow multiple socket apps
+    # very cool
+    setup_db(ctx, database_url)
 
     logger.info("starting slack bot service (no task pool)")
     # Lazy import to avoid initializing Slack app during CLI parsing

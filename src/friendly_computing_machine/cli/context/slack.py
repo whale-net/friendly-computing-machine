@@ -35,7 +35,7 @@ def setup_slack(
     logger.debug("slack setup complete")
 
 
-def setup_slack_bot_only(
+def setup_slack_web_client_only(
     ctx: typer.Context,
     slack_bot_token: T_slack_bot_token,
 ):

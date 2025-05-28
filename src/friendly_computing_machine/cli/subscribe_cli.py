@@ -25,7 +25,7 @@ from friendly_computing_machine.cli.context.rabbitmq import (
 )
 from friendly_computing_machine.cli.context.slack import (
     T_slack_bot_token,
-    setup_slack_bot_only,
+    setup_slack_web_client_only,
 )
 from friendly_computing_machine.db.util import should_run_migration
 from friendly_computing_machine.health import run_health_server
@@ -61,7 +61,7 @@ def callback(
     logger.debug("Subscribe CLI callback starting")
     setup_logging(ctx, log_otlp=log_otlp)
     setup_app_env(ctx, app_env)
-    setup_slack_bot_only(ctx, slack_bot_token)
+    setup_slack_web_client_only(ctx, slack_bot_token)
     setup_old_manman_api(ctx, manman_host_url)
     setup_manman_status_api(ctx, manman_host_url)
     setup_rabbitmq(

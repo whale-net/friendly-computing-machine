@@ -1,6 +1,6 @@
 import datetime
 
-from sqlmodel import Field
+from sqlmodel import Field, Index, UniqueConstraint
 
 from external.manman_status_api.models.status_info import StatusInfo
 from friendly_computing_machine.models.base import Base
@@ -26,7 +26,19 @@ class ManManStatusUpdate(ManManStatusUpdateBase, table=True):
     Represents a status update for ManMan, stored in the database.
     """
 
+    __table_args__ = (
+        UniqueConstraint("service_id", "service_type"),
+        # service_id first because it has higher cardinality
+        Index("idx_service", "service_id", "service_type"),
+        Index("idx_as_of_service", "as_of", "service_id", "service_type"),
+    )
+
     id: int = Field(default=None, nullable=False, primary_key=True)
+
+    # trying out putting this on the model instead of the base class
+    slack_message_id: str | None = Field(
+        nullable=True, index=True, description="Slack message ID if applicable"
+    )
 
 
 class ManManStatusUpdateCreate(ManManStatusUpdateBase):
