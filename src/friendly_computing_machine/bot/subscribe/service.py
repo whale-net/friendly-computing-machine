@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from amqpstorm import Connection
-
 from external.manman_status_api.api.default_api import DefaultApi as ManManStatusAPI
 from external.manman_status_api.models.status_info import StatusInfo
+
 from friendly_computing_machine.bot.app import SlackWebClientFCM
 
 logger = logging.getLogger(__name__)
