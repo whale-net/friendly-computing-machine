@@ -363,9 +363,25 @@ class ManManSubscribeService:
         logger.info(
             f"Worker {status_info.worker_id} status update: {status_info.status}"
         )
-        # TODO: Implement worker status handling
+
+        # TODO START HERE 5/27
+
+        # TODO: temporal workflow
+        # create a workflow for each worker/server instance by-id
+        # when a worker/server instance is created, start a workflow
+        # when a worker/server instance is updated, send a signal to the workflow
+        # the workflow should handle the status updates and slack logic
+        # this will be the synchronization point for updates hopefully.
+        # can also keep track of event timestamp and make sure that we don't ever go from a current state to an older state
+        # however, for now I am just going to write to the database and send slack messages
+        # the database will ultimately be the source of truth regardless of implementation
+        # however, the control flow around it will be different
+        # TODO - write to database
+        # TODO - if new -> send slack message
+        # TODO - if exists -> update slack message
+        # TODO - always retrieve info in paralell (? what is this requirement mean? just temporal note?)
+
         # TODO: Send appropriate Slack message with buttons
-        # TODO: Update database status
 
     def _handle_instance_status_update(self, status_info: StatusInfo):
         """
