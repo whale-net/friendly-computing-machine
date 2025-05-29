@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from friendly_computing_machine.models.base import Base
 from friendly_computing_machine.util import ts_to_datetime
@@ -208,6 +208,8 @@ class SlackSpecialChannel(SlackSpecialChannelBase, table=True):
     slack_special_channel_type_id: int = Field(
         nullable=False, foreign_key="slackspecialchanneltype.id", index=True
     )
+
+    slack_channel: SlackChannel = Relationship()
 
 
 class SlackSpecialChannelCreate(SlackSpecialChannelBase):

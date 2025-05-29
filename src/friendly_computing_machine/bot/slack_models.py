@@ -43,7 +43,7 @@ def create_worker_status_blocks(
                 ButtonElement(
                     text=PlainTextObject(text="Stop", emoji=True),
                     style="danger",
-                    value="worker_id",
+                    value=id,
                     action_id="worker-stop",
                 )
             ]

@@ -11,6 +11,7 @@ from external.manman_status_api.api.default_api import DefaultApi as ManManStatu
 from external.manman_status_api.models.status_info import StatusInfo
 from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.app import SlackWebClientFCM
+from friendly_computing_machine.bot.slack_models import create_worker_status_blocks
 from friendly_computing_machine.bot.util import slack_send_message
 from friendly_computing_machine.db.dal import (
     get_manman_status_update_from_create,
@@ -22,6 +23,7 @@ from friendly_computing_machine.db.dal import (
 from friendly_computing_machine.models.manman import (
     ManManStatusUpdateCreate,
 )
+from friendly_computing_machine.models.slack import SlackMessage
 
 logger = logging.getLogger(__name__)
 
@@ -137,14 +139,14 @@ class ManManSubscribeService:
             "manman_dev"
         )
         if self._manman_channel_type:
-            self._manman_channels = get_slack_special_channels_from_type(
+            self._manman_channel_tups = get_slack_special_channels_from_type(
                 self._manman_channel_type
             )
         else:
             logger.warning(
                 "No ManMan channel type found, using default channel for notifications."
             )
-            self._manman_channels = []
+            self._manman_channel_tups = []
 
         logger.info("ManMan Subscribe Service initialized")
 
@@ -413,6 +415,7 @@ class ManManSubscribeService:
             logger.info(
                 "Created new ManMan status update for initializing worker %s", up.id
             )
+            self._send_worker_slack_notification(up.id, status_info)
         elif status_info.status_type in (
             StatusType.RUNNING,
             StatusType.LOST,
@@ -424,7 +427,6 @@ class ManManSubscribeService:
             time.sleep(2)
 
             status_update = get_manman_status_update_from_create(status_update_create)
-            slack_send_message()
             logger.info("TODO send slack message update")
             status_update.current_status = status_info.status_type.value
             update_manman_status_update(status_update)
@@ -438,6 +440,9 @@ class ManManSubscribeService:
             raise ValueError(
                 f"Unhandled worker status type for worker: {status_info.status_type}"
             )
+
+        # self._send_worker_slack_notification(status_update.id, status_info)
+
         logger.info(
             f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
         )
@@ -456,13 +461,23 @@ class ManManSubscribeService:
         # TODO: Send appropriate Slack message with action buttons
         # TODO: Update database status
 
-    async def _send_slack_notification(
-        self,
-    ):
-        for channel in self._manman_channels:
+    def _send_worker_slack_notification(
+        self, worker_id: int, status_info: StatusInfo
+    ) -> SlackMessage:
+        for special_channel, slack_channel in self._manman_channel_tups:
             try:
-                logger.info(f"Sent Slack notification to channel {channel}")
+                message_block = create_worker_status_blocks(
+                    friendly_name=f"{self._manman_channel_type.friendly_type_name} Worker",
+                    name=self._manman_channel_type.type_name,
+                    id=str(worker_id),
+                    current_status=status_info.status_type.value,
+                )
+                print(message_block)
+
+                message = slack_send_message(slack_channel.slack_id)
+                logger.info(f"Sent Slack notification to channel {special_channel}")
+                return message
             except Exception as e:
                 logger.error(
-                    f"Failed to send Slack notification to channel {channel}: {e}"
+                    f"Failed to send Slack notification to channel {special_channel}: {e}"
                 )

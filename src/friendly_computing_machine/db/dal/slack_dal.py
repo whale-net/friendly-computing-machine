@@ -323,11 +323,12 @@ def get_slack_special_channel_type_from_name(
 def get_slack_special_channels_from_type(
     slack_special_channel_type: SlackSpecialChannelType,
     session: Optional[Session] = None,
-) -> list[SlackSpecialChannel]:
+) -> list[tuple[SlackSpecialChannel, SlackChannel]] | None:
     """Get all Slack special channels of a specific type."""
     with SessionManager(session) as session:
         stmt = select(SlackSpecialChannel).where(
             SlackSpecialChannel.slack_special_channel_type_id
             == slack_special_channel_type.id
         )
-        return list(session.exec(stmt).all())
+        results = session.exec(stmt).all()
+        return [(result, result.slack_channel) for result in results]
