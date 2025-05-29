@@ -18,7 +18,12 @@
       ],
       "settings": {
         "python.defaultInterpreterPath": "./.venv/bin/python",
-        "python.terminal.activateEnvironment": false
+        "python.terminal.activateEnvironment": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestPath": "./.venv/bin/pytest",
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "black"
       }
     }
   },
