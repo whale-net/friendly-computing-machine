@@ -1,6 +1,9 @@
 {
   "name": "Friendly Computing Machine Dev Container",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11-bullseye",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "target": "base"
+  },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
@@ -12,7 +15,6 @@
       "extensions": [
         "ms-python.python",
         "ms-python.pylint",
-        "ms-python.black-formatter",
         "ms-toolsai.jupyter",
         "charliermarsh.ruff"
       ],
@@ -23,7 +25,7 @@
         "python.testing.pytestPath": "./.venv/bin/pytest",
         "python.linting.enabled": true,
         "python.linting.ruffEnabled": true,
-        "python.formatting.provider": "black"
+        "python.formatting.provider": "ruff"
       }
     }
   },

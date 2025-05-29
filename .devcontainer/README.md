@@ -5,12 +5,15 @@ This directory contains the configuration for a VS Code development container th
 ## What's Included
 
 - **Python 3.11** - Matches the project requirements
-- **UV 0.5.13** - Package manager used by the project
+- **UV** - Package manager (version synchronized with Dockerfile)
 - **Docker-in-Docker** - Required for external API client generation
+- **Tilt** - Local development orchestration tool
+- **Kind** - Local Kubernetes clusters for testing
+- **Temporal CLI** - Command-line tool for Temporal workflows
+- **Kubectl** - Kubernetes command-line tool
 - **VS Code Extensions**:
   - Python language support
-  - Pylint and Ruff for linting
-  - Black formatter
+  - Pylint and Ruff for linting and formatting
   - Jupyter notebook support
 
 ## Setup
@@ -23,10 +26,11 @@ This directory contains the configuration for a VS Code development container th
 ## What the Setup Does
 
 The `setup.sh` script automatically:
-1. Installs UV 0.5.13
-2. Generates external API client dependencies 
-3. Installs all project dependencies with `uv sync`
-4. Verifies the installation works
+1. Verifies UV installation (already included in base image)
+2. Installs development tools (tilt, kind, kubectl, temporal cli)
+3. Generates external API client dependencies 
+4. Installs all project dependencies with `uv sync`
+5. Verifies the installation works
 
 ## After Setup
 
@@ -34,6 +38,15 @@ Once the container is ready, you can:
 - Run tests: `uv run pytest`
 - Run the Slack bot: `uv run fcm bot run`
 - Run the Temporal worker: `uv run workflow run`
+- Use tilt for local development: `tilt up`
+- Create a local kubernetes cluster: `kind create cluster`
+
+## Local Kubernetes Development
+
+To use tilt with a local Kubernetes cluster:
+1. Create a kind cluster: `kind create cluster`
+2. Switch kubectl context: `kubectl config use-context kind-kind`
+3. Run tilt: `tilt up`
 
 ## Environment Variables
 
