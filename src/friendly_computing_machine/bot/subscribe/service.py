@@ -404,12 +404,14 @@ class ManManSubscribeService:
             # will see how temporla hnales this
             import time
 
-            time.sleep(2)  # test
+            time.sleep(2)
+
             status_update = get_manman_status_update_from_create(status_update_create)
             # TODO: Send appropriate Slack message with buttons
             # slack_send_message()
             logger.info("TODO send slack message update")
             status_update.current_status = status_info.status_type.value
+            # TODO - fix updates, I think i solved this already
             update_manman_status_update(status_update)
         elif status_info.status_type == StatusType.COMPLETE:
             status_update = get_manman_status_update_from_create(status_update_create)

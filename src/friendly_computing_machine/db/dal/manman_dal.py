@@ -66,14 +66,24 @@ def get_manman_status_updates(
 
 
 def update_manman_status_update(
-    manman_status_update_id: int,
-    updates: dict[str, any],
+    manman_status_update: ManManStatusUpdate,
     session: Optional[Session] = None,
 ) -> ManManStatusUpdate | None:
-    """Update a ManMan status update."""
+    """Update a ManMan status update.
+
+    Args:
+        manman_status_update: ManManStatusUpdate object with the changes to apply.
+                             Only the fields that have been set (exclude_unset=True) will be updated.
+        session: Optional database session
+
+    Returns:
+        The updated ManManStatusUpdate object or None if not found
+    """
     with SessionManager(session) as session:
+        update_dict = manman_status_update.model_dump(exclude_unset=True)
+
         manman_status_update = db_update(
-            session, ManManStatusUpdate, manman_status_update_id, updates
+            session, ManManStatusUpdate, manman_status_update.id, update_dict
         )
     return manman_status_update
 
