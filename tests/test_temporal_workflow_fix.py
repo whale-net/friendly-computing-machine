@@ -18,12 +18,12 @@ def test_fix_slack_tagging_activity_signature():
 
     # First parameter should be 'text' with str annotation
     assert params[0].name == "text"
-    assert params[0].annotation == str
+    assert params[0].annotation is str
     assert params[0].default == inspect.Parameter.empty
 
     # Second parameter should be 'add_here_tag' with bool annotation and default False
     assert params[1].name == "add_here_tag"
-    assert params[1].annotation == bool
+    assert params[1].annotation is bool
     assert params[1].default is False
 
 
