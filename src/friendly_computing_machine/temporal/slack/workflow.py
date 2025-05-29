@@ -7,6 +7,7 @@ from temporalio import workflow
 from temporalio.client import ScheduleIntervalSpec, ScheduleSpec
 
 from friendly_computing_machine.temporal.ai.activity import (
+    detect_call_to_action,
     generate_gemini_response,
     generate_summary,
     get_vibe,
@@ -90,9 +91,18 @@ class SlackContextGeminiWorkflow:
             start_to_close_timeout=timedelta(seconds=10),
         )
 
+        # Detect if this response contains a call to action
+        is_call_to_action = await workflow.execute_activity(
+            detect_call_to_action,
+            response,
+            schedule_to_close_timeout=timedelta(seconds=10),
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
         tagged_response = await workflow.execute_activity(
             fix_slack_tagging_activity,
             response,
+            is_call_to_action,
             schedule_to_close_timeout=timedelta(seconds=5),
             start_to_close_timeout=timedelta(seconds=5),
         )

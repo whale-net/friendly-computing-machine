@@ -9,6 +9,7 @@ from temporalio.worker.workflow_sandbox import (
 )
 
 from friendly_computing_machine.temporal.ai.activity import (
+    detect_call_to_action,
     generate_gemini_response,
     generate_summary,
     get_vibe,
@@ -62,6 +63,7 @@ ACTIVITIES = [
     generate_gemini_response,
     build_hello_prompt,
     generate_summary,
+    detect_call_to_action,
     backfill_slack_messages_slack_user_id_activity,
     backfill_slack_messages_slack_channel_id_activity,
     backfill_slack_messages_slack_team_id_activity,

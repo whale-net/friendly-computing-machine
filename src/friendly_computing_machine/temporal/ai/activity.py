@@ -65,3 +65,30 @@ async def get_vibe(prompt: str) -> str:
         Please do not include any other text or formatting. Just the vibe.
     """)
     return await gen_text(prompt)
+
+
+@activity.defn
+async def detect_call_to_action(response: str) -> bool:
+    """
+    Detect if the AI response contains a call to action that should notify everyone.
+    """
+    detection_prompt = dedent(f"""
+        Analyze the following AI response and determine if it contains a call to action
+        that should notify all members of a Slack channel (with @here).
+
+        A call to action that warrants @here includes:
+        - Urgent announcements or requests
+        - Time-sensitive opportunities
+        - Important meetings or events requiring participation
+        - Critical alerts or warnings
+        - Requests for immediate feedback or input from the team
+
+        Response to analyze:
+        "{response}"
+
+        Respond with only "YES" if this contains a call to action that should notify everyone,
+        or "NO" if it does not. No other text or formatting.
+    """)
+
+    detection_result = await gen_text(detection_prompt)
+    return detection_result.strip().upper() == "YES"

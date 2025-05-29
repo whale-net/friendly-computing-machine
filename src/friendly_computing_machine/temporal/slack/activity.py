@@ -104,14 +104,19 @@ async def backfill_slack_user_info_activity() -> list[SlackUserCreate]:
 
 
 @activity.defn
-async def fix_slack_tagging_activity(text: str) -> str:
+async def fix_slack_tagging_activity(text: str, add_here_tag: bool = False) -> str:
     """
     Fix slack tagging in the text.
     This function replaces @here and @channel with their escaped versions.
+    If add_here_tag is True, adds @here at the beginning of the message.
     TODO: It also replaces <@U12345> with @U12345.
     """
 
     # TODO - person name replacement
+
+    # Add @here tag if this is a call to action
+    if add_here_tag and not text.strip().startswith("<!here>"):
+        text = f"<!here> {text}"
 
     # Replace @here and @channel with their escaped versions only if not already escaped
     text = re.sub(r"(?<!<)@here", "<!here>", text)
