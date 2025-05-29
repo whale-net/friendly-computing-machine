@@ -3,7 +3,7 @@ import functools  # Added
 import json
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 from amqpstorm import Connection
 
@@ -15,6 +15,7 @@ from friendly_computing_machine.bot.slack_models import create_worker_status_blo
 from friendly_computing_machine.bot.util import slack_send_message
 from friendly_computing_machine.db.dal import (
     get_manman_status_update_from_create,
+    get_slack_message_from_id,  # TODO - be less lazy with this
     get_slack_special_channel_type_from_name,
     get_slack_special_channels_from_type,
     insert_manman_status_update,
@@ -24,6 +25,7 @@ from friendly_computing_machine.models.manman import (
     ManManStatusUpdateCreate,
 )
 from friendly_computing_machine.models.slack import SlackMessage
+from friendly_computing_machine.util import datetime_to_ts
 
 logger = logging.getLogger(__name__)
 
@@ -411,11 +413,16 @@ class ManManSubscribeService:
         status_update_create = ManManStatusUpdateCreate.from_status_info(status_info)
         if status_info.status_type == StatusType.CREATED:
             # If the worker is initializing, we create a new status update
-            up = insert_manman_status_update(status_update_create)
+            status_update = insert_manman_status_update(status_update_create)
             logger.info(
-                "Created new ManMan status update for initializing worker %s", up.id
+                "Created new ManMan status update for initializing worker %s",
+                status_update.id,
             )
-            self._send_worker_slack_notification(up.id, status_info)
+            message = self._handle_worker_slack_notification(
+                status_update.id, status_info
+            )
+            status_update.slack_message_id = message.id
+            update_manman_status_update(status_update)
         elif status_info.status_type in (
             StatusType.RUNNING,
             StatusType.LOST,
@@ -426,10 +433,16 @@ class ManManSubscribeService:
 
             time.sleep(2)
 
+            # TODO consider returning a tuple here or something
             status_update = get_manman_status_update_from_create(status_update_create)
             logger.info("TODO send slack message update")
             status_update.current_status = status_info.status_type.value
-            update_manman_status_update(status_update)
+            status_update = update_manman_status_update(status_update)
+            # TODO this is lazy, do better
+            slack_message = get_slack_message_from_id(status_update.slack_message_id)
+            self._handle_worker_slack_notification(
+                status_update.id, status_info, datetime_to_ts(slack_message.ts)
+            )
         elif status_info.status_type == StatusType.COMPLETE:
             status_update = get_manman_status_update_from_create(status_update_create)
             status_update.current_status = status_info.status_type.value
@@ -441,7 +454,7 @@ class ManManSubscribeService:
                 f"Unhandled worker status type for worker: {status_info.status_type}"
             )
 
-        # self._send_worker_slack_notification(status_update.id, status_info)
+        #
 
         logger.info(
             f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
@@ -461,8 +474,8 @@ class ManManSubscribeService:
         # TODO: Send appropriate Slack message with action buttons
         # TODO: Update database status
 
-    def _send_worker_slack_notification(
-        self, worker_id: int, status_info: StatusInfo
+    def _handle_worker_slack_notification(
+        self, worker_id: int, status_info: StatusInfo, update_ts: Optional[str] = None
     ) -> SlackMessage:
         for special_channel, slack_channel in self._manman_channel_tups:
             try:
@@ -474,7 +487,9 @@ class ManManSubscribeService:
                 )
                 print(message_block)
 
-                message = slack_send_message(slack_channel.slack_id)
+                message = slack_send_message(
+                    slack_channel.slack_id, message_block, update_ts=update_ts
+                )
                 logger.info(f"Sent Slack notification to channel {special_channel}")
                 return message
             except Exception as e:

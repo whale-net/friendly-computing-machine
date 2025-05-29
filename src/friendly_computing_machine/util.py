@@ -14,6 +14,19 @@ def ts_to_datetime(ts: str):
     return datetime.datetime.fromtimestamp(float(ts))
 
 
+def datetime_to_ts(dt: datetime.datetime) -> str:
+    """
+    Convert a datetime object to a string timestamp.
+
+    Args:
+        dt: datetime object to convert.
+
+    Returns:
+        String representation of the timestamp.
+    """
+    return str(dt.timestamp())
+
+
 class NamedThreadPool(concurrent.futures.ThreadPoolExecutor):
     def submit(
         self, fn, /, thread_name: Optional[str] = None, *args, **kwargs

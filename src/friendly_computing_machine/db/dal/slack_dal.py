@@ -24,6 +24,14 @@ from friendly_computing_machine.models.slack import (
 logger = logging.getLogger(__name__)
 
 
+def get_slack_message_from_id(
+    message_id: int, session: Optional[Session] = None
+) -> SlackMessage | None:
+    """Get a Slack message by its database ID."""
+    with SessionManager(session) as session:
+        return session.get(SlackMessage, message_id)
+
+
 def get_music_poll_channel_slack_ids() -> set[str]:
     """Get Slack channel IDs that have music polls."""
     stmt = select(SlackChannel.slack_id).join(

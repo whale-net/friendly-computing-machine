@@ -103,7 +103,7 @@ def cli_bot_test_message(channel: str, message: str):
     # Lazy import to avoid initializing Slack app during CLI parsing
     from friendly_computing_machine.bot.util import slack_send_message
 
-    slack_send_message(channel, message)
+    slack_send_message(channel, message=message)
 
 
 @app.command("who-am-i")
