@@ -13,6 +13,8 @@ from friendly_computing_machine.models.slack import (
     SlackCommandCreate,
     SlackMessage,
     SlackMessageCreate,
+    SlackSpecialChannel,
+    SlackSpecialChannelType,
     SlackTeam,
     SlackTeamCreate,
     SlackUser,
@@ -304,3 +306,28 @@ def update_slack_command(
     with SessionManager(session) as session:
         slack_command = db_update(session, SlackCommand, slack_command_id, updates)
     return slack_command
+
+
+def get_slack_special_channel_type_from_name(
+    name: str,
+    session: Optional[Session] = None,
+) -> SlackSpecialChannelType | None:
+    """Get a Slack special channel type by name."""
+    with SessionManager(session) as session:
+        stmt = select(SlackSpecialChannelType).where(
+            SlackSpecialChannelType.type_name == name
+        )
+        return session.exec(stmt).one_or_none()
+
+
+def get_slack_special_channels_from_type(
+    slack_special_channel_type: SlackSpecialChannelType,
+    session: Optional[Session] = None,
+) -> list[SlackSpecialChannel]:
+    """Get all Slack special channels of a specific type."""
+    with SessionManager(session) as session:
+        stmt = select(SlackSpecialChannel).where(
+            SlackSpecialChannel.slack_special_channel_type_id
+            == slack_special_channel_type.id
+        )
+        return list(session.exec(stmt).all())

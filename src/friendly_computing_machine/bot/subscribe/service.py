@@ -3,7 +3,7 @@ import functools  # Added
 import json
 import logging
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable
 
 from amqpstorm import Connection
 
@@ -11,6 +11,17 @@ from external.manman_status_api.api.default_api import DefaultApi as ManManStatu
 from external.manman_status_api.models.status_info import StatusInfo
 from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.app import SlackWebClientFCM
+from friendly_computing_machine.bot.util import slack_send_message
+from friendly_computing_machine.db.dal import (
+    get_manman_status_update_from_create,
+    get_slack_special_channel_type_from_name,
+    get_slack_special_channels_from_type,
+    insert_manman_status_update,
+    update_manman_status_update,
+)
+from friendly_computing_machine.models.manman import (
+    ManManStatusUpdateCreate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +131,20 @@ class ManManSubscribeService:
                 handler=self._handle_instance_status_update,
             ),
         }
+
+        # Hardcoding for now
+        self._manman_channel_type = get_slack_special_channel_type_from_name(
+            "manman_dev"
+        )
+        if self._manman_channel_type:
+            self._manman_channels = get_slack_special_channels_from_type(
+                self._manman_channel_type
+            )
+        else:
+            logger.warning(
+                "No ManMan channel type found, using default channel for notifications."
+            )
+            self._manman_channels = []
 
         logger.info("ManMan Subscribe Service initialized")
 
@@ -380,14 +405,6 @@ class ManManSubscribeService:
         # TODO - if exists -> update slack message
         # TODO - always retrieve info in paralell (? what is this requirement mean? just temporal note?)
         # from friendly_computing_machine.bot.util import slack_send_message
-        from friendly_computing_machine.db.dal import (
-            get_manman_status_update_from_create,
-            insert_manman_status_update,
-            update_manman_status_update,
-        )
-        from friendly_computing_machine.models.manman import (
-            ManManStatusUpdateCreate,
-        )
 
         status_update_create = ManManStatusUpdateCreate.from_status_info(status_info)
         if status_info.status_type == StatusType.CREATED:
@@ -407,11 +424,9 @@ class ManManSubscribeService:
             time.sleep(2)
 
             status_update = get_manman_status_update_from_create(status_update_create)
-            # TODO: Send appropriate Slack message with buttons
-            # slack_send_message()
+            slack_send_message()
             logger.info("TODO send slack message update")
             status_update.current_status = status_info.status_type.value
-            # TODO - fix updates, I think i solved this already
             update_manman_status_update(status_update)
         elif status_info.status_type == StatusType.COMPLETE:
             status_update = get_manman_status_update_from_create(status_update_create)
@@ -442,18 +457,12 @@ class ManManSubscribeService:
         # TODO: Update database status
 
     async def _send_slack_notification(
-        self, channel: str, message: str, blocks: Optional[list] = None
+        self,
     ):
-        """
-        Send a notification to Slack asynchronously.
-
-        Args:
-            channel: Slack channel to send to
-            message: Text message
-            blocks: Optional Slack block kit format for rich messages
-        """
-        logger.info(f"Sending Slack notification to {channel}: {message}")
-        # TODO: Implement Slack Web API integration
-        # TODO: Send message with blocks for action buttons
-        # For now, just log the notification
-        await asyncio.sleep(0.01)  # Placeholder for async Slack API call
+        for channel in self._manman_channels:
+            try:
+                logger.info(f"Sent Slack notification to channel {channel}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to send Slack notification to channel {channel}: {e}"
+                )

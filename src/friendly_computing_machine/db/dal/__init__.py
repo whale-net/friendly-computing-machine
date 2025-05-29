@@ -46,6 +46,8 @@ from .slack_dal import (
     get_music_poll_channel_slack_ids,
     get_slack_channel,
     get_slack_command_by_id,
+    get_slack_special_channel_type_from_name,
+    get_slack_special_channels_from_type,
     get_slack_team_id_map,
     get_slack_teams,
     get_user_teams_from_messages,
@@ -85,6 +87,8 @@ __all__ = [
     "insert_slack_command",
     "get_slack_command_by_id",
     "update_slack_command",
+    "get_slack_special_channel_type_from_name",
+    "get_slack_special_channels_from_type",
     # Task functions
     "upsert_tasks",
     "upsert_task",

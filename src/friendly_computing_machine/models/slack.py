@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 from typing import Any, Dict, Optional
 
 from sqlmodel import Field
@@ -167,6 +168,14 @@ class SlackCommandCreate(SlackCommandBase):
 
 # ------
 # slack special channels
+
+
+# TODO - reference this enum in thhe migrations when appropriate
+# but don't make alemibc maintain it because that is probably not a good idea
+class SlackSpecialChannelTypeEnum(Enum):
+    """Corresponds to the SlackSpecialChannelType table's type_name field."""
+
+    MANMAN_DEV = "manman_dev"
 
 
 class SlackSpecialChannelTypeBase(Base):
