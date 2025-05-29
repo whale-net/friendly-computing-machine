@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "_comment": "MCP (Model Context Protocol) server configurations",
+    "_description": "This section defines MCP servers that provide tools and resources to AI assistants",
+    "_sample_configuration": {
+      "filesystem": {
+        "command": "npx",
+        "args": ["@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"],
+        "description": "Provides filesystem access within allowed directories"
+      },
+      "git": {
+        "command": "npx", 
+        "args": ["@modelcontextprotocol/server-git", "--repository", "/path/to/repo"],
+        "description": "Provides Git repository operations"
+      },
+      "postgres": {
+        "command": "npx",
+        "args": ["@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost/db"],
+        "description": "Provides PostgreSQL database access"
+      },
+      "slack": {
+        "command": "python",
+        "args": ["-m", "friendly_computing_machine.mcp.slack_server"],
+        "env": {
+          "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+          "SLACK_APP_TOKEN": "${SLACK_APP_TOKEN}"
+        },
+        "description": "Provides Slack integration tools"
+      }
+    }
+  }
+}
