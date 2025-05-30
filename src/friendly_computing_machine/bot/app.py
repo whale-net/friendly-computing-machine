@@ -1,5 +1,4 @@
 import logging
-import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from threading import Lock
@@ -22,11 +21,11 @@ logger = logging.getLogger(__name__)
 bot_config_lock = Lock()
 
 
-def init_client():
+def init_web_client(slack_bot_token: str):
     if "slack_web_client" in __GLOBALS:
         raise RuntimeError("double slack web client init")
     __GLOBALS["slack_web_client"] = SlackWebClientFCM(
-        token=os.environ.get("SLACK_BOT_TOKEN"),
+        token=slack_bot_token,
         logger=logging.getLogger("slack_web"),
     )
 
@@ -39,7 +38,6 @@ def get_slack_app() -> App:
     """Get the Slack app instance, initializing it if needed."""
     global _app_instance
     if _app_instance is None:
-        init_client()  # Initialize the client first
         _app_instance = App(
             client=get_slack_web_client(), logger=logging.getLogger("slack_bolt")
         )

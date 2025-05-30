@@ -9,7 +9,7 @@ from friendly_computing_machine.cli.context.gemini import T_google_api_key, setu
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.cli.context.manman_host import (
     T_manman_host_url,
-    setup_manman_host_api,
+    setup_old_manman_api,
 )
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
 from friendly_computing_machine.cli.context.slack import (
@@ -43,14 +43,13 @@ def callback(
     setup_logging(ctx, log_otlp=log_otlp)
     setup_slack(ctx, slack_app_token, slack_bot_token)
     setup_temporal(ctx, temporal_host, app_env)
-    setup_manman_host_api(ctx, manman_host_url)
+    setup_old_manman_api(ctx, manman_host_url)
     logger.debug("CLI callback complete")
 
 
-@app.command("run")
-def cli_run(
+@app.command("run-taskpool")
+def cli_run_taskpool(
     ctx: typer.Context,
-    google_api_key: T_google_api_key,
     database_url: T_database_url,
     skip_migration_check: bool = False,
 ):
@@ -65,13 +64,36 @@ def cli_run(
     else:
         logger.info("migration check passed, starting normally")
 
+    logger.info("starting task pool service")
+    # Lazy import to avoid initializing dependencies during CLI parsing
+    from friendly_computing_machine.bot.main import run_taskpool_only
+
+    run_taskpool_only()
+
+
+@app.command("run-slack-socket-app")
+def cli_run_slack_socket_app(
+    ctx: typer.Context,
+    google_api_key: T_google_api_key,
+    database_url: T_database_url,
+    skip_migration_check: bool = False,
+):
+    if skip_migration_check:
+        logger.info("skipping migration check")
+    else:
+        logger.info("migration check passed, starting normally")
+
     setup_gemini(ctx, google_api_key)
+    # TODO - one day this could be moved to temporal jobs
+    # which would remove the need for this db check and allow multiple socket apps
+    # very cool
+    setup_db(ctx, database_url)
 
-    logger.info("starting bot")
+    logger.info("starting slack bot service (no task pool)")
     # Lazy import to avoid initializing Slack app during CLI parsing
-    from friendly_computing_machine.bot.main import run_slack_bot
+    from friendly_computing_machine.bot.main import run_slack_bot_only
 
-    run_slack_bot(
+    run_slack_bot_only(
         app_token=ctx.obj[SLACK_FILENAME]["slack_app_token"],
     )
 
@@ -81,7 +103,7 @@ def cli_bot_test_message(channel: str, message: str):
     # Lazy import to avoid initializing Slack app during CLI parsing
     from friendly_computing_machine.bot.util import slack_send_message
 
-    slack_send_message(channel, message)
+    slack_send_message(channel, message=message)
 
 
 @app.command("who-am-i")

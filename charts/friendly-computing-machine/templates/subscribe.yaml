@@ -1,42 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fcm-slackbot-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  name: fcm-subscribe-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
   namespace: {{ .Values.namespace }}
   labels:
-    app: fcm-slackbot
+    app: fcm-subscribe
     component: slackbot
     part-of: friendly-computing-machine
-    {{- if .Values.deployment.name }}
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
   {{- end }}
 spec:
-  replicas: {{ .Values.deployment.replicas }}
+  replicas: {{ .Values.subscribe.replicas | default 1 }}
   selector:
     matchLabels:
-      app: fcm-slackbot
+      app: fcm-subscribe
   template:
     metadata:
       namespace: {{ .Values.namespace }}
       labels:
-        app: fcm-slackbot
+        app: fcm-subscribe
     spec:
       containers:
-      - name: fcm-slackbot
+      - name: fcm-subscribe
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: {{ .Values.subscribe.resources.requests.cpu | default "100m" }}
+            memory: {{ .Values.subscribe.resources.requests.memory | default "128Mi" }}
           limits:
-            cpu: 100m
-            memory: 128Mi
+            cpu: {{ .Values.subscribe.resources.limits.cpu | default "100m" }}
+            memory: {{ .Values.subscribe.resources.limits.memory | default "128Mi" }}
         ports:
         - containerPort: 7654
           name: health
-        {{- if .Values.deployment.health.enabled }}
+        {{- if .Values.subscribe.health.enabled }}
         livenessProbe:
           httpGet:
             path: /
@@ -53,29 +52,41 @@ spec:
           failureThreshold: 10
         {{- end }}
         args:
-          - bot
+          - subscribe
           - --log-otlp
-          - run-slack-socket-app
+          - run
           # migrations run as pre-install job
           - --skip-migration-check
-        # TODO - improve how secrets are sourced in this template
+        # Environment variables for the subscribe service
         env:
           - name: SLACK_BOT_TOKEN
             value: {{ .Values.env.slack.botToken }}
-          - name: SLACK_APP_TOKEN
-            value: {{ .Values.env.slack.appToken }}
           - name: DATABASE_URL
             value: {{ .Values.env.db.url }}
-          - name: GOOGLE_API_KEY
-            value: {{ .Values.env.google.api_key }}
-          - name: TEMPORAL_HOST
-            value: {{ .Values.env.temporal.host }}
           - name: APP_ENV
             value: {{ .Values.env.app_env }}
-          - name: MANMAN_HOST_URL
-            value: {{ .Values.env.manman.host }}
+          # RabbitMQ individual connection parameters
+          - name: FCM_RABBITMQ_HOST
+            value: {{ .Values.env.rabbitmq.host }}
+          - name: FCM_RABBITMQ_PORT
+            value: "{{ .Values.env.rabbitmq.port }}"
+          - name: FCM_RABBITMQ_USER
+            value: {{ .Values.env.rabbitmq.user }}
+          - name: FCM_RABBITMQ_PASSWORD
+            value: {{ .Values.env.rabbitmq.password }}
+          - name: FCM_RABBITMQ_VHOST
+            value: {{ .Values.env.rabbitmq.vhost | default "/" }}
+          {{- if .Values.env.rabbitmq.enableSsl }}
+          - name: FCM_RABBITMQ_ENABLE_SSL
+            value: "{{ .Values.env.rabbitmq.enableSsl }}"
+          {{- end }}
+          {{- if .Values.env.rabbitmq.sslHostname }}
+          - name: FCM_RABBITMQ_SSL_HOSTNAME
+            value: {{ .Values.env.rabbitmq.sslHostname }}
+          {{- end }}
+          # OpenTelemetry configuration
           - name: OTEL_SERVICE_NAME
-            value: fcm-slackbot
+            value: fcm-subscribe
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: {{ .Values.env.otelCollector.logs.endpoint }}
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -84,3 +95,5 @@ spec:
 {{/*            value: {{ .Values.env.otelCollector.metrics.endpoint }}*/}}
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: "deployment-name={{ .Values.deployment.name }}"
+          - name: MANMAN_HOST_URL
+            value: {{ .Values.env.manman.host }}

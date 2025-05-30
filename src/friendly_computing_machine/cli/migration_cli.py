@@ -12,6 +12,20 @@ from friendly_computing_machine.db.util import (
     run_migration,
 )
 
+# Import all models to ensure they are registered with SQLAlchemy
+# For example, if you have models in friendly_computing_machine.models.user and friendly_computing_machine.models.post
+# import friendly_computing_machine.models.user
+# import friendly_computing_machine.models.post
+# Add your model imports here:
+from friendly_computing_machine.models import (  # noqa: F401
+    base,
+    genai,
+    manman,
+    music_poll,
+    slack,
+    task,
+)
+
 logger = logging.getLogger(__name__)
 
 migration_app = typer.Typer(

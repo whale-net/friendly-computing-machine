@@ -5,54 +5,28 @@ The ManMan Subscribe Service is an event-driven microservice that listens to Rab
 ## Overview
 
 This service subscribes to the following topics:
-- `worker.{id}.status-updates` - Worker lifecycle events
-- `game-server-instance.{id}.status-updates` - Instance lifecycle events
+- `external.status.worker-instance.*` - Worker lifecycle events
+- `external.status.game-server-instance.*` - Instance lifecycle events
 
 ## Features
 
 - **Event Processing**: Handles worker and instance status changes (start, running, lost, crashed, complete)
 - **Slack Integration**: Sends rich formatted messages with action buttons to Slack channels
 - **Status Tracking**: Updates database status tracking for debugging and recovery scenarios
-- **Recovery Handling**: Manages lost worker/instance recovery scenarios
 
 ## Usage
 
-To start the subscribe service:
+To run the ManMan Subscribe Service using Tilt, follow these steps:
 
-```bash
-python -m friendly_computing_machine.cli.main bot subscribe \
-  --rabbitmq-url "amqp://user:pass@localhost:5672/" \
-  --slack-bot-token "xoxb-your-token-here" \
-  --database-url "postgresql://user:pass@localhost/db"
-```
+1. Ensure you have [Tilt](https://tilt.dev/) installed on your system. You can install it by following the instructions on the [Tilt installation page](https://docs.tilt.dev/install.html).
+2. Navigate to the root directory of the project in your terminal.
+3. Run the following command to start the service:
 
+   ```bash
+   tilt up
 ## Environment Variables
 
-The service can be configured using environment variables:
+read the cli entrypoint and callback
 
-- `RABBITMQ_URL`: RabbitMQ connection URL
-- `SLACK_WEB_API_TOKEN`: Slack Web API token for sending messages
-- `DATABASE_URL`: PostgreSQL database connection URL
 
-## Architecture
-
-```
-RabbitMQ Topics → ManMan Subscribe Service → Slack + Database
-```
-
-The service runs alongside the health server for monitoring and includes graceful shutdown handling.
-
-## Current Status
-
-This is currently a stub implementation. The following features need to be implemented:
-
-- [ ] RabbitMQ connection and topic subscription
-- [ ] Message processing and parsing
-- [ ] Slack Web API integration
-- [ ] Database status tracking
-- [ ] Recovery scenario handling
-- [ ] Action button handlers
-
-## Related Documentation
-
-See [manman_subscribe.md](../../../docs/manman_subscribe.md) for detailed requirements and architecture diagrams.
+this had a bunch more shit but I deleted it because it was largely garbage

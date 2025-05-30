@@ -32,6 +32,32 @@ temporal:
     limits:
       cpu: 100m
       memory: 128Mi
+  health:
+    enabled: true
+
+taskpool:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  health:
+    enabled: true
+
+subscribe:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  health:
+    enabled: true
 
 env:
   app_env: dev
@@ -42,6 +68,15 @@ env:
     appToken: <slack_app_token>
   google:
     api_key: <google_api_key>
+  rabbitmq:
+    host: <rabbitmq_host>
+    port: 5672
+    user: <rabbitmq_user>
+    password: <rabbitmq_password>
+    enableSsl: false
+    sslHostname: <ssl_hostname>
+    # for now this is just being set here
+    vhost: "/"
   otelCollector:
     logs:
       endpoint: <logs_endpoint>

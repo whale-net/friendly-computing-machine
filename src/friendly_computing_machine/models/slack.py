@@ -1,7 +1,8 @@
 import datetime
+from enum import Enum
 from typing import Any, Dict, Optional
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from friendly_computing_machine.models.base import Base
 from friendly_computing_machine.util import ts_to_datetime
@@ -162,4 +163,54 @@ class SlackCommand(SlackCommandBase, table=True):
 
 
 class SlackCommandCreate(SlackCommandBase):
+    pass
+
+
+# ------
+# slack special channels
+
+
+# TODO - reference this enum in thhe migrations when appropriate
+# but don't make alemibc maintain it because that is probably not a good idea
+class SlackSpecialChannelTypeEnum(Enum):
+    """Corresponds to the SlackSpecialChannelType table's type_name field."""
+
+    MANMAN_DEV = "manman_dev"
+
+
+class SlackSpecialChannelTypeBase(Base):
+    type_name: str = Field(index=True, unique=True)
+    friendly_type_name: str
+
+
+class SlackSpecialChannelType(SlackSpecialChannelTypeBase, table=True):
+    id: int = Field(default=None, nullable=False, primary_key=True)
+
+
+class SlackSpecialChannelTypeCreate(SlackSpecialChannelTypeBase):
+    pass
+
+
+class SlackSpecialChannelBase(Base):
+    reason: Optional[str] = None
+
+    # no updated at wahtever
+    enabled: bool = True
+
+
+class SlackSpecialChannel(SlackSpecialChannelBase, table=True):
+    id: int = Field(default=None, nullable=False, primary_key=True)
+
+    slack_channel_id: int = Field(
+        nullable=False, foreign_key="slackchannel.id", index=True
+    )
+
+    slack_special_channel_type_id: int = Field(
+        nullable=False, foreign_key="slackspecialchanneltype.id", index=True
+    )
+
+    slack_channel: SlackChannel = Relationship()
+
+
+class SlackSpecialChannelCreate(SlackSpecialChannelBase):
     pass

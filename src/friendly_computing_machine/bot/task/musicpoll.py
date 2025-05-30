@@ -56,7 +56,8 @@ class MusicPollPostPoll(ScheduledAbstractTask):
         for poll_info in config.music_poll_infos:
             # all polls must have a message to start. For some reason.
             poll_message = slack_send_message(
-                poll_info.slack_channel.slack_id, ":catjam: any cat jammers? :catjam:"
+                poll_info.slack_channel.slack_id,
+                message=":catjam: any cat jammers? :catjam:",
             )
             logger.info("sent poll message id=%s", poll_message.id)
             insert_music_poll_instance(

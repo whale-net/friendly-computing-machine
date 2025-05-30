@@ -6,6 +6,7 @@ metadata:
   labels:
     app: friendly-computing-machine
     component: migration
+    part-of: friendly-computing-machine
   annotations:
     {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
     # Argo CD sync wave annotations (Helm hooks automatically skipped)
