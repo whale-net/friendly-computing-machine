@@ -453,7 +453,8 @@ class ManManSubscribeService:
             slack_message = get_slack_message_from_id(status_update.slack_message_id)
             if slack_message is None:
                 logger.warning(
-                    f"Slack message not found for status update {status_update.id} - skipping update"
+                    "Slack message not found for status update %s - skipping update",
+                    status_update.id,
                 )
                 pass
 
