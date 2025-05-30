@@ -54,7 +54,7 @@ spec:
         args:
           - bot
           - --log-otlp
-          - run
+          - run-slack-socket-app
           # migrations run as pre-install job
           - --skip-migration-check
         # TODO - improve how secrets are sourced in this template

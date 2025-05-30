@@ -103,8 +103,18 @@ async def backfill_slack_user_info_activity() -> list[SlackUserCreate]:
     return slack_user_creates
 
 
+@dataclass
+class FixSlackTaggingParams:
+    """
+    Parameters for the fix_slack_tagging_activity.
+    """
+
+    text: str
+    add_here_tag: bool = False
+
+
 @activity.defn
-async def fix_slack_tagging_activity(text: str, add_here_tag: bool = False) -> str:
+async def fix_slack_tagging_activity(params: FixSlackTaggingParams) -> str:
     """
     Fix slack tagging in the text.
     This function replaces @here and @channel with their escaped versions.
@@ -115,11 +125,11 @@ async def fix_slack_tagging_activity(text: str, add_here_tag: bool = False) -> s
     # TODO - person name replacement
 
     # Add @here tag if this is a call to action
-    if add_here_tag and not text.strip().startswith("<!here>"):
-        text = f"<!here> {text}"
+    if params.add_here_tag and not params.text.strip().startswith("<!here>"):
+        params.text = f"<!here> {params.text}"
 
     # Replace @here and @channel with their escaped versions only if not already escaped
-    text = re.sub(r"(?<!<)@here", "<!here>", text)
-    text = re.sub(r"(?<!<)@channel", "<!channel>", text)
+    params.text = re.sub(r"(?<!<)@here", "<!here>", params.text)
+    params.text = re.sub(r"(?<!<)@channel", "<!channel>", params.text)
 
-    return text
+    return params.text

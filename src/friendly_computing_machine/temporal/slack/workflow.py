@@ -24,6 +24,7 @@ from friendly_computing_machine.temporal.db.job_activity import (
     upsert_slack_user_creates_activity,
 )
 from friendly_computing_machine.temporal.slack.activity import (
+    FixSlackTaggingParams,
     GenerateContextPromptParams,
     backfill_slack_user_info_activity,
     fix_slack_tagging_activity,
@@ -101,8 +102,7 @@ class SlackContextGeminiWorkflow:
 
         tagged_response = await workflow.execute_activity(
             fix_slack_tagging_activity,
-            response,
-            is_call_to_action,
+            FixSlackTaggingParams(response, is_call_to_action),
             schedule_to_close_timeout=timedelta(seconds=5),
             start_to_close_timeout=timedelta(seconds=5),
         )
