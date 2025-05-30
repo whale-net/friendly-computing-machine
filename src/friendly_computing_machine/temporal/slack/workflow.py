@@ -101,7 +101,8 @@ class SlackContextGeminiWorkflow:
 
         tagged_response = await workflow.execute_activity(
             fix_slack_tagging_activity,
-            response, is_call_to_action,
+            response,
+            is_call_to_action,
             schedule_to_close_timeout=timedelta(seconds=5),
             start_to_close_timeout=timedelta(seconds=5),
         )
