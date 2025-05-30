@@ -5,6 +5,9 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     app: fcm-slackbot
+    component: slackbot
+    part-of: friendly-computing-machine
+    {{- if .Values.deployment.name }}
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
