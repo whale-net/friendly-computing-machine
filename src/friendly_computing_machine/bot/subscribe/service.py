@@ -459,10 +459,7 @@ class ManManSubscribeService:
                 pass
 
             slack_message = self._handle_worker_slack_notification(
-                status_update.id, status_info, update_ts=slack_message.ts
-            )
-            self._handle_worker_slack_notification(
-                status_update.id, status_info, datetime_to_ts(slack_message.ts)
+                status_update.id, status_info, update_ts=datetime_to_ts(slack_message.ts)
             )
         else:
             # includes Initializing, which is not handled here, but is for server
