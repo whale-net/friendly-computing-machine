@@ -421,7 +421,18 @@ class ManManSubscribeService:
             message = self._handle_worker_slack_notification(
                 status_update.id, status_info
             )
+            logger.info(
+                "Sent Slack notification for initializing worker %s: %s",
+                status_update.id,
+                message.id if message else "No message sent",
+            )
             status_update.slack_message_id = message.id
+            status_update = update_manman_status_update(status_update)
+            logger.info(
+                "Updated ManMan status update with Slack message ID %s for worker %s",
+                status_update.slack_message_id,
+                status_update.id,
+            )
         elif status_info.status_type in (
             StatusType.RUNNING,
             StatusType.LOST,
@@ -435,11 +446,20 @@ class ManManSubscribeService:
 
             # TODO consider returning a tuple here or something
             status_update = get_manman_status_update_from_create(status_update_create)
-            logger.info("TODO send slack message update")
+            logger.info("Found existing ManMan status update: %s", status_update.id)
             status_update.current_status = status_info.status_type.value
             status_update = update_manman_status_update(status_update)
             # TODO this is lazy, do better
             slack_message = get_slack_message_from_id(status_update.slack_message_id)
+            if slack_message is None:
+                logger.warning(
+                    f"Slack message not found for status update {status_update.id} - skipping update"
+                )
+                pass
+
+            slack_message = self._handle_worker_slack_notification(
+                status_update.id, status_info, update_ts=slack_message.ts
+            )
             self._handle_worker_slack_notification(
                 status_update.id, status_info, datetime_to_ts(slack_message.ts)
             )
