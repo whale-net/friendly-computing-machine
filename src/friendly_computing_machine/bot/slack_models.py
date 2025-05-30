@@ -19,6 +19,8 @@ from slack_sdk.models.blocks import (
     VideoBlock,
 )
 
+from external.manman_status_api.models.status_type import StatusType
+
 
 # TODO - unit test for each block
 def render_blocks_to_text(blocks: List) -> str:
@@ -107,7 +109,7 @@ def render_blocks_to_text(blocks: List) -> str:
 
 
 def create_worker_status_blocks(
-    friendly_name: str, name: str, id: str, current_status: str
+    friendly_name: str, name: str, id: str, current_status: StatusType
 ) -> list[Block]:
     """
     Create a block payload for worker status display.
@@ -121,6 +123,28 @@ def create_worker_status_blocks(
     Returns:
         List of Slack blocks representing the worker status message
     """
+
+    should_include_buttons = current_status == StatusType.RUNNING
+    buttons = []
+    if should_include_buttons:
+        buttons.append(
+            # TODO - confirmation dialog for stop
+            ButtonElement(
+                text=PlainTextObject(text="Stop", emoji=True),
+                style="danger",
+                value=id,
+                action_id="worker-stop",
+            )
+        )
+
+    extra_blocks = []
+    if len(buttons) > 0:
+        extra_blocks.append(
+            ActionsBlock(
+                elements=buttons,
+            ),
+        )
+
     return [
         SectionBlock(
             text={
@@ -130,17 +154,10 @@ def create_worker_status_blocks(
         ),
         DividerBlock(),
         SectionBlock(
-            text={"type": "plain_text", "text": f"current_status: {current_status}"}
+            text={
+                "type": "plain_text",
+                "text": f"current_status: {current_status.name}",
+            }
         ),
-        ActionsBlock(
-            elements=[
-                # TODO - confirmation dialog for stop
-                ButtonElement(
-                    text=PlainTextObject(text="Stop", emoji=True),
-                    style="danger",
-                    value=id,
-                    action_id="worker-stop",
-                )
-            ]
-        ),
+        *extra_blocks,
     ]

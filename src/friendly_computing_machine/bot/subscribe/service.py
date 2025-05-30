@@ -422,16 +422,16 @@ class ManManSubscribeService:
                 status_update.id, status_info
             )
             status_update.slack_message_id = message.id
-            update_manman_status_update(status_update)
         elif status_info.status_type in (
             StatusType.RUNNING,
             StatusType.LOST,
+            StatusType.COMPLETE,
         ):
-            # TODO START HERE 5/28 - the timing is needed to allow the above update to insert. perhaps need retry for now
-            # will see how temporla hnales this
+            # TODO see how temporla hnales this
+            # this avoids race condition, but is not a good solution
             import time
 
-            time.sleep(2)
+            time.sleep(3)
 
             # TODO consider returning a tuple here or something
             status_update = get_manman_status_update_from_create(status_update_create)
@@ -443,18 +443,11 @@ class ManManSubscribeService:
             self._handle_worker_slack_notification(
                 status_update.id, status_info, datetime_to_ts(slack_message.ts)
             )
-        elif status_info.status_type == StatusType.COMPLETE:
-            status_update = get_manman_status_update_from_create(status_update_create)
-            status_update.current_status = status_info.status_type.value
-            logger.info("TODO send slack message update")
-            update_manman_status_update(status_update)
         else:
             # includes Initializing, which is not handled here, but is for server
             raise ValueError(
                 f"Unhandled worker status type for worker: {status_info.status_type}"
             )
-
-        #
 
         logger.info(
             f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
@@ -483,9 +476,8 @@ class ManManSubscribeService:
                     friendly_name=f"{self._manman_channel_type.friendly_type_name} Worker",
                     name=self._manman_channel_type.type_name,
                     id=str(worker_id),
-                    current_status=status_info.status_type.value,
+                    current_status=status_info.status_type,
                 )
-                print(message_block)
 
                 message = slack_send_message(
                     slack_channel.slack_id, message_block, update_ts=update_ts

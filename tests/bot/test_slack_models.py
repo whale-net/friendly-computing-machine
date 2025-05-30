@@ -1,5 +1,6 @@
 """Test suite for Slack model utilities."""
 
+from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.slack_models import (
     create_worker_status_blocks,
     render_blocks_to_text,
@@ -15,7 +16,7 @@ def test_create_and_render_worker_status_blocks():
         friendly_name=worker_name,
         name="test-worker",
         id=worker_id,
-        current_status="RUNNING",
+        current_status=StatusType.RUNNING,
     )
 
     assert blocks is not None
