@@ -6,6 +6,7 @@ metadata:
   labels:
     app: fcm-temporal-worker
     app.kubernetes.io/component: slackbot
+    app.kubernetes.io/part-of: friendly-computing-machine
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
