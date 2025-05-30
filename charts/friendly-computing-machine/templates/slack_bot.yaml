@@ -1,13 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fcm-slackbot-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
+  name: fcm-deployment{{- if .Values.deployment.name }}-{{- end }}{{ .Values.deployment.name }}
   namespace: {{ .Values.namespace }}
   labels:
-    app: fcm-slackbot
-    component: slackbot
-    part-of: friendly-computing-machine
-    {{- if .Values.deployment.name }}
+    app: friendly-computing-machine
+    app.kubernetes.io/component: slackbot
+    app.kubernetes.io/part-of: friendly-computing-machine
   {{- if and .Values.argocd.enabled .Values.argocd.useSyncWaves }}
   annotations:
     "argocd.argoproj.io/sync-wave": "0"
@@ -16,15 +15,15 @@ spec:
   replicas: {{ .Values.deployment.replicas }}
   selector:
     matchLabels:
-      app: fcm-slackbot
+      app: friendly-computing-machine
   template:
     metadata:
-      namespace: {{ .Values.namespace }}
+      namespace: fcm
       labels:
-        app: fcm-slackbot
+        app: friendly-computing-machine
     spec:
       containers:
-      - name: fcm-slackbot
+      - name: friendly-computing-machine
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         resources:
           requests:
@@ -55,7 +54,7 @@ spec:
         args:
           - bot
           - --log-otlp
-          - run-slack-socket-app
+          - run
           # migrations run as pre-install job
           - --skip-migration-check
         # TODO - improve how secrets are sourced in this template
@@ -75,7 +74,7 @@ spec:
           - name: MANMAN_HOST_URL
             value: {{ .Values.env.manman.host }}
           - name: OTEL_SERVICE_NAME
-            value: fcm-slackbot
+            value: fcm-bot
           - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
             value: {{ .Values.env.otelCollector.logs.endpoint }}
           - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
