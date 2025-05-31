@@ -1,7 +1,6 @@
 import logging
-import random
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from temporalio import activity
 
@@ -33,12 +32,6 @@ class GenerateContextPromptParams:
     previous_context: str
     vibe: str
 
-    should_invert_vibe: bool = field(default=False)
-
-    def __post_init__(self):
-        self.should_invert_vibe = random.random() < 0.1
-        logger.info(f"should invert vibe?: {self.should_invert_vibe}")
-
 
 @activity.defn
 async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
@@ -46,8 +39,6 @@ async def generate_context_prompt(params: GenerateContextPromptParams) -> str:
     Generate a context prompt based on previous messages and the current prompt.
     """
     tone_text = f"Detected tone of incoming prompt: {params.vibe}\n"
-    if params.should_invert_vibe:
-        tone_text += "Please intentionally respond with the opposite tone from what was detected.\n"
 
     context_prompt = (
         "# Response Guidelines\n\n"
