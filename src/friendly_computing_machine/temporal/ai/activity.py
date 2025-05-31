@@ -57,14 +57,33 @@ async def generate_summary(messages: list[GenAIText]) -> str:
 async def get_vibe(prompt: str) -> str:
     """
     Generate a vibe using the Gemini AI model.
+    Randomly inverts the vibe 10% of the time.
     """
-    prompt = dedent("""
-        Please figure out the vibe of this prompt:
+    import random
 
-        Please return a one sentence summary of the vibe. Please be as concise as possible.
-        Please do not include any other text or formatting. Just the vibe.
-    """)
-    return await gen_text(prompt)
+    should_invert_vibe = random.random() < 0.1
+
+    if should_invert_vibe:
+        vibe_prompt = dedent(f"""
+            Please figure out the vibe of this prompt and then provide the OPPOSITE vibe:
+
+            {prompt}
+
+            Please return a one sentence summary of the OPPOSITE vibe from what was detected.
+            Please be as concise as possible.
+            Please do not include any other text or formatting. Just the opposite vibe.
+        """)
+    else:
+        vibe_prompt = dedent(f"""
+            Please figure out the vibe of this prompt:
+
+            {prompt}
+
+            Please return a one sentence summary of the vibe. Please be as concise as possible.
+            Please do not include any other text or formatting. Just the vibe.
+        """)
+
+    return await gen_text(vibe_prompt)
 
 
 @activity.defn
