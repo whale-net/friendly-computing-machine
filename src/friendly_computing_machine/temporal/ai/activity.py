@@ -68,22 +68,22 @@ async def get_vibe(prompt: str, inversion_probability: float = 0.10) -> str:
 
     if should_invert_vibe:
         vibe_prompt = dedent(f"""
-            Please figure out the vibe of this prompt and then provide the OPPOSITE vibe:
+            Figure out the vibe of this prompt and then provide the OPPOSITE vibe:
 
             {prompt}
 
-            Please return a one sentence summary of the OPPOSITE vibe from what was detected.
-            Please be as concise as possible.
-            Please do not include any other text or formatting. Just the opposite vibe.
+            Return a one sentence summary of the OPPOSITE vibe from what was detected.
+            Be as concise as possible.
+            Do not include any other text or formatting. Just the opposite vibe.
         """)
     else:
         vibe_prompt = dedent(f"""
-            Please figure out the vibe of this prompt:
+            Figure out the vibe of this prompt:
 
             {prompt}
 
-            Please return a one sentence summary of the vibe. Please be as concise as possible.
-            Please do not include any other text or formatting. Just the vibe.
+            Return a one sentence summary of the vibe. Be as concise as possible.
+            Do not include any other text or formatting. Just the vibe.
         """)
 
     return await gen_text(vibe_prompt)
