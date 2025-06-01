@@ -1,3 +1,4 @@
+import random
 from textwrap import dedent
 
 import google.generativeai as genai
@@ -54,14 +55,16 @@ async def generate_summary(messages: list[GenAIText]) -> str:
 
 
 @activity.defn
-async def get_vibe(prompt: str) -> str:
+async def get_vibe(prompt: str, inversion_probability: float = 0.10) -> str:
     """
     Generate a vibe using the Gemini AI model.
-    Randomly inverts the vibe 10% of the time.
-    """
-    import random
+    Randomly inverts the vibe based on the specified probability.
 
-    should_invert_vibe = random.random() < 0.1
+    Args:
+        prompt: The input prompt to analyze for vibe
+        inversion_probability: Probability of inverting the vibe (default: 0.10)
+    """
+    should_invert_vibe = random.random() < inversion_probability
 
     if should_invert_vibe:
         vibe_prompt = dedent(f"""
