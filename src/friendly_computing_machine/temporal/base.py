@@ -13,12 +13,54 @@ from temporalio.client import (
     ScheduleUpdateInput,
 )
 
-from friendly_computing_machine.temporal.util import get_temporal_queue_name
+from .naming import create_workflow_naming, WorkflowNaming
+from .util import get_temporal_queue_name
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractScheduleWorkflow(ABC):
+    """
+    Abstract base class for scheduled temporal workflows with standardized naming.
+    
+    This class provides a standardized approach to workflow naming and scheduling
+    that supports multiple applications, environments, and namespaces.
+    
+    Subclasses should override get_workflow_name() to provide a custom name,
+    or rely on the default class-name-based naming.
+    """
+    
+    def __init__(self, namespace: str = "default"):
+        """
+        Initialize the workflow with optional namespace.
+        
+        Args:
+            namespace: Logical grouping for this workflow (e.g., "slack", "ai", "db")
+        """
+        self._namespace = namespace
+        self._naming: Optional[WorkflowNaming] = None
+    
+    def get_naming(self) -> WorkflowNaming:
+        """Get or create the naming utility for this workflow."""
+        if self._naming is None:
+            self._naming = create_workflow_naming(self._namespace)
+        return self._naming
+    
+    def get_workflow_name(self) -> str:
+        """
+        Get the workflow name for this instance.
+        
+        Override this method to provide a custom workflow name.
+        Default implementation converts class name to kebab-case.
+        
+        Returns:
+            Workflow name (e.g., "slack-user-info")
+        """
+        return WorkflowNaming._class_name_to_workflow_name(self.__class__.__name__)
+    
+    def get_namespace(self) -> str:
+        """Get the namespace for this workflow."""
+        return self._namespace
     @abstractmethod
     async def run(self, wf_arg: Optional[Any] = None):
         """
@@ -64,15 +106,64 @@ class AbstractScheduleWorkflow(ABC):
         logger.debug("schedule update input: %s", input)
         return ScheduleUpdate(schedule=self.get_schedule(input.description.id))
 
-    def get_id(self, app_env) -> str:
-        # For now, just use the class name. should be fine
-        return f"fcm-{app_env}-{self.__class__.__name__}"
+    def get_id(self, app_env: str) -> str:
+        """
+        Get the workflow ID.
+        
+        This method supports both new naming system and legacy compatibility.
+        
+        Args:
+            app_env: Environment name (for legacy compatibility)
+            
+        Returns:
+            Standardized workflow ID
+        """
+        try:
+            # Try new naming system
+            naming = self.get_naming()
+            workflow_name = self.get_workflow_name()
+            return naming.get_workflow_id(workflow_name)
+        except RuntimeError:
+            # Fall back to legacy naming for backward compatibility
+            logger.warning(
+                "Using legacy naming for %s. Consider initializing naming configuration.",
+                self.__class__.__name__
+            )
+            return f"fcm-{app_env}-{self.__class__.__name__}"
 
     def get_schedule_id(self, app_env: str) -> str:
-        return f"wf-schedule-{self.get_id(app_env)}"
+        """
+        Get the schedule ID for this workflow.
+        
+        Args:
+            app_env: Environment name (for legacy compatibility)
+            
+        Returns:
+            Standardized schedule ID
+        """
+        try:
+            # Try new naming system
+            naming = self.get_naming()
+            workflow_name = self.get_workflow_name()
+            return naming.get_schedule_id(workflow_name)
+        except RuntimeError:
+            # Fall back to legacy naming for backward compatibility
+            return f"wf-schedule-{self.get_id(app_env)}"
 
     def get_temporal_queue_name(self) -> str:
-        return get_temporal_queue_name("main")
+        """
+        Get the temporal queue name for this workflow.
+        
+        Returns:
+            Queue name using new naming system or legacy fallback
+        """
+        try:
+            # Try new naming system
+            naming = self.get_naming()
+            return naming.get_queue_name("main")
+        except RuntimeError:
+            # Fall back to legacy system
+            return get_temporal_queue_name("main")
 
     def get_schedule(self, app_env: str, wf_arg: Optional[Any] = None) -> Schedule:
         # TODO - wf_arg is kind of a hack but it is useful for now otherwise

@@ -127,6 +127,14 @@ class SlackMessageQODWorkflow(AbstractScheduleWorkflow):
     It retrieves the previous messages from the Slack channel and generates a response
     based on the provided prompt and the summarized context.
     """
+    
+    def __init__(self):
+        """Initialize workflow with Slack namespace."""
+        super().__init__(namespace="slack")
+    
+    def get_workflow_name(self) -> str:
+        """Get custom workflow name."""
+        return "message-qod"
 
     def get_schedule_spec(self) -> ScheduleSpec:
         return ScheduleSpec(
@@ -198,6 +206,21 @@ class SlackUserInfoWorkflowParams:
 
 @workflow.defn
 class SlackUserInfoWorkflow(AbstractScheduleWorkflow):
+    """
+    Workflow to backfill slack user information.
+    
+    This workflow retrieves user information from Slack and updates the database
+    with the latest user data, including profile information and status.
+    """
+    
+    def __init__(self):
+        """Initialize workflow with Slack namespace."""
+        super().__init__(namespace="slack")
+    
+    def get_workflow_name(self) -> str:
+        """Get custom workflow name."""
+        return "user-info-sync"
+
     def get_schedule_spec(self) -> ScheduleSpec:
         # 30 minutes should be enough time for this job
         # don't want to spam slack API, but also don't want to wait too long on updates
