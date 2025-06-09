@@ -2,7 +2,7 @@ import datetime
 
 from sqlmodel import Field, Index, UniqueConstraint
 
-from external.manman_status_api.models.status_info import StatusInfo
+from external.manman_status_api.models.external_status_info import ExternalStatusInfo
 from friendly_computing_machine.models.base import Base
 
 
@@ -46,9 +46,11 @@ class ManManStatusUpdate(ManManStatusUpdateBase, table=True):
 
 class ManManStatusUpdateCreate(ManManStatusUpdateBase):
     @classmethod
-    def from_status_info(cls, status_info: StatusInfo) -> "ManManStatusUpdateCreate":
+    def from_status_info(
+        cls, status_info: ExternalStatusInfo
+    ) -> "ManManStatusUpdateCreate":
         """
-        Create a ManManStatusUpdateCreate instance from a StatusInfo instance.
+        Create a ManManStatusUpdateCreate instance from a ExternalStatusInfo instance.
         """
 
         service_type = (
