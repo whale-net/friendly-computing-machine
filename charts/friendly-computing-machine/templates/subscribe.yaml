@@ -12,7 +12,7 @@ metadata:
     "argocd.argoproj.io/sync-wave": "0"
   {{- end }}
 spec:
-  replicas: {{ .Values.subscribe.replicas | default 1 }}
+  replicas: {{ .Values.subscribe.replicas }}
   selector:
     matchLabels:
       app: fcm-subscribe
