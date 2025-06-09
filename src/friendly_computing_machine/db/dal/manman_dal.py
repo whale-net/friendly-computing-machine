@@ -3,6 +3,7 @@
 import logging
 from typing import Optional
 
+from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session, select
 
 from friendly_computing_machine.db.util import SessionManager, db_update
@@ -26,6 +27,49 @@ def insert_manman_status_update(
         session.commit()
         session.refresh(db_manman_status_update)
         return db_manman_status_update
+
+
+def upsert_manman_status_update(
+    manman_status_update: ManManStatusUpdateCreate, session: Optional[Session] = None
+) -> ManManStatusUpdate:
+    """Insert or update a ManMan status update based on unique constraint.
+
+    This is an atomic operation that handles race conditions where messages arrive out of order.
+    Uses PostgreSQL's ON CONFLICT clause with SQLAlchemy 2.0 idioms.
+    """
+    with SessionManager(session) as session:
+        # Convert to dict excluding unset fields
+        values_dict = manman_status_update.model_dump(exclude_unset=True)
+
+        # Build the insert statement with ON CONFLICT DO UPDATE
+        insert_stmt = insert(ManManStatusUpdate).values(**values_dict)
+
+        # For the update, exclude the constraint columns
+        update_dict = {
+            k: v
+            for k, v in values_dict.items()
+            if k not in ["service_type", "service_id"]
+        }
+        print(update_dict)
+        # Handle conflict on (service_type, service_id) unique constraint
+        # Only update if the new as_of is later than the existing one
+        update_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=["service_type", "service_id"],
+            set_=update_dict,
+            where=(ManManStatusUpdate.as_of < insert_stmt.excluded.as_of),
+        ).returning(ManManStatusUpdate)
+
+        # Execute the statement and get the result
+        result = session.exec(update_stmt).first()
+
+        if not result:
+            raise RuntimeError("Upsert operation failed to return a result")
+        # it's a row so we are hopefully getting the first one
+        ret_res = result[0]
+        logger.info("this is the result row %s", ret_res)
+        session.commit()
+        session.refresh(ret_res)
+        return ret_res
 
 
 def get_manman_status_update_by_id(

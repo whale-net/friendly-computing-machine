@@ -1,11 +1,10 @@
-import asyncio
-import functools  # Added
 import json
 import logging
+import time
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Optional
 
-from amqpstorm import Connection
+from amqpstorm import Channel, Connection
 
 from external.manman_status_api.api.default_api import DefaultApi as ManManStatusAPI
 from external.manman_status_api.models.external_status_info import ExternalStatusInfo
@@ -14,14 +13,16 @@ from friendly_computing_machine.bot.app import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_models import create_worker_status_blocks
 from friendly_computing_machine.bot.util import slack_send_message
 from friendly_computing_machine.db.dal import (
-    get_manman_status_update_from_create,
+    # get_manman_status_update_from_create,  # DEAD CODE - unused import
     get_slack_message_from_id,  # TODO - be less lazy with this
     get_slack_special_channel_type_from_name,
     get_slack_special_channels_from_type,
-    insert_manman_status_update,
+    # insert_manman_status_update,  # DEAD CODE - unused import, using upsert instead
     update_manman_status_update,
 )
+from friendly_computing_machine.db.dal.manman_dal import upsert_manman_status_update
 from friendly_computing_machine.models.manman import (
+    ManManStatusUpdate,
     ManManStatusUpdateCreate,
 )
 from friendly_computing_machine.models.slack import SlackMessage
@@ -35,17 +36,7 @@ class QueueConfig:
     """Configuration for a message queue."""
 
     name: str
-    routing_key: str
-    handler: Callable[[ExternalStatusInfo], None]
-
-    def __post_init__(self):
-        """Validate configuration after initialization."""
-        if not self.name:
-            raise ValueError("Queue name cannot be empty")
-        if not self.routing_key:
-            raise ValueError("Routing key cannot be empty")
-        if not callable(self.handler):
-            raise ValueError("Handler must be callable")
+    routing_keys: list[str]
 
 
 class ManManSubscribeService:
@@ -60,40 +51,11 @@ class ManManSubscribeService:
     Events are processed to:
     - Send formatted Slack messages with action buttons
 
-    CONTROL FLOW (Consume-based):
-    1. Initialization (__init__):
-       - Sets up RabbitMQ connection, channel, and queue configs.
-       - Initializes internal loop and consumer task references.
-
-    2. Service Start (start()):
-       - Declares durable queues and binds them to the exchange (using asyncio.to_thread).
-       - Registers consumers for each queue using `channel.basic.consume`.
-         The callback (`_amqp_message_callback`) is set for each consumer.
-       - Starts `channel.start_consuming()` in a background asyncio task.
-         This task blocks internally, listening for messages.
-
-    3. Message Arrival & Callback (`_amqp_message_callback`):
-       - Called by AMQPStorm's I/O thread when a message arrives.
-       - Parses the message body (JSON).
-       - Schedules `_process_consumed_message` on the main asyncio event loop
-         using `asyncio.run_coroutine_threadsafe`.
-       - Handles initial parsing errors and schedules message rejection if needed.
-
-    4. Async Message Processing (`_process_consumed_message`):
-       - Runs on the asyncio event loop.
-       - Deserializes message data to `ExternalStatusInfo`.
-       - Calls the configured handler via `_handle_status_info_async`.
-       - Acknowledges (ack) or rejects (nack) the message on the channel
-         using `asyncio.to_thread`.
-
-    5. Handler Execution (`_handle_status_info_async`):
-       - Wraps synchronous handlers (e.g., `_handle_worker_status_update`)
-         in `loop.run_in_executor()` to prevent blocking the event loop.
-
-    6. Service Stop (stop()):
-       - Signals `channel.stop_consuming()` (via asyncio.to_thread).
-       - Waits for the background consumer task to finish.
-       - Closes the AMQP channel.
+    SIMPLIFIED SYNCHRONOUS CONTROL FLOW:
+    1. Initialization (__init__): Sets up RabbitMQ connection, channel, and queue configs.
+    2. Service Start (start()): Declares durable queues, binds them to exchange, registers consumers.
+    3. Message Callback (_amqp_message_callback): Directly processes messages synchronously.
+    4. Service Stop (stop()): Stops consuming and closes channel.
     """
 
     def __init__(
@@ -113,28 +75,21 @@ class ManManSubscribeService:
             app_env: Application environment string
         """
         self._rabbitmq_connection = rabbitmq_connection
-        self._channel = rabbitmq_connection.channel()
+        self._channel: Channel = rabbitmq_connection.channel()
         self._slack_api = slack_api
         self._is_running = False
         self._manman_status_api = manman_status_api
         self._app_env = app_env
 
-        self._loop: asyncio.AbstractEventLoop | None = None  # Added
-        self._consumer_bg_task: asyncio.Task | None = None  # Added
-
         # Queue configuration using proper classes
-        self._queues = {
-            "worker": QueueConfig(
-                name=f"fcm-{self._app_env}.manman.worker.status",
-                routing_key="external.status.worker-instance.*",
-                handler=self._handle_worker_status_update,
-            ),
-            "instance": QueueConfig(
-                name=f"fcm-{self._app_env}.manman.server.status",
-                routing_key="external.status.game-server-instance.*",
-                handler=self._handle_instance_status_update,
-            ),
-        }
+        self._exchange = "external_service_events"
+        self._queue = QueueConfig(
+            name=f"fcm-{self._app_env}.manman.generic.status",
+            routing_keys=[
+                "worker.*.status",
+                "game_server_instance.*.status",
+            ],
+        )
 
         # Hardcoding for now
         self._manman_channel_type = get_slack_special_channel_type_from_name(
@@ -152,240 +107,120 @@ class ManManSubscribeService:
 
         logger.info("ManMan Subscribe Service initialized")
 
-    async def start(self):
+    def start(self):
         """
-        Start the subscribe service in consume mode.
-        Declares queues, sets up consumers, and starts message consumption in a background task.
+        Start the subscribe service in synchronous mode.
+        Declares queues, sets up consumers, and starts blocking message consumption.
         """
-        logger.info("Starting ManMan Subscribe Service (Consume Mode)")
+        logger.info("Starting ManMan Subscribe Service (Synchronous Mode)")
         if self._is_running:
             logger.warning("Service is already running.")
             return
 
         self._is_running = True
-        self._loop = asyncio.get_running_loop()
 
         try:
             # Set up queues and bindings
-            for queue_type, config in self._queues.items():
-                logger.info(f"Declaring and binding queue: {config.name}")
-                await asyncio.to_thread(
-                    self._channel.queue.declare, queue=config.name, durable=True
+            self._channel.queue.declare(queue=self._queue.name, durable=True)
+            for routing_key in self._queue.routing_keys:
+                self._channel.queue.bind(
+                    exchange=self._exchange,
+                    queue=self._queue.name,
+                    routing_key=routing_key,
                 )
-                await asyncio.to_thread(
-                    self._channel.queue.bind,
-                    exchange="external",
-                    queue=config.name,
-                    routing_key=config.routing_key,
-                )
-                logger.info(f"Configured {queue_type} queue: {config.name}")
+                logger.info(f"Binding created for routing key: {routing_key}")
 
-                # Register consumer for this queue
-                bound_callback = functools.partial(
-                    self._amqp_message_callback, queue_config=config
-                )
-                await asyncio.to_thread(
-                    self._channel.basic.consume,
-                    callback=bound_callback,
-                    queue=config.name,
-                    no_ack=False,  # Manual acknowledgment
-                )
-                logger.info(f"Consumer set up for queue: {config.name}")
-
-            logger.info("Starting AMQPStorm message consumption background task...")
-            self._consumer_bg_task = self._loop.create_task(
-                asyncio.to_thread(self._channel.start_consuming),
-                name="amqp_consumer_thread",
+            # Register consumer for this queue
+            self._channel.basic.consume(
+                callback=self._amqp_message_callback,
+                queue=self._queue.name,
+                no_ack=False,  # Manual acknowledgment
             )
-            logger.info("ManMan Subscribe Service started successfully.")
+            logger.info(f"Consumer set up for queue: {self._queue.name}")
+
+            logger.info("Starting synchronous message consumption...")
+            # This blocks until stop_consuming() is called
+            self._channel.start_consuming()
+            logger.info("ManMan Subscribe Service stopped consuming.")
 
         except Exception as e:
             logger.error(f"Failed to start ManMan Subscribe Service: {e}")
             self._is_running = False
-            if self._consumer_bg_task and not self._consumer_bg_task.done():
-                self._consumer_bg_task.cancel()
-            # Re-raise the exception to signal failure
             raise
 
-    async def stop(self):
+    def stop(self):
         """
         Stop the subscribe service gracefully.
-        Signals the AMQP consumer to stop, waits for it, and closes the channel.
+        Signals the consumer to stop and closes the channel.
         """
-        logger.info("Stopping ManMan Subscribe Service (Consume Mode)")
-        if not self._is_running and not (
-            self._consumer_bg_task and not self._consumer_bg_task.done()
-        ):
-            logger.info("Service not running or already stopped/stopping.")
+        logger.info("Stopping ManMan Subscribe Service")
+        if not self._is_running:
+            logger.info("Service not running.")
             return
 
-        # Signal that the service is stopping
         self._is_running = False
 
         if self._channel and self._channel.is_open:
-            logger.info("Requesting AMQP consumer to stop...")
+            logger.info("Stopping AMQP consumer...")
             try:
-                # This call makes start_consuming() return in its thread.
-                await asyncio.to_thread(self._channel.stop_consuming)
-                logger.info("AMQP consumer stop request sent.")
+                self._channel.stop_consuming()
+                logger.info("AMQP consumer stopped.")
             except Exception as e:
-                logger.error(f"Error requesting AMQP consumer to stop: {e}")
-        else:
-            logger.info("Channel not available or not open for stopping consumers.")
+                logger.error(f"Error stopping AMQP consumer: {e}")
 
-        if self._consumer_bg_task:
-            logger.info("Waiting for consumer background task to complete...")
-            try:
-                await asyncio.wait_for(self._consumer_bg_task, timeout=10.0)
-                logger.info("Consumer background task completed.")
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "Timeout waiting for consumer background task. Attempting to cancel."
-                )
-                self._consumer_bg_task.cancel()
-                try:
-                    await self._consumer_bg_task  # Allow cancellation to propagate
-                except asyncio.CancelledError:
-                    logger.info("Consumer background task was cancelled.")
-                except Exception as e:
-                    logger.error(f"Error during consumer task cancellation: {e}")
-            except Exception as e:
-                logger.error(f"Error waiting for consumer background task: {e}")
-            finally:
-                self._consumer_bg_task = None
-
-        if self._channel and self._channel.is_open:
             logger.info("Closing AMQP channel.")
             try:
-                await asyncio.to_thread(self._channel.close)
+                self._channel.close()
                 logger.info("AMQP channel closed.")
             except Exception as e:
                 logger.error(f"Error closing AMQP channel: {e}")
-        self._channel = None  # Mark as closed
 
+        self._channel = None
         logger.info("ManMan Subscribe Service stopped.")
 
-    def _amqp_message_callback(self, message, queue_config: QueueConfig):
+    def _amqp_message_callback(self, message):
         """
-        Synchronous callback executed by AMQPStorm's I/O thread when a message is received.
-        Extracts necessary data and schedules the full asynchronous processing on the event loop.
+        Synchronous callback executed when a message is received.
         """
-        if not self._loop:  # Should be set by start()
-            logger.error(
-                "Event loop not available in AMQP callback. Cannot process message."
-            )
-            # Cannot safely reject here without the loop or a valid channel reference strategy
-            # for this specific scenario. This indicates a severe setup issue.
-            return
-
         try:
-            # Extract all necessary information from the message object here,
-            # as the message object itself might not be safe to pass across threads
-            # or its lifetime might be tied to the callback's scope in some libraries.
-            body = message.body
-            delivery_tag = message.delivery_tag
-        except Exception as e:
-            logger.error(
-                f"Error accessing message properties in AMQP callback for queue {queue_config.name}: {e}"
+            logger.info(
+                f"Received message on queue {self._queue.name} (delivery_tag: {message.delivery_tag})"
             )
-            # Cannot process further if basic message properties are inaccessible.
-            return
 
-        logger.info(
-            f"Received message on queue {queue_config.name} (delivery_tag: {delivery_tag}), scheduling for async processing."
-        )
-        asyncio.run_coroutine_threadsafe(
-            self._process_message_async(body, delivery_tag, queue_config), self._loop
-        )
-
-    async def _process_message_async(
-        self, body: bytes, delivery_tag: int, queue_config: QueueConfig
-    ):
-        """
-        Asynchronously parses, processes, and acknowledges/rejects a message.
-        This method runs in the asyncio event loop.
-        """
-        logger.info(
-            f"Async processing message from {queue_config.name} (delivery_tag: {delivery_tag})"
-        )
-        try:
-            message_data = json.loads(body)
-            logger.debug(f"Message JSON parsed for {delivery_tag}: {message_data}")
+            # Parse message
+            message_data = json.loads(message.body)
+            logger.debug(f"Message JSON parsed: {message_data}")
 
             status_info = ExternalStatusInfo.from_dict(message_data)
-            logger.debug(
-                f"ExternalStatusInfo deserialized for {delivery_tag}: {status_info}"
-            )
+            logger.debug(f"ExternalStatusInfo deserialized: {status_info}")
 
-            await self._handle_status_info_async(queue_config.handler, status_info)
-
-            logger.debug(
-                f"Attempting to ACK message {delivery_tag} on queue {queue_config.name}."
-            )
-            if self._channel and self._channel.is_open:  # Ensure channel is usable
-                await asyncio.to_thread(
-                    self._channel.basic.ack, delivery_tag=delivery_tag
-                )
-                logger.info(
-                    f"Message {delivery_tag} from {queue_config.name} acknowledged."
-                )
+            # Process message based on type
+            if status_info.worker_id:
+                self._handle_worker_status_update(status_info)
+            elif status_info.game_server_instance_id:
+                self._handle_instance_status_update(status_info)
             else:
-                logger.warning(
-                    f"Channel not available or closed, cannot ACK message {delivery_tag} from {queue_config.name}."
-                )
-                # This message will likely be redelivered by RabbitMQ after visibility timeout.
+                logger.warning(f"Unknown status info type: {status_info}")
+
+            # Acknowledge message
+            self._channel.basic.ack(delivery_tag=message.delivery_tag)
+            logger.info(f"Message {message.delivery_tag} acknowledged.")
 
         except json.JSONDecodeError as e:
             logger.warning(
-                f"Invalid JSON in message from {queue_config.name} (delivery_tag: {delivery_tag}): {e}. Body: {body[:200]}"
+                f"Invalid JSON in message (delivery_tag: {message.delivery_tag}): {e}. Body: {message.body[:200]}"
             )
-            if self._channel and self._channel.is_open:
-                await asyncio.to_thread(
-                    self._channel.basic.reject, delivery_tag=delivery_tag, requeue=False
-                )
-                logger.info(f"Message {delivery_tag} (invalid JSON) rejected.")
-            else:
-                logger.warning(
-                    f"Channel not available or closed, cannot REJECT (invalid JSON) message {delivery_tag}."
-                )
+            self._channel.basic.reject(delivery_tag=message.delivery_tag, requeue=False)
+            logger.info(f"Message {message.delivery_tag} (invalid JSON) rejected.")
         except Exception as e:
             logger.error(
-                f"Error processing message from {queue_config.name} (delivery_tag: {delivery_tag}): {e}",
+                f"Error processing message (delivery_tag: {message.delivery_tag}): {e}",
                 exc_info=True,
             )
-            if self._channel and self._channel.is_open:
-                await asyncio.to_thread(
-                    self._channel.basic.reject, delivery_tag=delivery_tag, requeue=False
-                )
-                logger.warning(
-                    f"Message {delivery_tag} rejected due to processing error."
-                )
-            else:
-                logger.warning(
-                    f"Channel not available or closed, cannot REJECT (processing error) message {delivery_tag}."
-                )
-
-    async def _handle_status_info_async(
-        self,
-        handler: Callable[[ExternalStatusInfo], None],
-        status_info: ExternalStatusInfo,
-    ):
-        """
-        Generic async status info handler wrapper.
-
-        Args:
-            handler: The sync handler function to call
-            status_info: Parsed ExternalStatusInfo object
-        """
-        try:
-            logger.info(f"Processing status update for {status_info}")
-
-            # Run handler in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, handler, status_info)
-
-        except Exception as e:
-            logger.error(f"Error handling status info: {e}")
+            self._channel.basic.reject(delivery_tag=message.delivery_tag, requeue=False)
+            logger.warning(
+                f"Message {message.delivery_tag} rejected due to processing error."
+            )
 
     def _handle_worker_status_update(self, status_info: ExternalStatusInfo):
         """
@@ -415,62 +250,67 @@ class ManManSubscribeService:
         # from friendly_computing_machine.bot.util import slack_send_message
 
         status_update_create = ManManStatusUpdateCreate.from_status_info(status_info)
+
+        # Use upsert pattern - handles both create and update cases gracefully
+        # This removes the need for time.sleep(3) race condition workaround
+        status_update: ManManStatusUpdate = upsert_manman_status_update(
+            status_update_create
+        )
+
+        # Handle Slack notification based on whether we need to create or update
         if status_info.status_type == StatusType.CREATED:
-            # If the worker is initializing, we create a new status update
-            status_update = insert_manman_status_update(status_update_create)
-            logger.info(
-                "Created new ManMan status update for initializing worker %s",
-                status_update.id,
-            )
+            # Create new Slack message
             message = self._handle_worker_slack_notification(
-                status_update.id, status_info
-            )
-            logger.info(
-                "Sent Slack notification for initializing worker %s: %s",
-                status_update.id,
-                message.id if message else "No message sent",
+                status_update.service_id, status_info
             )
             status_update.slack_message_id = message.id
             status_update = update_manman_status_update(status_update)
             logger.info(
-                "Updated ManMan status update with Slack message ID %s for worker %s",
-                status_update.slack_message_id,
-                status_update.id,
+                "Created Slack notification for worker %s: message_id=%s",
+                status_update.service_id,
+                message.id,
             )
-        elif status_info.status_type in (
+        elif status_info.status_type in [
             StatusType.RUNNING,
-            StatusType.LOST,
             StatusType.COMPLETE,
-        ):
-            # TODO see how temporla hnales this
-            # this avoids race condition, but is not a good solution
-            import time
-
-            time.sleep(3)
-
-            # TODO consider returning a tuple here or something
-            status_update = get_manman_status_update_from_create(status_update_create)
-            logger.info("Found existing ManMan status update: %s", status_update.id)
-            status_update.current_status = status_info.status_type.value
-            status_update = update_manman_status_update(status_update)
-            # TODO this is lazy, do better
+            StatusType.LOST,
+        ]:
+            # Update existing Slack message
             slack_message = get_slack_message_from_id(status_update.slack_message_id)
-            if slack_message is None:
-                logger.warning(
-                    "Slack message not found for status update %s - skipping update",
-                    status_update.id,
+            if not slack_message:
+                # Wait for message to be created in Slack
+                # This is a retry hack until temporal workflow is implemented
+                # shouldn't be as needed with synchronous workflow
+                time.sleep(2)
+                slack_message = get_slack_message_from_id(
+                    status_update.slack_message_id
                 )
-                pass
-
-            slack_message = self._handle_worker_slack_notification(
-                status_update.id,
+                if not slack_message:
+                    logger.error(
+                        "Slack message not found for status update %s after waiting",
+                        status_update.service_id,
+                    )
+                    return
+            if slack_message is None:
+                # avoid double sending messages. need create, for now...
+                logger.error(
+                    "Slack message not found for status update %s",
+                    status_update.service_id,
+                )
+                return
+            self._handle_worker_slack_notification(
+                status_update.service_id,
                 status_info,
                 update_ts=datetime_to_ts(slack_message.ts),
             )
+            logger.info(
+                "Updated Slack notification for worker %s",
+                status_update.service_id,
+            )
         else:
-            # includes Initializing, which is not handled here, but is for server
-            raise ValueError(
-                f"Unhandled worker status type for worker: {status_info.status_type}"
+            # Includes INITIALIZING, which is not handled here, but is for server
+            logger.warning(
+                f"Unhandled worker status type for worker {status_info.worker_id}: {status_info.status_type}"
             )
 
         logger.info(
