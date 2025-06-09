@@ -8,7 +8,7 @@ from typing import Callable, Optional
 from amqpstorm import Connection
 
 from external.manman_status_api.api.default_api import DefaultApi as ManManStatusAPI
-from external.manman_status_api.models.status_info import StatusInfo
+from external.manman_status_api.models.external_status_info import ExternalStatusInfo
 from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.app import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_models import create_worker_status_blocks
@@ -36,7 +36,7 @@ class QueueConfig:
 
     name: str
     routing_key: str
-    handler: Callable[[StatusInfo], None]
+    handler: Callable[[ExternalStatusInfo], None]
 
     def __post_init__(self):
         """Validate configuration after initialization."""
@@ -81,7 +81,7 @@ class ManManSubscribeService:
 
     4. Async Message Processing (`_process_consumed_message`):
        - Runs on the asyncio event loop.
-       - Deserializes message data to `StatusInfo`.
+       - Deserializes message data to `ExternalStatusInfo`.
        - Calls the configured handler via `_handle_status_info_async`.
        - Acknowledges (ack) or rejects (nack) the message on the channel
          using `asyncio.to_thread`.
@@ -312,8 +312,10 @@ class ManManSubscribeService:
             message_data = json.loads(body)
             logger.debug(f"Message JSON parsed for {delivery_tag}: {message_data}")
 
-            status_info = StatusInfo.from_dict(message_data)
-            logger.debug(f"StatusInfo deserialized for {delivery_tag}: {status_info}")
+            status_info = ExternalStatusInfo.from_dict(message_data)
+            logger.debug(
+                f"ExternalStatusInfo deserialized for {delivery_tag}: {status_info}"
+            )
 
             await self._handle_status_info_async(queue_config.handler, status_info)
 
@@ -364,14 +366,16 @@ class ManManSubscribeService:
                 )
 
     async def _handle_status_info_async(
-        self, handler: Callable[[StatusInfo], None], status_info: StatusInfo
+        self,
+        handler: Callable[[ExternalStatusInfo], None],
+        status_info: ExternalStatusInfo,
     ):
         """
         Generic async status info handler wrapper.
 
         Args:
             handler: The sync handler function to call
-            status_info: Parsed StatusInfo object
+            status_info: Parsed ExternalStatusInfo object
         """
         try:
             logger.info(f"Processing status update for {status_info}")
@@ -383,12 +387,12 @@ class ManManSubscribeService:
         except Exception as e:
             logger.error(f"Error handling status info: {e}")
 
-    def _handle_worker_status_update(self, status_info: StatusInfo):
+    def _handle_worker_status_update(self, status_info: ExternalStatusInfo):
         """
         Handle worker status update events.
 
         Args:
-            status_info: StatusInfo object containing worker status information
+            status_info: ExternalStatusInfo object containing worker status information
         """
         logger.info(
             f"Worker {status_info.worker_id} status update: {status_info.status_info_id}"
@@ -473,12 +477,12 @@ class ManManSubscribeService:
             f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
         )
 
-    def _handle_instance_status_update(self, status_info: StatusInfo):
+    def _handle_instance_status_update(self, status_info: ExternalStatusInfo):
         """
         Handle instance status update events.
 
         Args:
-            status_info: StatusInfo object containing instance status information
+            status_info: ExternalStatusInfo object containing instance status information
         """
         logger.info(
             f"Instance {status_info.game_server_instance_id} status update: {status_info.status_info_id}"
@@ -488,7 +492,10 @@ class ManManSubscribeService:
         # TODO: Update database status
 
     def _handle_worker_slack_notification(
-        self, worker_id: int, status_info: StatusInfo, update_ts: Optional[str] = None
+        self,
+        worker_id: int,
+        status_info: ExternalStatusInfo,
+        update_ts: Optional[str] = None,
     ) -> SlackMessage:
         for special_channel, slack_channel in self._manman_channel_tups:
             try:
