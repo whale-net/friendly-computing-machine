@@ -9,6 +9,7 @@ from friendly_computing_machine.cli.context.gemini import T_google_api_key, setu
 from friendly_computing_machine.cli.context.log import setup_logging
 from friendly_computing_machine.cli.context.manman_host import (
     T_manman_host_url,
+    setup_manman_experience_api,
     setup_old_manman_api,
 )
 from friendly_computing_machine.cli.context.slack import FILENAME as SLACK_FILENAME
@@ -43,6 +44,7 @@ def callback(
     setup_logging(ctx, log_otlp=log_otlp)
     setup_slack(ctx, slack_app_token, slack_bot_token)
     setup_temporal(ctx, temporal_host, app_env)
+    setup_manman_experience_api(ctx, manman_host_url)
     setup_old_manman_api(ctx, manman_host_url)
     logger.debug("CLI callback complete")
 

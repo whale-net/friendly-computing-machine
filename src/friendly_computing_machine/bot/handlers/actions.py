@@ -5,8 +5,9 @@ from slack_bolt import Ack
 from external.old_manman_api.models.stdin_command_request import StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
+from friendly_computing_machine.bot.slack_enum import SlackActionRegistry
 from friendly_computing_machine.bot.slack_payloads import ActionPayload
-from friendly_computing_machine.manman.api import OldManManAPI
+from friendly_computing_machine.manman.api import ManManExperienceAPI, OldManManAPI
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     payload = ActionPayload.from_dict(body)
     logger.debug(body)
 
-    if payload.custom_command is None:
+    if payload.stdin_command_input is None:
         logger.error("Custom command is None")
         # message?
         client.chat_postMessage(
@@ -73,11 +74,11 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
         )
         return
 
-    logger.info(f"Custom command: {payload.custom_command}")
+    logger.info(f"Custom command: {payload.stdin_command_input}")
 
     # TODO - parse this? seems rather wrong to just take user input but whatever for now
     req = StdinCommandRequest(
-        commands=[payload.custom_command],
+        commands=[payload.stdin_command_input],
     )
     try:
         mapi = OldManManAPI.get_api()
@@ -92,3 +93,52 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
         client.chat_postMessage(
             channel=payload.user_id, text="Error: ManMan API error. Please try again"
         )
+
+
+@app.action(SlackActionRegistry.MANMAN_WORKER_STOP)
+def handle_manman_worker_stop(
+    ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
+):
+    ack()
+    logger.info("ManMan worker stop action triggered")
+    mmexapi = ManManExperienceAPI.get_api()
+    # This is kind of risky because it shuts down the current worker
+    # but it is the only way to stop a worker in ManMan Experience atm
+    # eventually we should have a proper stop endpoint with ID to avoid this weirdness
+    mmexapi.worker_shutdown_worker_shutdown_post()
+
+
+@app.action(SlackActionRegistry.MANMAN_SERVER_CREATE)
+def handle_manman_server_create(
+    ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
+):
+    ack()
+    # payload = ActionPayload.from_dict(body)
+    logger.info("ManMan server create action triggered")
+
+    # NOT YET IMPLEMENTED
+    logger.info("This action is not yet implemented.")
+
+
+@app.action(SlackActionRegistry.MANMAN_SERVER_STDIN)
+def handle_manman_server_stdin(
+    ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
+):
+    ack()
+    # payload = ActionPayload.from_dict(body)
+    logger.info("ManMan server stdin action triggered")
+
+    # NOT YET IMPLEMENTED
+    logger.info("This action is not yet implemented.")
+
+
+@app.action(SlackActionRegistry.MANMAN_SERVER_STOP)
+def handle_manman_server_stop(
+    ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
+):
+    ack()
+    # payload = ActionPayload.from_dict(body)
+    logger.info("ManMan server stop action triggered")
+
+    # NOT YET IMPLEMENTED
+    logger.info("This action is not yet implemented.")

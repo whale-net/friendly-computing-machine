@@ -20,6 +20,7 @@ from slack_sdk.models.blocks import (
 )
 
 from external.manman_status_api.models.status_type import StatusType
+from friendly_computing_machine.bot.slack_enum import SlackActionRegistry
 
 
 # TODO - unit test for each block
@@ -133,7 +134,7 @@ def create_worker_status_blocks(
                 text=PlainTextObject(text="Stop", emoji=True),
                 style="danger",
                 value=id,
-                action_id="worker-stop",
+                action_id=SlackActionRegistry.MANMAN_WORKER_STOP,
             )
         )
 

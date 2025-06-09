@@ -50,7 +50,6 @@ def upsert_manman_status_update(
             for k, v in values_dict.items()
             if k not in ["service_type", "service_id"]
         }
-        print(update_dict)
         # Handle conflict on (service_type, service_id) unique constraint
         # Only update if the new as_of is later than the existing one
         update_stmt = insert_stmt.on_conflict_do_update(

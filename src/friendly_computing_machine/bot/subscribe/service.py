@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import time
@@ -233,6 +234,14 @@ class ManManSubscribeService:
             f"Worker {status_info.worker_id} status update: {status_info.status_info_id}"
         )
 
+        if status_info.as_of < datetime.datetime.now(
+            datetime.timezone.utc
+        ) - datetime.timedelta(minutes=5):
+            logger.warning(
+                f"Worker {status_info.worker_id} status update is too old: {status_info.as_of}. Ignoring update."
+            )
+            return
+
         # TODO: temporal workflow
         # create a workflow for each worker/server instance by-id
         # when a worker/server instance is created, start a workflow
@@ -355,3 +364,4 @@ class ManManSubscribeService:
                 logger.error(
                     f"Failed to send Slack notification to channel {special_channel}: {e}"
                 )
+                raise
