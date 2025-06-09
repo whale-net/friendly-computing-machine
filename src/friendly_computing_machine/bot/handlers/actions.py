@@ -20,7 +20,7 @@ def handle_start_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     # Use the ManManAPI class to get the client
     try:
         mapi = OldManManAPI.get_api()
-        game_server_config_id = int(payload.private_metadata)
+        game_server_config_id = int(payload.action_body)
         mapi.start_game_server_host_gameserver_id_start_post(game_server_config_id)
         logger.info("started %s", game_server_config_id)
     except ValueError as e:
@@ -39,7 +39,7 @@ def handle_stop_server(ack: Ack, body, client: SlackWebClientFCM, logger):
     logger.info("Stop server clicked")
     try:
         mapi = OldManManAPI.get_api()
-        game_server_config_id = int(payload.private_metadata)
+        game_server_config_id = int(payload.action_body)
         mapi.stop_game_server_host_gameserver_id_stop_post(game_server_config_id)
     except Exception as e:
         logger.exception(f"Failed to get ManMan API client: {e}")
@@ -82,7 +82,7 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     )
     try:
         mapi = OldManManAPI.get_api()
-        game_server_instance_id = int(payload.private_metadata)
+        game_server_instance_id = int(payload.action_body)
         mapi.stdin_game_server_host_gameserver_id_stdin_post(
             game_server_instance_id,
             req,
@@ -113,11 +113,13 @@ def handle_manman_server_create(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
     ack()
-    # payload = ActionPayload.from_dict(body)
     logger.info("ManMan server create action triggered")
-
-    # NOT YET IMPLEMENTED
-    logger.info("This action is not yet implemented.")
+    payload = ActionPayload.from_dict(body)
+    # not ideal, but we need to get the server ID from the private metadata
+    # eventually this should be custom dataclasses and the such
+    server_id = int(payload.action_body)
+    mmexapi = ManManExperienceAPI.get_api()
+    mmexapi.start_game_server_gameserver_id_start_post(server_id)
 
 
 @app.action(SlackActionRegistry.MANMAN_SERVER_STDIN)
@@ -125,11 +127,14 @@ def handle_manman_server_stdin(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
     ack()
-    # payload = ActionPayload.from_dict(body)
     logger.info("ManMan server stdin action triggered")
 
-    # NOT YET IMPLEMENTED
-    logger.info("This action is not yet implemented.")
+    # payload = ActionPayload.from_dict(body)
+    # mmexapi = ManManExperienceAPI.get_api()
+
+    logger.info(
+        "Not implemented yet, but this is where we would handle stdin for a ManMan server."
+    )
 
 
 @app.action(SlackActionRegistry.MANMAN_SERVER_STOP)
@@ -137,8 +142,10 @@ def handle_manman_server_stop(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
     ack()
-    # payload = ActionPayload.from_dict(body)
+    payload = ActionPayload.from_dict(body)
     logger.info("ManMan server stop action triggered")
-
-    # NOT YET IMPLEMENTED
-    logger.info("This action is not yet implemented.")
+    # not ideal, but we need to get the server ID from the private metadata
+    # eventually this should be custom dataclasses and the such
+    server_id = int(payload.action_body)
+    mmexapi = ManManExperienceAPI.get_api()
+    mmexapi.stop_game_server_gameserver_id_stop_post(server_id)

@@ -137,6 +137,21 @@ def create_worker_status_blocks(
                 action_id=SlackActionRegistry.MANMAN_WORKER_STOP,
             )
         )
+        buttons.append(
+            ButtonElement(
+                text=PlainTextObject(text="Start TestCS2", emoji=True),
+                value="1",
+                action_id=SlackActionRegistry.MANMAN_SERVER_CREATE,
+            )
+        )
+        buttons.append(
+            ButtonElement(
+                text=PlainTextObject(text="Stop TestCS2", emoji=True),
+                style="danger",
+                value="1",
+                action_id=SlackActionRegistry.MANMAN_SERVER_STOP,
+            )
+        )
 
     extra_blocks = []
     if len(buttons) > 0:

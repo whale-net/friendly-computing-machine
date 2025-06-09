@@ -195,6 +195,15 @@ class ManManSubscribeService:
             status_info = ExternalStatusInfo.from_dict(message_data)
             logger.debug(f"ExternalStatusInfo deserialized: {status_info}")
 
+            if status_info.as_of < datetime.datetime.now(
+                datetime.timezone.utc
+            ) - datetime.timedelta(minutes=5):
+                self._channel.basic.ack(delivery_tag=message.delivery_tag)
+                logger.warning(
+                    f"tag {message.delivery_tag} status update {status_info.worker_id} is too old: {status_info.as_of}. Ignoring update."
+                )
+                return
+
             # Process message based on type
             if status_info.worker_id:
                 self._handle_worker_status_update(status_info)
@@ -233,14 +242,6 @@ class ManManSubscribeService:
         logger.info(
             f"Worker {status_info.worker_id} status update: {status_info.status_info_id}"
         )
-
-        if status_info.as_of < datetime.datetime.now(
-            datetime.timezone.utc
-        ) - datetime.timedelta(minutes=5):
-            logger.warning(
-                f"Worker {status_info.worker_id} status update is too old: {status_info.as_of}. Ignoring update."
-            )
-            return
 
         # TODO: temporal workflow
         # create a workflow for each worker/server instance by-id
@@ -339,6 +340,7 @@ class ManManSubscribeService:
         # TODO: Implement instance status handling
         # TODO: Send appropriate Slack message with action buttons
         # TODO: Update database status
+        # TODO 6/9/25 start here
 
     def _handle_worker_slack_notification(
         self,

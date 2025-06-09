@@ -1,5 +1,8 @@
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,7 +38,7 @@ class ViewSubmissionPayload:
 
 @dataclass
 class ActionPayload:
-    __SAMPLE__ = """
+    _ = """
     # Common fields in action payloads:
     {
         "type": "block_actions",  # or "view_submission", "view_closed"
@@ -99,15 +102,35 @@ class ActionPayload:
     """
 
     user_id: str
-    # Stores additional metadata associated with the view, typically used to pass
-    # contextual information between different parts of the Slack app.
-    private_metadata: str
-    # ????
+
+    # private metadata is used to store the action body for views
+    private_metadata: str | None
+    # otherwise it's the action body
+    action_value: str | None
+
     stdin_command_input: Optional[str] = None
     view_id: Optional[str] = None
 
+    @property
+    def action_body(self) -> Any:
+        if self.private_metadata and self.action_value:
+            logger.warning(
+                "Both private_metadata and action_body are set. "
+                "Returning private_metadata."
+            )
+        elif self.private_metadata:
+            return self.private_metadata
+        elif self.action_value:
+            return self.action_value
+        return None
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ActionPayload":
+        try:
+            view_id = data["view"]["id"]
+        except Exception:
+            view_id = None
+
         try:
             stdin_command_input = data["view"]["state"]["values"][
                 "stdin_custom_input_block"
@@ -116,13 +139,19 @@ class ActionPayload:
             stdin_command_input = None
 
         try:
-            view_id = data["view"]["id"]
+            private_metadata = data["view"]["private_metadata"]
         except Exception:
-            view_id = None
+            private_metadata = None
+
+        try:
+            action_value = data["actions"][0]["value"]
+        except Exception:
+            action_value = None
 
         return cls(
             user_id=data["user"]["id"],
             stdin_command_input=stdin_command_input,
-            private_metadata=data["view"]["private_metadata"],
+            private_metadata=private_metadata,
+            action_value=action_value,
             view_id=view_id,
         )
