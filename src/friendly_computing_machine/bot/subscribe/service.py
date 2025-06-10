@@ -11,7 +11,7 @@ from external.manman_status_api.api.default_api import DefaultApi as ManManStatu
 from external.manman_status_api.models.external_status_info import ExternalStatusInfo
 from external.manman_status_api.models.status_type import StatusType
 from friendly_computing_machine.bot.app import SlackWebClientFCM
-from friendly_computing_machine.bot.slack_models import create_worker_status_blocks
+from friendly_computing_machine.bot.slack_models import create_manman_status_blocks
 from friendly_computing_machine.bot.util import slack_send_message
 from friendly_computing_machine.db.dal import (
     # get_manman_status_update_from_create,  # DEAD CODE - unused import
@@ -26,7 +26,9 @@ from friendly_computing_machine.models.manman import (
     ManManStatusUpdate,
     ManManStatusUpdateCreate,
 )
-from friendly_computing_machine.models.slack import SlackMessage
+from friendly_computing_machine.models.slack import (
+    SlackMessage,
+)
 from friendly_computing_machine.util import datetime_to_ts
 
 logger = logging.getLogger(__name__)
@@ -206,9 +208,9 @@ class ManManSubscribeService:
 
             # Process message based on type
             if status_info.worker_id:
-                self._handle_worker_status_update(status_info)
+                self._handle_status_update(status_info)
             elif status_info.game_server_instance_id:
-                self._handle_instance_status_update(status_info)
+                self._handle_status_update(status_info)
             else:
                 logger.warning(f"Unknown status info type: {status_info}")
 
@@ -270,9 +272,7 @@ class ManManSubscribeService:
         # Handle Slack notification based on whether we need to create or update
         if status_info.status_type == StatusType.CREATED:
             # Create new Slack message
-            message = self._handle_worker_slack_notification(
-                status_update.service_id, status_info
-            )
+            message = self._handle_slack_notification(status_info)
             status_update.slack_message_id = message.id
             status_update = update_manman_status_update(status_update)
             logger.info(
@@ -308,8 +308,7 @@ class ManManSubscribeService:
                     status_update.service_id,
                 )
                 return
-            self._handle_worker_slack_notification(
-                status_update.service_id,
+            self._handle_slack_notification(
                 status_info,
                 update_ts=datetime_to_ts(slack_message.ts),
             )
@@ -327,38 +326,111 @@ class ManManSubscribeService:
             f"Worker {status_info.worker_id} status update processed: {status_info.status_info_id}"
         )
 
-    def _handle_instance_status_update(self, status_info: ExternalStatusInfo):
+    def _handle_status_update(self, status_info: ExternalStatusInfo):
         """
-        Handle instance status update events.
+        Handle worker status update events.
 
         Args:
-            status_info: ExternalStatusInfo object containing instance status information
+            status_info: ExternalStatusInfo object containing worker status information
         """
-        logger.info(
-            f"Instance {status_info.game_server_instance_id} status update: {status_info.status_info_id}"
-        )
-        # TODO: Implement instance status handling
-        # TODO: Send appropriate Slack message with action buttons
-        # TODO: Update database status
-        # TODO 6/9/25 start here
+        logger.info("handling %s", status_info)
 
-    def _handle_worker_slack_notification(
+        # TODO: temporal workflow
+        # create a workflow for each worker/server instance by-id
+        # when a worker/server instance is created, start a workflow
+        # when a worker/server instance is updated, send a signal to the workflow
+        # the workflow should handle the status updates and slack logic
+        # this will be the synchronization point for updates hopefully.
+        # can also keep track of event timestamp and make sure that we don't ever go from a current state to an older state
+        # however, for now I am just going to write to the database and send slack messages
+        # the database will ultimately be the source of truth regardless of implementation
+        # however, the control flow around it will be different
+        # TODO - write to database
+        # TODO - if new -> send slack message
+        # TODO - if exists -> update slack message
+        # TODO - always retrieve info in paralell (? what is this requirement mean? just temporal note?)
+        # from friendly_computing_machine.bot.util import slack_send_message
+
+        status_update_create = ManManStatusUpdateCreate.from_status_info(status_info)
+
+        # Use upsert pattern - handles both create and update cases gracefully
+        # This removes the need for time.sleep(3) race condition workaround
+        status_update: ManManStatusUpdate = upsert_manman_status_update(
+            status_update_create
+        )
+
+        # Handle Slack notification based on whether we need to create or update
+        if status_info.status_type == StatusType.CREATED:
+            # Create new Slack message
+            message = self._handle_slack_notification(status_info)
+            status_update.slack_message_id = message.id
+            status_update = update_manman_status_update(status_update)
+            logger.info(
+                "Created Slack notification for type %s with id %s: message_id=%s",
+                status_update.service_type,
+                status_update.service_id,
+                message.id,
+            )
+        elif status_info.status_type in [
+            StatusType.RUNNING,
+            StatusType.COMPLETE,
+            StatusType.LOST,
+        ]:
+            # Update existing Slack message
+            slack_message = get_slack_message_from_id(status_update.slack_message_id)
+            if not slack_message:
+                # Wait for message to be created in Slack
+                # This is a retry hack until temporal workflow is implemented
+                # shouldn't be as needed with synchronous workflow
+                time.sleep(2)
+                slack_message = get_slack_message_from_id(
+                    status_update.slack_message_id
+                )
+                if not slack_message:
+                    logger.error(
+                        "Slack message not found for status update %s after waiting",
+                        status_update.service_id,
+                    )
+                    return
+            if slack_message is None:
+                # avoid double sending messages. need create, for now...
+                logger.error(
+                    "Slack message not found for status update %s",
+                    status_update.service_id,
+                )
+                return
+            self._handle_slack_notification(
+                status_info,
+                update_ts=datetime_to_ts(slack_message.ts),
+            )
+            logger.info(
+                "Updated Slack notification for worker %s",
+                status_update.service_id,
+            )
+        else:
+            logger.warning("Unhandled status type %s", status_info.status_type)
+
+        logger.info("status_info %s handled successfully", status_info)
+
+    def _handle_slack_notification(
         self,
-        worker_id: int,
         status_info: ExternalStatusInfo,
         update_ts: Optional[str] = None,
     ) -> SlackMessage:
-        for special_channel, slack_channel in self._manman_channel_tups:
+        for (
+            special_channel,
+            slack_channel,
+            special_channel_type,
+        ) in self._manman_channel_tups:
             try:
-                message_block = create_worker_status_blocks(
-                    friendly_name=f"{self._manman_channel_type.friendly_type_name} Worker",
-                    name=self._manman_channel_type.type_name,
-                    id=str(worker_id),
-                    current_status=status_info.status_type,
+                message_block = create_manman_status_blocks(
+                    special_channel_type=special_channel_type,
+                    current_status=status_info,
                 )
-
                 message = slack_send_message(
-                    slack_channel.slack_id, message_block, update_ts=update_ts
+                    channel=slack_channel.slack_id,
+                    blocks=message_block,
+                    update_ts=update_ts,
                 )
                 logger.info(f"Sent Slack notification to channel {special_channel}")
                 return message

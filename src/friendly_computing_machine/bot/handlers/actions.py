@@ -1,8 +1,10 @@
 import logging
+import re
 
 from slack_bolt import Ack
 
-from external.old_manman_api.models.stdin_command_request import StdinCommandRequest
+from external.manman_experience_api.models import StdinCommandRequest
+from external.old_manman_api.models.stdin_command_request import old_StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_enum import SlackActionRegistry
@@ -77,7 +79,7 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
     logger.info(f"Custom command: {payload.stdin_command_input}")
 
     # TODO - parse this? seems rather wrong to just take user input but whatever for now
-    req = StdinCommandRequest(
+    req = old_StdinCommandRequest(
         commands=[payload.stdin_command_input],
     )
     try:
@@ -99,20 +101,19 @@ def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
 def handle_manman_worker_stop(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
-    ack()
     logger.info("ManMan worker stop action triggered")
     mmexapi = ManManExperienceAPI.get_api()
     # This is kind of risky because it shuts down the current worker
     # but it is the only way to stop a worker in ManMan Experience atm
     # eventually we should have a proper stop endpoint with ID to avoid this weirdness
     mmexapi.worker_shutdown_worker_shutdown_post()
+    ack()
 
 
 @app.action(SlackActionRegistry.MANMAN_SERVER_CREATE)
 def handle_manman_server_create(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
-    ack()
     logger.info("ManMan server create action triggered")
     payload = ActionPayload.from_dict(body)
     # not ideal, but we need to get the server ID from the private metadata
@@ -120,28 +121,33 @@ def handle_manman_server_create(
     server_id = int(payload.action_body)
     mmexapi = ManManExperienceAPI.get_api()
     mmexapi.start_game_server_gameserver_id_start_post(server_id)
+    ack()
 
 
-@app.action(SlackActionRegistry.MANMAN_SERVER_STDIN)
+@app.action(re.compile(f"^{SlackActionRegistry.MANMAN_SERVER_STDIN}_"))
 def handle_manman_server_stdin(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
-    ack()
     logger.info("ManMan server stdin action triggered")
 
-    # payload = ActionPayload.from_dict(body)
-    # mmexapi = ManManExperienceAPI.get_api()
-
-    logger.info(
-        "Not implemented yet, but this is where we would handle stdin for a ManMan server."
+    payload = ActionPayload.from_dict(body)
+    # TODO - improve this
+    raw_string = payload.action_body
+    id, command = raw_string.split(";", 1)
+    # TODO - pass in command_args as list instead of a single string
+    mmexapi = ManManExperienceAPI.get_api()
+    # TODO  does work?
+    mmexapi.stdin_game_server_gameserver_id_stdin_post(
+        int(id),
+        StdinCommandRequest(commands=[command]),
     )
+    ack()
 
 
 @app.action(SlackActionRegistry.MANMAN_SERVER_STOP)
 def handle_manman_server_stop(
     ack: Ack, body, client: SlackWebClientFCM, logger: logging.Logger
 ):
-    ack()
     payload = ActionPayload.from_dict(body)
     logger.info("ManMan server stop action triggered")
     # not ideal, but we need to get the server ID from the private metadata
@@ -149,3 +155,4 @@ def handle_manman_server_stop(
     server_id = int(payload.action_body)
     mmexapi = ManManExperienceAPI.get_api()
     mmexapi.stop_game_server_gameserver_id_stop_post(server_id)
+    ack()

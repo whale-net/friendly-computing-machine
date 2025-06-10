@@ -132,13 +132,6 @@ class ActionPayload:
             view_id = None
 
         try:
-            stdin_command_input = data["view"]["state"]["values"][
-                "stdin_custom_input_block"
-            ]["stdin_custom_command_input"]["value"]
-        except Exception:
-            stdin_command_input = None
-
-        try:
             private_metadata = data["view"]["private_metadata"]
         except Exception:
             private_metadata = None
@@ -147,6 +140,15 @@ class ActionPayload:
             action_value = data["actions"][0]["value"]
         except Exception:
             action_value = None
+
+        try:
+            stdin_command_input = data["view"]["state"]["values"][
+                "stdin_custom_input_block"
+            ]["stdin_custom_command_input"]["value"]
+        except Exception:
+            # fallback action_value because it likely means it's coming from action
+            # this whole stdin_command_input = is a bit of hack, but it works for now
+            stdin_command_input = action_value
 
         return cls(
             user_id=data["user"]["id"],

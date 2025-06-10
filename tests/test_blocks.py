@@ -25,8 +25,8 @@ def test_blocks(status: StatusType, has_buttons: bool):
     """Test creating blocks and rendering them to text."""
     # Create worker status blocks
     blocks = create_worker_status_blocks(
-        friendly_name="Test Worker",
-        name="test-worker",
+        special_channel_name="Test Worker",
+        service_type_name="test-worker",
         id="worker-123",
         current_status=status,
     )

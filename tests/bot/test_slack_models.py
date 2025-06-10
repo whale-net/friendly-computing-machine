@@ -13,8 +13,8 @@ def test_create_and_render_worker_status_blocks():
     worker_id = "worker-123"
     # Create worker status blocks
     blocks = create_worker_status_blocks(
-        friendly_name=worker_name,
-        name="test-worker",
+        special_channel_name=worker_name,
+        service_type_name="test-worker",
         id=worker_id,
         current_status=StatusType.RUNNING,
     )
