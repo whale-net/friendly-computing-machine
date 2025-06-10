@@ -157,7 +157,9 @@ def create_server_status_blocks(
             ButtonElement(
                 text=PlainTextObject(text="Stop"),
                 style="danger",
-                value=str(current_status.game_server_instance_id),
+                # value=str(current_status.game_server_instance_id),
+                # TEMP to server
+                value="1",
                 action_id=SlackActionRegistry.MANMAN_SERVER_STOP,
             )
         )
@@ -217,11 +219,11 @@ def create_server_status_blocks(
             )
         )
 
-    logger.info("these are muh instance control buttons: %s", buttons_control_group)
-    logger.info(
+    logger.debug("these are muh instance control buttons: %s", buttons_control_group)
+    logger.debug(
         "these are muh server control buttons: %s", buttons_server_control_group
     )
-    logger.info("these are muh server mutate buttons: %s", buttons_server_mutate_group)
+    logger.debug("these are muh server mutate buttons: %s", buttons_server_mutate_group)
 
     # justin picked this. I repeat, I did not pick this.
     server_emoji = Emoji.CHICKEN_JOCKEY
