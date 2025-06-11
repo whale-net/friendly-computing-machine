@@ -156,3 +156,11 @@ def handle_manman_server_stop(
     mmexapi = ManManExperienceAPI.get_api()
     mmexapi.stop_game_server_gameserver_id_stop_post(server_id)
     ack()
+
+    # TODO 6/10/25
+    # something is wrong with the stop. It is being passed the right id I think
+    # but it's not doing anything on the server.
+    # need more debug information in the server in this csae
+    # also need to fix rabbitmq timeout issue or whatever that keeps happening in local terminal
+    # also need proper worker and server instance ids chained to actios
+    # and base classes for passing that metadata around
