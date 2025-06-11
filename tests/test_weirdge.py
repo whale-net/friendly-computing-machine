@@ -6,7 +6,7 @@ from enum import StrEnum
 
 
 class TestStrEnumUnderstanding:
-    class TestEnum(StrEnum):
+    class EnumForTest(StrEnum):
         """
         Test enum to understand how StrEnum works.
         """
@@ -16,5 +16,5 @@ class TestStrEnumUnderstanding:
 
     def test_enum_values(self):
         # yes I can compare directly to strings, very cool
-        assert self.TestEnum.VALUE1 == "value1"
-        assert self.TestEnum.VALUE2 == "value_2"
+        assert self.EnumForTest.VALUE1 == "value1"
+        assert self.EnumForTest.VALUE2 == "value_2"
