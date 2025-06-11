@@ -4,7 +4,6 @@ import re
 from slack_bolt import Ack
 
 from external.manman_experience_api.models import StdinCommandRequest
-from external.old_manman_api.models.stdin_command_request import old_StdinCommandRequest
 from friendly_computing_machine.bot.app import app
 from friendly_computing_machine.bot.slack_client import SlackWebClientFCM
 from friendly_computing_machine.bot.slack_enum import SlackActionRegistry
@@ -64,37 +63,22 @@ def handle_restart_server(ack: Ack, body, client: SlackWebClientFCM, logger):
 
 @app.action("send_stdin_custom_command")
 def handle_custom_command(ack: Ack, body, client: SlackWebClientFCM, logger):
-    ack()
     payload = ActionPayload.from_dict(body)
-    logger.debug(body)
-
-    if payload.stdin_command_input is None:
-        logger.error("Custom command is None")
-        # message?
-        client.chat_postMessage(
-            channel=payload.user_id, text="Error: Custom command is empty."
-        )
+    # TODO - improve this
+    raw_string = payload.action_body
+    id, command = raw_string.split(";", 1)
+    # TODO - pass in command_args as list instead of a single string
+    mmexapi = ManManExperienceAPI.get_api()
+    # TODO  does work?
+    if not command:
+        logger.error("No command provided in stdin action")
+        ack(text="No command provided")
         return
-
-    logger.info(f"Custom command: {payload.stdin_command_input}")
-
-    # TODO - parse this? seems rather wrong to just take user input but whatever for now
-    req = old_StdinCommandRequest(
-        commands=[payload.stdin_command_input],
+    mmexapi.stdin_game_server_gameserver_id_stdin_post(
+        int(id),
+        StdinCommandRequest(commands=[command]),
     )
-    try:
-        mapi = OldManManAPI.get_api()
-        game_server_instance_id = int(payload.action_body)
-        mapi.stdin_game_server_host_gameserver_id_stdin_post(
-            game_server_instance_id,
-            req,
-        )
-    except Exception as e:
-        logger.exception(f"Failed to get ManMan API client: {e}")
-        # Optionally inform the user about the configuration issue
-        client.chat_postMessage(
-            channel=payload.user_id, text="Error: ManMan API error. Please try again"
-        )
+    ack()
 
 
 @app.action(SlackActionRegistry.MANMAN_WORKER_STOP)
@@ -155,7 +139,7 @@ def handle_manman_server_stop(
     server_id = int(payload.action_body)
     mmexapi = ManManExperienceAPI.get_api()
     mmexapi.stop_game_server_gameserver_id_stop_post(server_id)
-    ack()
+    ack(":( bye bye")
 
     # TODO 6/10/25
     # something is wrong with the stop. It is being passed the right id I think
