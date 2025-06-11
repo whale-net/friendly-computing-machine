@@ -209,6 +209,7 @@ class SlackSpecialChannel(SlackSpecialChannelBase, table=True):
         nullable=False, foreign_key="slackspecialchanneltype.id", index=True
     )
 
+    slack_special_channel_type: SlackSpecialChannelType = Relationship()
     slack_channel: SlackChannel = Relationship()
 
 

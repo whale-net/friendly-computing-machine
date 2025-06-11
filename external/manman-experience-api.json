@@ -1,293 +1,82 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "ManMan Experience API",
-    "version": "0.1.0"
-  },
-  "paths": {
-    "/worker/current": {
-      "get": {
-        "summary": "Worker Current",
-        "operationId": "worker_current_worker_current_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Worker"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/gameserver": {
-      "get": {
-        "summary": "Get Game Servers",
-        "description": "Get all game server configs\n\nAlthough it seems strange for us to return configs instead of instances,\nthis is the way the API is designed. We want to make the /gameserver/ endpoint\nthe way you would interact with a game server. The whole instance thing\nshould be abstracted away from the user.\n\n:return: list of game server configs",
-        "operationId": "get_game_servers_gameserver_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/GameServerConfig"
-                  },
-                  "type": "array",
-                  "title": "Response Get Game Servers Gameserver Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/gameserver/{id}/start": {
-      "post": {
-        "summary": "Start Game Server",
-        "description": "Given the game server config ID, start a game server instance\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
-        "operationId": "start_game_server_gameserver__id__start_post",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/gameserver/{id}/stop": {
-      "post": {
-        "summary": "Stop Game Server",
-        "description": "Given the game server config ID, stop a game server instance\n\nFinds the current worker, and sends a stop command to it\nIt is up to the worker to handle the command\nand stop the game server instance.\n\nThis endpoint provides an abstract gameserver interface\nto users, so they don't have to know about the worker\nand how it works\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
-        "operationId": "stop_game_server_gameserver__id__stop_post",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/gameserver/{id}/stdin": {
-      "post": {
-        "summary": "Stdin Game Server",
-        "description": "Send a stdin command to the game server config's running instance\n\nThis finds the current worker, and sends a stdin command to it\nIt is up to the worker to handle the command\nand send it to the game server instance.\n\nThis endpoint does not have a bheavior defined if no server is running.\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:param body: StdinCommandRequest\n:return: arbitrary response",
-        "operationId": "stdin_game_server_gameserver__id__stdin_post",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StdinCommandRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/gameserver/instances/active": {
-      "get": {
-        "summary": "Get Active Game Server Instances",
-        "description": "Get all active game server instances for the current worker.",
-        "operationId": "get_active_game_server_instances_gameserver_instances_active_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CurrentInstanceResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Health",
-        "operationId": "health_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "title": "Response Health Health Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
   "components": {
     "schemas": {
       "CurrentInstanceResponse": {
+        "description": "Response to the worker to start a game server instance.",
         "properties": {
+          "configs": {
+            "items": {
+              "$ref": "#/components/schemas/GameServerConfig"
+            },
+            "title": "Configs",
+            "type": "array"
+          },
           "game_server_instances": {
             "items": {
               "$ref": "#/components/schemas/GameServerInstance"
             },
-            "type": "array",
-            "title": "Game Server Instances"
+            "title": "Game Server Instances",
+            "type": "array"
           },
           "workers": {
             "items": {
               "$ref": "#/components/schemas/Worker"
             },
-            "type": "array",
-            "title": "Workers"
-          },
-          "configs": {
-            "items": {
-              "$ref": "#/components/schemas/GameServerConfig"
-            },
-            "type": "array",
-            "title": "Configs"
+            "title": "Workers",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "game_server_instances",
           "workers",
           "configs"
         ],
         "title": "CurrentInstanceResponse",
-        "description": "Response to the worker to start a game server instance."
+        "type": "object"
       },
       "GameServerConfig": {
         "properties": {
-          "game_server_config_id": {
-            "type": "integer",
-            "title": "Game Server Config Id"
-          },
-          "game_server_id": {
-            "type": "integer",
-            "title": "Game Server Id"
-          },
-          "is_default": {
-            "type": "boolean",
-            "title": "Is Default",
-            "default": false
-          },
-          "is_visible": {
-            "type": "boolean",
-            "title": "Is Visible",
-            "default": true
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "executable": {
-            "type": "string",
-            "title": "Executable"
-          },
           "args": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "title": "Args"
+            "title": "Args",
+            "type": "array"
           },
           "env_var": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "title": "Env Var"
+            "title": "Env Var",
+            "type": "array"
+          },
+          "executable": {
+            "title": "Executable",
+            "type": "string"
+          },
+          "game_server_config_id": {
+            "title": "Game Server Config Id",
+            "type": "integer"
+          },
+          "game_server_id": {
+            "title": "Game Server Id",
+            "type": "integer"
+          },
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "is_visible": {
+            "default": true,
+            "title": "Is Visible",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "game_server_config_id",
           "game_server_id",
@@ -296,23 +85,16 @@
           "args",
           "env_var"
         ],
-        "title": "GameServerConfig"
+        "title": "GameServerConfig",
+        "type": "object"
       },
       "GameServerInstance": {
         "properties": {
-          "game_server_instance_id": {
-            "type": "integer",
-            "title": "Game Server Instance Id"
-          },
-          "game_server_config_id": {
-            "type": "integer",
-            "title": "Game Server Config Id"
-          },
           "end_date": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -320,24 +102,31 @@
             ],
             "title": "End Date"
           },
-          "worker_id": {
-            "type": "integer",
-            "title": "Worker Id"
+          "game_server_config_id": {
+            "title": "Game Server Config Id",
+            "type": "integer"
+          },
+          "game_server_instance_id": {
+            "title": "Game Server Instance Id",
+            "type": "integer"
           },
           "last_heartbeat": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Last Heartbeat"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "game_server_instance_id",
           "game_server_config_id",
@@ -345,7 +134,8 @@
           "worker_id",
           "last_heartbeat"
         ],
-        "title": "GameServerInstance"
+        "title": "GameServerInstance",
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -353,29 +143,29 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
-            "type": "array",
-            "title": "Detail"
+            "title": "Detail",
+            "type": "array"
           }
         },
-        "type": "object",
-        "title": "HTTPValidationError"
+        "title": "HTTPValidationError",
+        "type": "object"
       },
       "StdinCommandRequest": {
+        "description": "Request to send to the worker to start a game server instance.",
         "properties": {
           "commands": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "title": "Commands"
+            "title": "Commands",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "commands"
         ],
         "title": "StdinCommandRequest",
-        "description": "Request to send to the worker to start a game server instance."
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -390,42 +180,38 @@
                 }
               ]
             },
-            "type": "array",
-            "title": "Location"
+            "title": "Location",
+            "type": "array"
           },
           "msg": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "title": "Error Type"
+            "title": "Error Type",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "loc",
           "msg",
           "type"
         ],
-        "title": "ValidationError"
+        "title": "ValidationError",
+        "type": "object"
       },
       "Worker": {
         "properties": {
-          "worker_id": {
-            "type": "integer",
-            "title": "Worker Id"
-          },
           "created_date": {
-            "type": "string",
             "format": "date-time",
-            "title": "Created Date"
+            "title": "Created Date",
+            "type": "string"
           },
           "end_date": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -436,24 +222,260 @@
           "last_heartbeat": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Last Heartbeat"
+          },
+          "worker_id": {
+            "title": "Worker Id",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "worker_id",
           "end_date",
           "last_heartbeat"
         ],
-        "title": "Worker"
+        "title": "Worker",
+        "type": "object"
       }
     }
-  }
+  },
+  "info": {
+    "title": "ManMan Experience API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/gameserver": {
+      "get": {
+        "description": "Get all game server configs\n\nAlthough it seems strange for us to return configs instead of instances,\nthis is the way the API is designed. We want to make the /gameserver/ endpoint\nthe way you would interact with a game server. The whole instance thing\nshould be abstracted away from the user.\n\n:return: list of game server configs",
+        "operationId": "get_game_servers_gameserver_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GameServerConfig"
+                  },
+                  "title": "Response Get Game Servers Gameserver Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Game Servers"
+      }
+    },
+    "/gameserver/{id}/start": {
+      "post": {
+        "description": "Given the game server config ID, start a game server instance\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
+        "operationId": "start_game_server_gameserver__id__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Game Server"
+      }
+    },
+    "/gameserver/{id}/stdin": {
+      "post": {
+        "description": "Send a stdin command to the game server config's running instance\n\nThis finds the current worker, and sends a stdin command to it\nIt is up to the worker to handle the command\nand send it to the game server instance.\n\nThis endpoint does not have a bheavior defined if no server is running.\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:param body: StdinCommandRequest\n:return: arbitrary response",
+        "operationId": "stdin_game_server_gameserver__id__stdin_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StdinCommandRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stdin Game Server"
+      }
+    },
+    "/gameserver/{id}/stop": {
+      "post": {
+        "description": "Given the game server config ID, stop a game server instance\n\nFinds the current worker, and sends a stop command to it\nIt is up to the worker to handle the command\nand stop the game server instance.\n\nThis endpoint provides an abstract gameserver interface\nto users, so they don't have to know about the worker\nand how it works\n\n:param id: game server config ID\n:param channel: rabbitmq channel\n:return: arbitrary response",
+        "operationId": "stop_game_server_gameserver__id__stop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stop Game Server"
+      }
+    },
+    "/gameserver/instances/active": {
+      "get": {
+        "description": "Get all active game server instances for the current worker.",
+        "operationId": "get_active_game_server_instances_gameserver_instances_active_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentInstanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Active Game Server Instances"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Health Health Get",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/worker/current": {
+      "get": {
+        "operationId": "worker_current_worker_current_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Worker"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Worker Current"
+      }
+    },
+    "/worker/shutdown": {
+      "post": {
+        "description": "Shutdown the current worker.\n\nThis endpoint sends a shutdown command to the current worker's command queue.\nThe worker will gracefully shut down all running game server instances and\nterminate the worker service.\n\n:return: success response with worker ID",
+        "operationId": "worker_shutdown_worker_shutdown_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Worker Shutdown"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/experience"
+    }
+  ]
 }

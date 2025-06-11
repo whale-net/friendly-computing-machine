@@ -1,5 +1,8 @@
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,31 +38,122 @@ class ViewSubmissionPayload:
 
 @dataclass
 class ActionPayload:
+    _ = """
+    # Common fields in action payloads:
+    {
+        "type": "block_actions",  # or "view_submission", "view_closed"
+        "user": {
+            "id": "U123456",
+            "name": "username",
+            "team_id": "T123456"
+        },
+        "api_app_id": "A123456",
+        "token": "verification_token",
+        "container": {
+            "type": "view",  # or "message"
+            "view_id": "V123456"
+        },
+        "trigger_id": "123456.789.abcdef",  # For opening modals
+        "team": {
+            "id": "T123456",
+            "domain": "workspace-name"
+        },
+        "enterprise": {...},  # If using Enterprise Grid
+        "is_enterprise_install": false,
+        "view": {
+            "id": "V123456",
+            "team_id": "T123456",
+            "type": "modal",
+            "title": {...},
+            "close": {...},
+            "submit": {...},
+            "private_metadata": "your-data-here",
+            "callback_id": "your_callback_id",
+            "state": {
+                "values": {
+                    # Your input values here
+                }
+            },
+            "hash": "123456.abcdef",
+            "root_view_id": "V123456",
+            "previous_view_id": null,
+            "app_id": "A123456",
+            "app_installed_team_id": "T123456",
+            "bot_id": "B123456"
+        },
+        "actions": [  # For block_actions type
+            {
+                "type": "button",
+                "action_id": "button_1",
+                "block_id": "block_1",
+                "text": {...},
+                "value": "click_me_123",
+                "action_ts": "1234567890.123456"
+            }
+        ],
+        "response_urls": [  # For sending follow-up messages
+            {
+                "response_url": "https://hooks.slack.com/actions/...",
+                "block_id": "block_1",
+                "action_id": "button_1"
+            }
+        ]
+    }
+    """
+
     user_id: str
-    # Stores additional metadata associated with the view, typically used to pass
-    # contextual information between different parts of the Slack app.
-    private_metadata: str
-    # ????
-    custom_command: Optional[str] = None
+
+    # private metadata is used to store the action body for views
+    private_metadata: str | None
+    # otherwise it's the action body
+    action_value: str | None
+
+    stdin_command_input: Optional[str] = None
     view_id: Optional[str] = None
+
+    @property
+    def action_body(self) -> Any:
+        if self.private_metadata and self.action_value:
+            logger.warning(
+                "Both private_metadata and action_body are set. "
+                "Returning private_metadata."
+            )
+        elif self.private_metadata:
+            return self.private_metadata
+        elif self.action_value:
+            return self.action_value
+        return None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ActionPayload":
-        try:
-            custom_command = data["view"]["state"]["values"][
-                "stdin_custom_input_block"
-            ]["stdin_custom_command_input"]["value"]
-        except Exception:
-            custom_command = None
-
         try:
             view_id = data["view"]["id"]
         except Exception:
             view_id = None
 
+        try:
+            private_metadata = data["view"]["private_metadata"]
+        except Exception:
+            private_metadata = None
+
+        try:
+            action_value = data["actions"][0]["value"]
+        except Exception:
+            action_value = None
+
+        try:
+            stdin_command_input = data["view"]["state"]["values"][
+                "stdin_custom_input_block"
+            ]["stdin_custom_command_input"]["value"]
+        except Exception:
+            # fallback action_value because it likely means it's coming from action
+            # this whole stdin_command_input = is a bit of hack, but it works for now
+            stdin_command_input = action_value
+
         return cls(
             user_id=data["user"]["id"],
-            custom_command=custom_command,
-            private_metadata=data["view"]["private_metadata"],
+            stdin_command_input=stdin_command_input,
+            private_metadata=private_metadata,
+            action_value=action_value,
             view_id=view_id,
         )

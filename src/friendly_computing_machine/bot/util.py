@@ -102,12 +102,17 @@ def slack_send_message(
         text=message_text,  # Store rendered text in database
         # unsure if message or response ts is more correct, or if it matters
         # TODO - check if this is giving wrong timezone
-        ts=ts_to_datetime(message_data.get("ts")),
+        ts=update_ts or ts_to_datetime(message_data.get("ts")),
         thread_ts=ts_to_datetime(response_thread_ts) if response_thread_ts else None,
         parent_user_slack_id=message_data.get("parent_user_id"),
     )
     logger.debug("in_message: %s", in_message)
 
+    if update_ts:
+        logger.warning(
+            "Updating message with ts=%s, this will send a duplicate message in the database",
+            update_ts,
+        )
     out_message = insert_message(in_message)
     return out_message
 
