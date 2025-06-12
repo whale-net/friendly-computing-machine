@@ -148,3 +148,69 @@ def handle_manman_server_stop(
     # also need to fix rabbitmq timeout issue or whatever that keeps happening in local terminal
     # also need proper worker and server instance ids chained to actios
     # and base classes for passing that metadata around
+
+
+@app.action(re.compile(r"^poll_vote_\d+_\d+$"))
+def handle_poll_vote(ack: Ack, body, client: SlackWebClientFCM, logger):
+    """Handle poll vote button clicks."""
+    ack()
+    
+    try:
+        from friendly_computing_machine.db.dal.poll_dal import insert_poll_vote, get_poll_by_id
+        from friendly_computing_machine.models.poll import PollVoteCreate
+        from friendly_computing_machine.temporal.poll_workflow import PollUpdateActivityParams, update_poll_message_activity
+        from friendly_computing_machine.temporal.util import execute_activity
+        import datetime
+        
+        # Parse action_id to get poll_id and option_id
+        action_id = body["actions"][0]["action_id"]
+        # Format: poll_vote_{poll_id}_{option_id}
+        parts = action_id.split("_")
+        poll_id = int(parts[2])
+        option_id = int(parts[3])
+        
+        user_id = body["user"]["id"]
+        
+        logger.info(f"User {user_id} voting for option {option_id} in poll {poll_id}")
+        
+        # Check if poll is still active
+        poll = get_poll_by_id(poll_id)
+        if not poll or not poll.is_active:
+            ack("This poll is no longer active.")
+            return
+        
+        # Record the vote
+        vote_create = PollVoteCreate(
+            poll_id=poll_id,
+            poll_option_id=option_id,
+            slack_user_slack_id=user_id,
+            created_at=datetime.datetime.now(),
+        )
+        
+        insert_poll_vote(vote_create)
+        logger.info(f"Recorded vote for user {user_id} in poll {poll_id}")
+        
+        # Trigger immediate poll message update
+        # Note: We'll call this synchronously since we're not in an async context
+        # In production, you might want to queue this update or use a different mechanism
+        try:
+            # Import the function directly and call it synchronously
+            from friendly_computing_machine.temporal.poll_workflow import _update_poll_message
+            _update_poll_message(poll_id)
+        except Exception as e:
+            logger.warning(f"Failed to trigger immediate poll update: {e}")
+        
+        # Send ephemeral confirmation to the user
+        client.chat_postEphemeral(
+            channel=body["channel"]["id"],
+            user=user_id,
+            text="✅ Your vote has been recorded!"
+        )
+        
+    except Exception as e:
+        logger.exception(f"Error handling poll vote: {e}")
+        client.chat_postEphemeral(
+            channel=body["channel"]["id"],
+            user=body["user"]["id"],
+            text="❌ Sorry, there was an error recording your vote. Please try again."
+        )
