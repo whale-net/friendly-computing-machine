@@ -11,7 +11,7 @@ class PollBase(Base):
     title: str = Field()
     description: Optional[str] = Field(default=None)
     slack_channel_slack_id: str = Field(index=True)
-    slack_user_slack_id: str = Field(index=True)  # creator of the poll
+    slack_user_slack_id: str = Field(index=True)  # creator slack_id (not FK)
     slack_message_id: Optional[int] = Field(default=None, foreign_key="slackmessage.id")
     slack_message_ts: Optional[str] = Field(default=None)  # for message updates
     created_at: datetime.datetime = Field(
@@ -65,7 +65,7 @@ class PollOptionCreate(PollOptionBase):
 class PollVoteBase(Base):
     poll_id: int = Field(foreign_key="poll.id", index=True)
     poll_option_id: int = Field(foreign_key="polloption.id", index=True)
-    slack_user_slack_id: str = Field(index=True)
+    slack_user_slack_id: str = Field(index=True)  # voter slack_id (not FK)
     created_at: datetime.datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
