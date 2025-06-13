@@ -1,6 +1,5 @@
 """Comprehensive tests for temporal workflows."""
 
-import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -102,7 +101,9 @@ class TestSlackContextGeminiWorkflow:
         """Mock all activities used by SlackContextGeminiWorkflow."""
         return {
             "get_slack_channel_context": AsyncMock(return_value=[]),
-            "generate_summary": AsyncMock(return_value="Previous discussion about weather"),
+            "generate_summary": AsyncMock(
+                return_value="Previous discussion about weather"
+            ),
             "get_vibe": AsyncMock(return_value="Curious and casual"),
             "generate_context_prompt": AsyncMock(return_value="Context-aware prompt"),
             "generate_gemini_response": AsyncMock(return_value="It's sunny today!"),
@@ -118,10 +119,10 @@ class TestSlackContextGeminiWorkflow:
         workflow = SlackContextGeminiWorkflow()
 
         # Mock workflow.execute_activity and asyncio.gather
-        with patch("temporalio.workflow.execute_activity") as mock_execute, patch(
-            "asyncio.gather"
-        ) as mock_gather:
-
+        with (
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather") as mock_gather,
+        ):
             # Setup mock responses in order of execution
             mock_execute.side_effect = [
                 mock_workflow_activities["get_slack_channel_context"].return_value,
@@ -138,7 +139,9 @@ class TestSlackContextGeminiWorkflow:
             ]
 
             # Mock workflow.execute_activity for concurrent activities
-            with patch("temporalio.workflow.execute_activity") as mock_execute_concurrent:
+            with patch(
+                "temporalio.workflow.execute_activity"
+            ) as mock_execute_concurrent:
                 mock_execute_concurrent.return_value = AsyncMock()
 
                 # Execute workflow
@@ -157,10 +160,10 @@ class TestSlackContextGeminiWorkflow:
         """Test that parameters are passed correctly between workflow steps."""
         workflow = SlackContextGeminiWorkflow()
 
-        with patch("temporalio.workflow.execute_activity") as mock_execute, patch(
-            "asyncio.gather"
-        ) as mock_gather:
-
+        with (
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather") as mock_gather,
+        ):
             mock_execute.side_effect = [
                 [],  # get_slack_channel_context
                 "Context prompt",  # generate_context_prompt
@@ -194,7 +197,9 @@ class TestSlackContextGeminiWorkflow:
             tagging_params = fix_tagging_call[0][1]
             assert isinstance(tagging_params, FixSlackTaggingParams)
             assert tagging_params.text == "AI response"
-            assert tagging_params.add_here_tag is True  # Because detect_call_to_action returned True
+            assert (
+                tagging_params.add_here_tag is True
+            )  # Because detect_call_to_action returned True
 
     @pytest.mark.asyncio
     async def test_slack_context_gemini_workflow_no_call_to_action(
@@ -203,8 +208,9 @@ class TestSlackContextGeminiWorkflow:
         """Test workflow when no call to action is detected."""
         workflow = SlackContextGeminiWorkflow()
 
-        with patch("temporalio.workflow.execute_activity") as mock_execute, patch(
-            "asyncio.gather"
+        with (
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather"),
         ):
             mock_execute.side_effect = [
                 [],  # get_slack_channel_context
@@ -316,12 +322,15 @@ class TestSlackMessageQODWorkflow:
         expected_results = ["OK", "OK", "OK", "OK"]
         expected_genai_results = ["OK", "OK"]
 
-        with patch("temporalio.workflow.start_activity") as mock_start, patch(
-            "temporalio.workflow.execute_activity"
-        ) as mock_execute, patch("asyncio.gather") as mock_gather:
-
+        with (
+            patch("temporalio.workflow.start_activity") as mock_start,
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather") as mock_gather,
+        ):
             # Mock start_activity (returns futures that will be awaited)
-            mock_futures = [AsyncMock(return_value=result) for result in expected_results[1:]]
+            mock_futures = [
+                AsyncMock(return_value=result) for result in expected_results[1:]
+            ]
             mock_start.side_effect = mock_futures
 
             # Mock execute_activity for the first activity and genai activities
@@ -350,10 +359,11 @@ class TestSlackMessageQODWorkflow:
         """Test that activities are executed in the correct order."""
         workflow = SlackMessageQODWorkflow()
 
-        with patch("temporalio.workflow.start_activity") as mock_start, patch(
-            "temporalio.workflow.execute_activity"
-        ) as mock_execute, patch("asyncio.gather") as mock_gather:
-
+        with (
+            patch("temporalio.workflow.start_activity") as mock_start,
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather") as mock_gather,
+        ):
             # Setup mocks
             mock_start.return_value = AsyncMock(return_value="OK")
             mock_execute.return_value = AsyncMock(return_value="OK")
@@ -402,10 +412,10 @@ class TestWorkflowErrorHandling:
             slack_channel_slack_id="C123", prompt="test"
         )
 
-        with patch("temporalio.workflow.execute_activity") as mock_execute, patch(
-            "asyncio.gather"
-        ) as mock_gather:
-
+        with (
+            patch("temporalio.workflow.execute_activity") as mock_execute,
+            patch("asyncio.gather") as mock_gather,
+        ):
             # First activity succeeds
             mock_execute.return_value = []
 

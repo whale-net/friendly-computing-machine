@@ -79,7 +79,7 @@ with patch("temporalio.workflow.execute_activity") as mock_execute:
     assert result == "final"
     assert mock_execute.call_count == 3
 
-# Concurrent activities  
+# Concurrent activities
 with patch("asyncio.gather") as mock_gather:
     mock_gather.return_value = ["result1", "result2"]
     results = await workflow_with_concurrent_activities.run(params)
@@ -140,7 +140,7 @@ pytest tests/test_temporal_workflows.py -v
 ### Manual validation (without external dependencies)
 ```bash
 python3 tests/manual_test_runner.py
-python3 tests/integration_test_runner.py  
+python3 tests/integration_test_runner.py
 python3 tests/final_validation_test.py
 ```
 
