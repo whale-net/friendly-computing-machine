@@ -148,3 +148,41 @@ def handle_test_command(ack: Ack, say: Say, command, client: SlackWebClientFCM):
             # This block will always run
             logger.info("Finished handling /test command")
             span.end()
+
+
+@app.command("/wpoll")
+def handle_wpoll_command(ack: Ack, say: Say, command, client: SlackWebClientFCM):
+    """Handle the /wpoll slash command to create a new poll."""
+    with tracer.start_as_current_span("handle_wpoll_command") as span:
+        try:
+            ack()
+            logger.info("slack-ack")
+            span.set_attribute("slack.command", "/wpoll")
+            span.set_attribute("slack.user.id", command["user_id"])
+            span.set_attribute("slack.channel.id", command["channel_id"])
+
+            # Import here to avoid circular imports
+            from friendly_computing_machine.bot.modal_schemas import PollCreateModal
+
+            modal = PollCreateModal()
+            # Pass the channel ID as private metadata so we can retrieve it in the view handler
+            view = modal.build()
+            view["private_metadata"] = command["channel_id"]
+
+            client.views_open(
+                trigger_id=command["trigger_id"],
+                view=view,
+            )
+
+            logger.info("Poll creation modal opened for user %s", command["user_id"])
+            span.set_status(trace.Status(trace.StatusCode.OK))
+
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            logger.exception("Error handling /wpoll command")
+            # Reraise exception to be caught by global handler
+            raise
+        finally:
+            logger.info("Finished handling /wpoll command")
+            span.end()

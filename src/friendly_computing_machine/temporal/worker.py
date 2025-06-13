@@ -25,6 +25,11 @@ from friendly_computing_machine.temporal.db.job_activity import (
     delete_slack_message_duplicates_activity,
     upsert_slack_user_creates_activity,
 )
+from friendly_computing_machine.temporal.poll_workflow import (
+    PollWorkflow,
+    finalize_poll_activity,
+    update_poll_message_activity,
+)
 from friendly_computing_machine.temporal.sample import (
     SayHello,
     build_hello_prompt,
@@ -54,6 +59,7 @@ WORKFLOWS = [
     SlackContextGeminiWorkflow,
     SlackMessageQODWorkflow,
     SlackUserInfoWorkflow,
+    PollWorkflow,
 ]
 ACTIVITIES = [
     generate_context_prompt,
@@ -74,6 +80,8 @@ ACTIVITIES = [
     backfill_genai_text_slack_user_id_activity,
     backfill_genai_text_slack_channel_id_activity,
     fix_slack_tagging_activity,
+    update_poll_message_activity,
+    finalize_poll_activity,
 ]
 
 

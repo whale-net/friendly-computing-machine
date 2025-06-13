@@ -125,3 +125,88 @@ class ServerActionModal(BaseModalView):
                 ),
             ],
         )
+
+
+@dataclass
+class PollCreateModal(BaseModalView):
+    callback_id: str = "poll_create_modal"
+    title: str = "Create Poll"
+    submit_text: str = "Create Poll"
+
+    def build(self) -> View:
+        return View(
+            type="modal",
+            callback_id=self.callback_id,
+            title=PlainTextObject(text=self.title),
+            submit=PlainTextObject(text=self.submit_text),
+            blocks=[
+                InputBlock(
+                    block_id="poll_title_block",
+                    label=PlainTextObject(text="Poll Title"),
+                    element=PlainTextInputElement(
+                        action_id="poll_title_input",
+                        placeholder=PlainTextObject(text="Enter poll title"),
+                        max_length=255,
+                    ),
+                ),
+                InputBlock(
+                    block_id="poll_description_block",
+                    label=PlainTextObject(text="Poll Description (Optional)"),
+                    element=PlainTextInputElement(
+                        action_id="poll_description_input",
+                        placeholder=PlainTextObject(text="Enter poll description"),
+                        multiline=True,
+                        max_length=1000,
+                    ),
+                    optional=True,
+                ),
+                InputBlock(
+                    block_id="poll_option_1_block",
+                    label=PlainTextObject(text="Option 1"),
+                    element=PlainTextInputElement(
+                        action_id="poll_option_1_input",
+                        placeholder=PlainTextObject(text="Enter first option"),
+                        max_length=255,
+                    ),
+                ),
+                InputBlock(
+                    block_id="poll_option_2_block",
+                    label=PlainTextObject(text="Option 2"),
+                    element=PlainTextInputElement(
+                        action_id="poll_option_2_input",
+                        placeholder=PlainTextObject(text="Enter second option"),
+                        max_length=255,
+                    ),
+                ),
+                InputBlock(
+                    block_id="poll_option_3_block",
+                    label=PlainTextObject(text="Option 3 (Optional)"),
+                    element=PlainTextInputElement(
+                        action_id="poll_option_3_input",
+                        placeholder=PlainTextObject(text="Enter third option"),
+                        max_length=255,
+                    ),
+                    optional=True,
+                ),
+                InputBlock(
+                    block_id="poll_option_4_block",
+                    label=PlainTextObject(text="Option 4 (Optional)"),
+                    element=PlainTextInputElement(
+                        action_id="poll_option_4_input",
+                        placeholder=PlainTextObject(text="Enter fourth option"),
+                        max_length=255,
+                    ),
+                    optional=True,
+                ),
+                InputBlock(
+                    block_id="poll_option_5_block",
+                    label=PlainTextObject(text="Option 5 (Optional)"),
+                    element=PlainTextInputElement(
+                        action_id="poll_option_5_input",
+                        placeholder=PlainTextObject(text="Enter fifth option"),
+                        max_length=255,
+                    ),
+                    optional=True,
+                ),
+            ],
+        )

@@ -40,6 +40,18 @@ from .music_poll_dal import (
     update_music_poll_instance,
     update_music_poll_response,
 )
+from .poll_dal import (
+    deactivate_poll,
+    get_poll_by_id,
+    get_poll_options,
+    get_poll_vote_counts,
+    get_poll_voters_by_option,
+    get_poll_votes,
+    insert_poll,
+    insert_poll_options,
+    insert_poll_vote,
+    update_poll_message_info,
+)
 from .slack_dal import (
     find_poll_instance_messages,
     get_bot_slack_user_slack_ids,
@@ -128,4 +140,15 @@ __all__ = [
     "update_manman_status_update",
     "delete_manman_status_update",
     "get_manman_status_update_from_create",
+    # Poll functions
+    "insert_poll",
+    "get_poll_by_id",
+    "update_poll_message_info",
+    "deactivate_poll",
+    "insert_poll_options",
+    "get_poll_options",
+    "insert_poll_vote",
+    "get_poll_votes",
+    "get_poll_vote_counts",
+    "get_poll_voters_by_option",
 ]
