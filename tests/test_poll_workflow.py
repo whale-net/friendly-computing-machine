@@ -99,17 +99,24 @@ def test_update_poll_message_activity_poll_not_found(mock_get_poll):
 @patch("friendly_computing_machine.temporal.poll_workflow._update_poll_message")
 def test_finalize_poll_activity(mock_update, mock_deactivate):
     """Test poll finalization activity."""
-    mock_poll = Mock()
-    mock_poll.id = 1
-    mock_deactivate.return_value = mock_poll
-    mock_update.return_value = "Updated"
+    import asyncio
 
-    params = PollUpdateActivityParams(poll_id=1)
-    result = finalize_poll_activity(params)
+    async def run_test():
+        mock_poll = Mock()
+        mock_poll.id = 1
+        mock_deactivate.return_value = mock_poll
+        mock_update.return_value = "Updated"
 
-    assert result == "Poll 1 finalized"
-    mock_deactivate.assert_called_once_with(1)
-    mock_update.assert_called_once_with(1)
+        params = PollUpdateActivityParams(poll_id=1)
+        result = await finalize_poll_activity(params)
+
+        assert result == "Poll 1 finalized"
+        mock_deactivate.assert_called_once_with(1)
+        mock_update.assert_called_once_with(1)
+
+    asyncio.run(run_test())
+
+    asyncio.run(run_test())
 
 
 def test_poll_workflow_initialization():
