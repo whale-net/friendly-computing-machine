@@ -160,23 +160,23 @@ def handle_wpoll_command(ack: Ack, say: Say, command, client: SlackWebClientFCM)
             span.set_attribute("slack.command", "/wpoll")
             span.set_attribute("slack.user.id", command["user_id"])
             span.set_attribute("slack.channel.id", command["channel_id"])
-            
+
             # Import here to avoid circular imports
             from friendly_computing_machine.bot.modal_schemas import PollCreateModal
-            
+
             modal = PollCreateModal()
             # Pass the channel ID as private metadata so we can retrieve it in the view handler
             view = modal.build()
             view["private_metadata"] = command["channel_id"]
-            
+
             client.views_open(
                 trigger_id=command["trigger_id"],
                 view=view,
             )
-            
+
             logger.info("Poll creation modal opened for user %s", command["user_id"])
             span.set_status(trace.Status(trace.StatusCode.OK))
-            
+
         except Exception as e:
             span.record_exception(e)
             span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))

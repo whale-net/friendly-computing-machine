@@ -25,10 +25,16 @@ def upgrade() -> None:
         "poll",
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("slack_channel_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("slack_user_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column(
+            "slack_channel_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False
+        ),
+        sa.Column(
+            "slack_user_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False
+        ),
         sa.Column("slack_message_id", sa.Integer(), nullable=True),
-        sa.Column("slack_message_ts", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column(
+            "slack_message_ts", sqlmodel.sql.sqltypes.AutoString(), nullable=True
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -83,7 +89,9 @@ def upgrade() -> None:
         "pollvote",
         sa.Column("poll_id", sa.Integer(), nullable=False),
         sa.Column("poll_option_id", sa.Integer(), nullable=False),
-        sa.Column("slack_user_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column(
+            "slack_user_slack_id", sqlmodel.sql.sqltypes.AutoString(), nullable=False
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

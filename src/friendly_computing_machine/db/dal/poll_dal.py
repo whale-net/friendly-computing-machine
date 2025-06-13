@@ -33,14 +33,16 @@ def get_poll_by_id(poll_id: int) -> Optional[Poll]:
         return session.exec(statement).first()
 
 
-def update_poll_message_info(poll_id: int, slack_message_id: int, slack_message_ts: str) -> Poll:
+def update_poll_message_info(
+    poll_id: int, slack_message_id: int, slack_message_ts: str
+) -> Poll:
     """Update poll with Slack message information."""
     with Session(get_db_connection()) as session:
         statement = select(Poll).where(Poll.id == poll_id)
         poll = session.exec(statement).first()
         if not poll:
             raise ValueError(f"Poll with id {poll_id} not found")
-        
+
         poll.slack_message_id = slack_message_id
         poll.slack_message_ts = slack_message_ts
         session.add(poll)
@@ -56,7 +58,7 @@ def update_poll_workflow_id(poll_id: int, workflow_id: str) -> Poll:
         poll = session.exec(statement).first()
         if not poll:
             raise ValueError(f"Poll with id {poll_id} not found")
-        
+
         poll.workflow_id = workflow_id
         session.add(poll)
         session.commit()
@@ -71,7 +73,7 @@ def deactivate_poll(poll_id: int) -> Poll:
         poll = session.exec(statement).first()
         if not poll:
             raise ValueError(f"Poll with id {poll_id} not found")
-        
+
         poll.is_active = False
         session.add(poll)
         session.commit()
@@ -93,7 +95,11 @@ def insert_poll_options(poll_options: List[PollOptionCreate]) -> List[PollOption
 def get_poll_options(poll_id: int) -> List[PollOption]:
     """Get all options for a poll, ordered by display_order."""
     with Session(get_db_connection()) as session:
-        statement = select(PollOption).where(PollOption.poll_id == poll_id).order_by(PollOption.display_order)
+        statement = (
+            select(PollOption)
+            .where(PollOption.poll_id == poll_id)
+            .order_by(PollOption.display_order)
+        )
         return list(session.exec(statement).all())
 
 
@@ -103,10 +109,10 @@ def insert_poll_vote(vote_create: PollVoteCreate) -> PollVote:
         # Check if user already voted for this poll
         existing_vote_statement = select(PollVote).where(
             PollVote.poll_id == vote_create.poll_id,
-            PollVote.slack_user_slack_id == vote_create.slack_user_slack_id
+            PollVote.slack_user_slack_id == vote_create.slack_user_slack_id,
         )
         existing_vote = session.exec(existing_vote_statement).first()
-        
+
         if existing_vote:
             # Update existing vote
             existing_vote.poll_option_id = vote_create.poll_option_id
