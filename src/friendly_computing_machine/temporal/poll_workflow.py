@@ -143,6 +143,14 @@ async def finalize_poll_activity(params: PollUpdateActivityParams) -> str:
 class PollWorkflow:
     """Temporal workflow to manage a poll lifecycle."""
     
+    def __init__(self):
+        self.update_requested = False
+    
+    @workflow.signal
+    async def request_poll_update(self):
+        """Signal to request a poll message update."""
+        self.update_requested = True
+    
     @workflow.run
     async def run(self, params: PollWorkflowParams) -> str:
         """Run the poll workflow for the specified duration."""
@@ -155,26 +163,39 @@ class PollWorkflow:
             start_to_close_timeout=timedelta(seconds=30),
         )
         
-        # Set up periodic updates every 30 seconds
-        update_interval = timedelta(seconds=30)
         poll_duration = timedelta(hours=params.duration_hours)
+        end_time = workflow.now() + poll_duration
         
-        # Calculate how many updates we'll do
-        total_updates = int(poll_duration.total_seconds() / update_interval.total_seconds())
-        
-        for i in range(total_updates):
-            # Wait for the update interval
-            await workflow.sleep(update_interval)
+        # Wait for either poll expiration or signals
+        while workflow.now() < end_time:
+            # Calculate remaining time
+            remaining_time = end_time - workflow.now()
             
-            # Update the poll message
+            # Wait for either a signal or timeout (remaining time)
             try:
-                await workflow.execute_activity(
-                    update_poll_message_activity,
-                    PollUpdateActivityParams(poll_id=params.poll_id),
-                    start_to_close_timeout=timedelta(seconds=30),
+                await workflow.wait_condition(
+                    lambda: self.update_requested, 
+                    timeout=remaining_time
                 )
-            except Exception as e:
-                logger.warning(f"Failed to update poll message during workflow: {e}")
+            except Exception:
+                # Timeout occurred, poll has expired
+                logger.info(f"Poll {params.poll_id} has expired")
+                break
+            
+            # If we got here, it means we received an update signal
+            if self.update_requested:
+                self.update_requested = False
+                logger.info(f"Received update signal for poll {params.poll_id}")
+                
+                # Update the poll message
+                try:
+                    await workflow.execute_activity(
+                        update_poll_message_activity,
+                        PollUpdateActivityParams(poll_id=params.poll_id),
+                        start_to_close_timeout=timedelta(seconds=30),
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to update poll message during workflow: {e}")
         
         # Finalize the poll
         result = await workflow.execute_activity(

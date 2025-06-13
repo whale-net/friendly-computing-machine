@@ -158,9 +158,9 @@ def handle_poll_vote(ack: Ack, body, client: SlackWebClientFCM, logger):
     try:
         from friendly_computing_machine.db.dal.poll_dal import insert_poll_vote, get_poll_by_id
         from friendly_computing_machine.models.poll import PollVoteCreate
-        from friendly_computing_machine.temporal.poll_workflow import PollUpdateActivityParams, update_poll_message_activity
-        from friendly_computing_machine.temporal.util import execute_activity
+        from friendly_computing_machine.temporal.util import get_temporal_client_async
         import datetime
+        import asyncio
         
         # Parse action_id to get poll_id and option_id
         action_id = body["actions"][0]["action_id"]
@@ -178,6 +178,11 @@ def handle_poll_vote(ack: Ack, body, client: SlackWebClientFCM, logger):
         if not poll or not poll.is_active:
             ack("This poll is no longer active.")
             return
+            
+        if not poll.workflow_id:
+            logger.error(f"Poll {poll_id} has no workflow_id")
+            ack("Error: Poll workflow not found.")
+            return
         
         # Record the vote
         vote_create = PollVoteCreate(
@@ -190,15 +195,22 @@ def handle_poll_vote(ack: Ack, body, client: SlackWebClientFCM, logger):
         insert_poll_vote(vote_create)
         logger.info(f"Recorded vote for user {user_id} in poll {poll_id}")
         
-        # Trigger immediate poll message update
-        # Note: We'll call this synchronously since we're not in an async context
-        # In production, you might want to queue this update or use a different mechanism
-        try:
-            # Import the function directly and call it synchronously
-            from friendly_computing_machine.temporal.poll_workflow import _update_poll_message
-            _update_poll_message(poll_id)
-        except Exception as e:
-            logger.warning(f"Failed to trigger immediate poll update: {e}")
+        # Send signal to the temporal workflow to trigger update
+        def send_signal():
+            try:
+                import asyncio
+                async def async_send_signal():
+                    temporal_client = await get_temporal_client_async()
+                    handle = temporal_client.get_workflow_handle(poll.workflow_id)
+                    await handle.signal("request_poll_update")
+                    logger.info(f"Sent update signal to workflow {poll.workflow_id}")
+                
+                # Run the async operation synchronously
+                asyncio.run(async_send_signal())
+            except Exception as e:
+                logger.warning(f"Failed to send signal to workflow: {e}")
+        
+        send_signal()
         
         # Send ephemeral confirmation to the user
         client.chat_postEphemeral(

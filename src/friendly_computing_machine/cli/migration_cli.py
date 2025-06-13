@@ -22,6 +22,7 @@ from friendly_computing_machine.models import (  # noqa: F401
     genai,
     manman,
     music_poll,
+    poll,
     slack,
     task,
 )

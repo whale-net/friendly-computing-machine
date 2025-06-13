@@ -49,6 +49,21 @@ def update_poll_message_info(poll_id: int, slack_message_id: int, slack_message_
         return poll
 
 
+def update_poll_workflow_id(poll_id: int, workflow_id: str) -> Poll:
+    """Update poll with temporal workflow ID."""
+    with Session(get_db_connection()) as session:
+        statement = select(Poll).where(Poll.id == poll_id)
+        poll = session.exec(statement).first()
+        if not poll:
+            raise ValueError(f"Poll with id {poll_id} not found")
+        
+        poll.workflow_id = workflow_id
+        session.add(poll)
+        session.commit()
+        session.refresh(poll)
+        return poll
+
+
 def deactivate_poll(poll_id: int) -> Poll:
     """Deactivate a poll."""
     with Session(get_db_connection()) as session:

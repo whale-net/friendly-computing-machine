@@ -14,6 +14,7 @@ class PollBase(Base):
     slack_user_slack_id: str = Field(index=True)  # creator slack_id (not FK)
     slack_message_id: Optional[int] = Field(default=None, foreign_key="slackmessage.id")
     slack_message_ts: Optional[str] = Field(default=None)  # for message updates
+    workflow_id: Optional[str] = Field(default=None, index=True)  # temporal workflow ID
     created_at: datetime.datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),
@@ -37,6 +38,7 @@ class PollCreate(PollBase):
             slack_user_slack_id=self.slack_user_slack_id,
             slack_message_id=self.slack_message_id,
             slack_message_ts=self.slack_message_ts,
+            workflow_id=self.workflow_id,
             created_at=self.created_at,
             expires_at=self.expires_at,
             is_active=self.is_active,

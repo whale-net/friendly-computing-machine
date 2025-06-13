@@ -117,6 +117,8 @@ def test_poll_workflow_initialization():
     """Test that PollWorkflow can be instantiated."""
     workflow = PollWorkflow()
     assert workflow is not None
+    assert hasattr(workflow, 'update_requested')
+    assert workflow.update_requested is False
 
 
 # Integration test that simulates the workflow pattern
@@ -134,9 +136,28 @@ def test_poll_workflow_pattern():
     # Verify workflow class exists and can be instantiated
     workflow = PollWorkflow()
     assert hasattr(workflow, 'run')
+    assert hasattr(workflow, 'request_poll_update')
     
     # Verify the run method signature accepts the correct parameters
     import inspect
     sig = inspect.signature(workflow.run)
     assert 'params' in sig.parameters
     assert sig.parameters['params'].annotation == PollWorkflowParams
+
+
+def test_poll_workflow_signal():
+    """Test that the poll workflow signal handling works."""
+    workflow = PollWorkflow()
+    
+    # Initially, no update should be requested
+    assert workflow.update_requested is False
+    
+    # The signal should be an async method
+    import asyncio
+    
+    async def test_signal():
+        await workflow.request_poll_update()
+        assert workflow.update_requested is True
+    
+    # Run the async test
+    asyncio.run(test_signal())

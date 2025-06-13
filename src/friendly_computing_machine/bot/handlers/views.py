@@ -144,6 +144,11 @@ def handle_poll_create_submission(ack: Ack, body, client: SlackWebClientFCM, log
         
         # Start temporal workflow
         workflow_id = f"poll-workflow-{poll.id}-{datetime.datetime.now().isoformat()}"
+        
+        # Update poll with workflow ID
+        from friendly_computing_machine.db.dal.poll_dal import update_poll_workflow_id
+        update_poll_workflow_id(poll.id, workflow_id)
+        
         execute_workflow(
             PollWorkflow.run,
             PollWorkflowParams(poll_id=poll.id, duration_hours=8),
