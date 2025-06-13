@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlmodel import Session, select
 
-from friendly_computing_machine.db.util import get_db_connection
+from friendly_computing_machine.db.util import get_engine
 from friendly_computing_machine.models.poll import (
     Poll,
     PollCreate,
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def insert_poll(poll_create: PollCreate) -> Poll:
     """Insert a new poll into the database."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         poll = poll_create.to_poll()
         session.add(poll)
         session.commit()
@@ -28,7 +28,7 @@ def insert_poll(poll_create: PollCreate) -> Poll:
 
 def get_poll_by_id(poll_id: int) -> Optional[Poll]:
     """Get a poll by its ID."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = select(Poll).where(Poll.id == poll_id)
         return session.exec(statement).first()
 
@@ -37,7 +37,7 @@ def update_poll_message_info(
     poll_id: int, slack_message_id: int, slack_message_ts: str
 ) -> Poll:
     """Update poll with Slack message information."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = select(Poll).where(Poll.id == poll_id)
         poll = session.exec(statement).first()
         if not poll:
@@ -53,7 +53,7 @@ def update_poll_message_info(
 
 def update_poll_workflow_id(poll_id: int, workflow_id: str) -> Poll:
     """Update poll with temporal workflow ID."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = select(Poll).where(Poll.id == poll_id)
         poll = session.exec(statement).first()
         if not poll:
@@ -68,7 +68,7 @@ def update_poll_workflow_id(poll_id: int, workflow_id: str) -> Poll:
 
 def deactivate_poll(poll_id: int) -> Poll:
     """Deactivate a poll."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = select(Poll).where(Poll.id == poll_id)
         poll = session.exec(statement).first()
         if not poll:
@@ -83,7 +83,7 @@ def deactivate_poll(poll_id: int) -> Poll:
 
 def insert_poll_options(poll_options: List[PollOptionCreate]) -> List[PollOption]:
     """Insert multiple poll options."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         options = [option_create.to_poll_option() for option_create in poll_options]
         session.add_all(options)
         session.commit()
@@ -94,7 +94,7 @@ def insert_poll_options(poll_options: List[PollOptionCreate]) -> List[PollOption
 
 def get_poll_options(poll_id: int) -> List[PollOption]:
     """Get all options for a poll, ordered by display_order."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = (
             select(PollOption)
             .where(PollOption.poll_id == poll_id)
@@ -105,7 +105,7 @@ def get_poll_options(poll_id: int) -> List[PollOption]:
 
 def insert_poll_vote(vote_create: PollVoteCreate) -> PollVote:
     """Insert a new poll vote."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         # Check if user already voted for this poll
         existing_vote_statement = select(PollVote).where(
             PollVote.poll_id == vote_create.poll_id,
@@ -131,7 +131,7 @@ def insert_poll_vote(vote_create: PollVoteCreate) -> PollVote:
 
 def get_poll_votes(poll_id: int) -> List[PollVote]:
     """Get all votes for a poll."""
-    with Session(get_db_connection()) as session:
+    with Session(get_engine()) as session:
         statement = select(PollVote).where(PollVote.poll_id == poll_id)
         return list(session.exec(statement).all())
 

@@ -53,9 +53,9 @@ def test_poll_service_integration():
     modal = PollCreateModal()
     view = modal.build()
 
-    assert view["type"] == "modal"
-    assert view["callback_id"] == "poll_create_modal"
-    assert "blocks" in view
+    assert view.type == "modal"
+    assert view.callback_id == "poll_create_modal"
+    assert view.blocks is not None
 
     # Test 5: Workflow parameters work
     from friendly_computing_machine.temporal.poll_workflow import (
