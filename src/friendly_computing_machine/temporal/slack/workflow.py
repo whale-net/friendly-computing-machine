@@ -135,7 +135,7 @@ class SlackMessageQODWorkflow(AbstractScheduleWorkflow):
 
     @workflow.run
     async def run(
-        self, params: SlackContextGeminiWorkflowParams = SlackMessageQODWorkflowParams()
+        self, params: SlackMessageQODWorkflowParams = SlackMessageQODWorkflowParams()
     ):
         logger.info("params %s", params)
 
