@@ -41,6 +41,13 @@ from friendly_computing_machine.temporal.slack.workflow import (
     SlackMessageQODWorkflow,
     SlackUserInfoWorkflow,
 )
+from friendly_computing_machine.temporal.youtube.activity import (
+    check_youtube_live_streams_activity,
+    send_slack_notification_activity,
+)
+from friendly_computing_machine.temporal.youtube.workflow import (
+    YouTubeLiveWorkflow,
+)
 from friendly_computing_machine.temporal.util import (
     get_temporal_client_async,
     get_temporal_queue_name,
@@ -54,6 +61,7 @@ WORKFLOWS = [
     SlackContextGeminiWorkflow,
     SlackMessageQODWorkflow,
     SlackUserInfoWorkflow,
+    YouTubeLiveWorkflow,
 ]
 ACTIVITIES = [
     generate_context_prompt,
@@ -74,6 +82,8 @@ ACTIVITIES = [
     backfill_genai_text_slack_user_id_activity,
     backfill_genai_text_slack_channel_id_activity,
     fix_slack_tagging_activity,
+    check_youtube_live_streams_activity,
+    send_slack_notification_activity,
 ]
 
 
