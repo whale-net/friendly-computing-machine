@@ -36,6 +36,7 @@ def test_youtube_live_check_params():
     
     assert params.channel_ids == ["test1", "test2"]
     assert params.minutes_back == 2  # default value
+    assert params.scheduled_time is None  # default value
     
     # Test with custom minutes_back
     params_custom = YouTubeLiveCheckParams(
@@ -43,6 +44,15 @@ def test_youtube_live_check_params():
         minutes_back=5
     )
     assert params_custom.minutes_back == 5
+    assert params_custom.scheduled_time is None
+    
+    # Test with scheduled_time
+    scheduled_time = datetime.now(timezone.utc)
+    params_with_time = YouTubeLiveCheckParams(
+        channel_ids=["test1"],
+        scheduled_time=scheduled_time,
+    )
+    assert params_with_time.scheduled_time == scheduled_time
 
 
 def test_slack_notification_params():

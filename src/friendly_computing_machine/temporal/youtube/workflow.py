@@ -62,12 +62,23 @@ class YouTubeLiveWorkflow(AbstractScheduleWorkflow):
     ):
         logger.info("Starting YouTube live stream check with params: %s", params)
 
+        # Get the scheduled time from workflow info to ensure consistent time window
+        # This prevents issues with execution delays affecting the monitoring window
+        workflow_info = workflow.info()
+        scheduled_time = workflow_info.current_build_started_at
+        
+        logger.info(
+            "Using workflow scheduled time: %s for live stream monitoring",
+            scheduled_time.isoformat() if scheduled_time else "None",
+        )
+
         # Check for new live streams
         live_streams = await workflow.execute_activity(
             check_youtube_live_streams_activity,
             YouTubeLiveCheckParams(
                 channel_ids=params.channel_ids,
                 minutes_back=params.minutes_back,
+                scheduled_time=scheduled_time,
             ),
             start_to_close_timeout=timedelta(seconds=30),
         )

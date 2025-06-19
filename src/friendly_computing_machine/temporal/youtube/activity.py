@@ -27,6 +27,7 @@ class YouTubeLiveCheckParams:
     
     channel_ids: List[str]
     minutes_back: int = 2
+    scheduled_time: Optional[datetime] = None
 
 
 @activity.defn
@@ -56,9 +57,21 @@ async def check_youtube_live_streams_activity(
     # Build YouTube API client
     youtube = build("youtube", "v3", developerKey=api_key)
     
-    # Calculate time threshold
-    now = datetime.now(timezone.utc)
-    threshold = now - timedelta(minutes=params.minutes_back)
+    # Calculate time threshold using scheduled time if provided, otherwise use current time
+    if params.scheduled_time:
+        threshold_base = params.scheduled_time
+        logger.info(
+            "Using scheduled time %s for threshold calculation",
+            threshold_base.isoformat(),
+        )
+    else:
+        threshold_base = datetime.now(timezone.utc)
+        logger.info(
+            "Using current time %s for threshold calculation (no scheduled time provided)",
+            threshold_base.isoformat(),
+        )
+    
+    threshold = threshold_base - timedelta(minutes=params.minutes_back)
     
     live_streams = []
     
